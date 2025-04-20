@@ -204,15 +204,30 @@ function M.show(history, buf_path, main_bufnr)
 	api.nvim_set_option_value("buflisted", false, { scope = "local", buf = bufnr })
 
 	api.nvim_buf_set_keymap(bufnr, "n", "<CR>", "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
 		callback = function()
 			M.preview_snapshot(history, api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
 		end,
 	})
 
 	api.nvim_buf_set_keymap(bufnr, "n", "<leader>r", "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
 		callback = function()
 			M.handle_restore(history, api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
 			M.refresh(bufnr, buf_path)
+		end,
+	})
+
+	api.nvim_buf_set_keymap(bufnr, "n", "q", "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
+		callback = function()
+			vim.api.nvim_win_close(0, true)
 		end,
 	})
 
@@ -279,6 +294,15 @@ function M.preview_snapshot(history, line, bufnr, buf_path, main_bufnr)
 	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = preview_buf })
 	api.nvim_set_option_value("readonly", true, { scope = "local", buf = preview_buf })
 	api.nvim_set_option_value("buflisted", false, { scope = "local", buf = preview_buf })
+
+	api.nvim_buf_set_keymap(preview_buf, "n", "q", "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
+		callback = function()
+			vim.api.nvim_win_close(0, true)
+		end,
+	})
 
 	create_native_float(preview_buf)
 end
