@@ -196,10 +196,16 @@ function M.show(history, buf_path, main_bufnr)
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 
 	api.nvim_set_option_value("filetype", "time-machine-history", { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("bufhidden", "wipe", { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("swapfile", false, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("buflisted", false, { scope = "local", buf = bufnr })
 
 	api.nvim_buf_set_keymap(bufnr, "n", "<CR>", "", {
 		callback = function()
-			M.preview_snapshot(history, api.nvim_win_get_cursor(0)[1], bufnr, buf_path)
+			M.preview_snapshot(history, api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
 		end,
 	})
 
@@ -222,7 +228,7 @@ function M.get_id_from_line(bufnr, line_num)
 	return ok and id_map[line_num] or nil
 end
 
-function M.preview_snapshot(history, line, bufnr, buf_path)
+function M.preview_snapshot(history, line, bufnr, buf_path, main_bufnr)
 	local full_id = M.get_id_from_line(bufnr, line)
 	if not full_id then
 		return
@@ -258,13 +264,21 @@ function M.preview_snapshot(history, line, bufnr, buf_path)
 
 	local preview_buf = api.nvim_create_buf(false, true)
 
+	api.nvim_buf_set_lines(preview_buf, 0, -1, false, content)
+
 	if full_id == root_branch_id then
-		-- vim.api.nvim_set_option_value("filetype", "gitcommit", { scope = "local", buf = preview_buf })
+		local filetype = api.nvim_get_option_value("filetype", { scope = "local", buf = main_bufnr })
+		vim.api.nvim_set_option_value("filetype", filetype, { scope = "local", buf = preview_buf })
 	else
 		vim.api.nvim_set_option_value("filetype", "diff", { scope = "local", buf = preview_buf })
 	end
 
-	api.nvim_buf_set_lines(preview_buf, 0, -1, false, content)
+	api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = preview_buf })
+	api.nvim_set_option_value("bufhidden", "wipe", { scope = "local", buf = preview_buf })
+	api.nvim_set_option_value("swapfile", false, { scope = "local", buf = preview_buf })
+	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = preview_buf })
+	api.nvim_set_option_value("readonly", true, { scope = "local", buf = preview_buf })
+	api.nvim_set_option_value("buflisted", false, { scope = "local", buf = preview_buf })
 
 	create_native_float(preview_buf)
 end
