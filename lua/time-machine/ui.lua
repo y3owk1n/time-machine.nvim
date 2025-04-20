@@ -1,0 +1,246 @@
+local api = vim.api
+local M = {}
+
+local native_float = nil
+
+local winborder = vim.api.nvim_get_option_value("winborder", { scope = "local" }) or "none"
+
+---@type vim.api.keyset.win_config
+local shared_win_opts = {
+	relative = "editor",
+	width = 0.8,
+	height = 0.8,
+	border = winborder,
+	title_pos = "center",
+	footer = "Remember to :wq to save and exit",
+	footer_pos = "center",
+}
+
+--- Create a floating window for native
+---@param buf integer The buffer to open
+local function create_native_float(buf)
+	if native_float then
+		if vim.api.nvim_win_is_valid(native_float) then
+			vim.api.nvim_win_set_buf(native_float, buf)
+			return
+		end
+	end
+
+	local win_opts = vim.tbl_deep_extend("force", shared_win_opts, {
+		title = "Time Machine",
+	})
+
+	win_opts.width = math.floor(vim.o.columns * win_opts.width)
+	win_opts.height = math.floor(vim.o.lines * win_opts.height)
+	win_opts.row = math.floor((vim.o.lines - win_opts.height) / 2)
+	win_opts.col = math.floor((vim.o.columns - win_opts.width) / 2)
+
+	vim.api.nvim_open_win(buf, true, win_opts)
+end
+
+function M.build_child_map(history)
+	local child_map = {}
+	for id, snap in pairs(history.snapshots) do
+		if snap.parent then
+			child_map[snap.parent] = child_map[snap.parent] or {}
+			table.insert(child_map[snap.parent], id)
+		end
+	end
+	return child_map
+end
+
+function M.has_children(history, snapshot_id)
+	local child_map = M.build_child_map(history)
+	return child_map[snapshot_id] and #child_map[snapshot_id] > 0
+end
+
+local function find_key_with_prefix(tbl, prefix)
+	for key, value in pairs(tbl) do
+		if type(key) == "string" and key:sub(1, #prefix) == prefix then
+			return key, value
+		end
+	end
+end
+
+local function build_tree(history)
+	local root_key = find_key_with_prefix(history.snapshots, "root")
+	local root = history.snapshots[root_key]
+	local nodes = {}
+	local tree = {}
+
+	-- Build node map with children
+	for id, snap in pairs(history.snapshots) do
+		nodes[id] = {
+			snap = snap,
+			children = {},
+		}
+	end
+
+	-- Build parent-child relationships
+	for id, node in pairs(nodes) do
+		local parent = node.snap.parent
+		if parent and nodes[parent] then
+			table.insert(nodes[parent].children, node)
+		end
+	end
+
+	-- Sort children by timestamp
+	for _, node in pairs(nodes) do
+		table.sort(node.children, function(a, b)
+			return a.snap.timestamp < b.snap.timestamp
+		end)
+	end
+
+	return nodes[root.id]
+end
+
+local function format_tree(node, depth, is_last, lines, id_map, current_id)
+	local max_indent = require("time-machine").config.max_indent
+	local snap = node.snap
+	local d = depth - 1
+
+	-- Determine indent and connector
+	local indent, connector, indented = "", "", false
+	if depth > 0 then
+		if d <= max_indent then
+			indent = string.rep("  ", d)
+		else
+			indent = string.rep("  ", max_indent)
+			indented = true
+		end
+		connector = is_last and "└─ " or "├─ "
+	end
+
+	-- Build line text
+	local is_current = (snap.id == current_id)
+	local time = os.date("%H:%M", snap.timestamp)
+	local tags = (#snap.tags > 0) and " ◼ " .. table.concat(snap.tags, ", ") or ""
+	local id_text = snap.id:sub(1, 4) == "root" and snap.id or snap.id:sub(5, 8)
+	local marker = is_current and "● " or ""
+	local ellipsis = indented and "... " or ""
+
+	table.insert(lines, indent .. connector .. string.format("%s[%s] %s%s%s", marker, time, ellipsis, id_text, tags))
+	id_map[#lines] = snap.id
+
+	-- Recurse children
+	for i, child in ipairs(node.children) do
+		format_tree(child, depth + 1, (i == #node.children), lines, id_map, current_id)
+	end
+end
+
+function M.refresh(bufnr, buf_path)
+	local history = require("time-machine.storage").load_history(buf_path)
+
+	if not history then
+		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+		return
+	end
+
+	local tree = build_tree(history)
+
+	local lines = {}
+	local id_map = {}
+
+	format_tree(tree, 0, true, lines, id_map, history.current.id)
+	-- format_tree(tree, "", true, lines, 0, id_map, history.current.id)
+
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+	vim.api.nvim_buf_set_var(bufnr, "time_machine_id_map", id_map)
+end
+
+function M.show(history, buf_path, main_bufnr)
+	local tree = build_tree(history)
+	local lines = {}
+	local id_map = {} -- Maps line numbers to full IDs
+
+	format_tree(tree, 0, true, lines, id_map, history.current.id)
+	-- format_tree(tree, "", true, lines, 0, id_map, history.current.id)
+
+	local bufnr = api.nvim_create_buf(false, true)
+
+	api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+
+	api.nvim_set_option_value("filetype", "time-machine-history", { scope = "local", buf = bufnr })
+
+	api.nvim_buf_set_keymap(bufnr, "n", "<CR>", "", {
+		callback = function()
+			M.preview_snapshot(history, api.nvim_win_get_cursor(0)[1], bufnr, buf_path)
+		end,
+	})
+
+	api.nvim_buf_set_keymap(bufnr, "n", "<leader>r", "", {
+		callback = function()
+			M.handle_restore(history, api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
+			M.refresh(bufnr, buf_path)
+		end,
+	})
+
+	vim.api.nvim_open_win(bufnr, true, {
+		split = "right",
+	})
+
+	vim.api.nvim_buf_set_var(bufnr, "time_machine_id_map", id_map)
+end
+
+function M.get_id_from_line(bufnr, line_num)
+	local ok, id_map = pcall(vim.api.nvim_buf_get_var, bufnr, "time_machine_id_map")
+	return ok and id_map[line_num] or nil
+end
+
+function M.preview_snapshot(history, line, bufnr, buf_path)
+	local full_id = M.get_id_from_line(bufnr, line)
+	if not full_id then
+		return
+	end
+
+	local content = {}
+
+	local root_branch_id = require("time-machine").root_branch_id(buf_path)
+
+	if full_id == root_branch_id then
+		content = vim.split(history.root.content, "\n")
+	else
+		local current = history.snapshots[full_id]
+		local chain = {}
+
+		-- Collect chain of snapshots from selected to root
+		while current do
+			table.insert(chain, current)
+			current = history.snapshots[current.parent]
+		end
+
+		-- Append each snapshot diff in order: newest to oldest
+		for i = #chain, 1, -1 do
+			local snap = chain[i]
+			if snap.diff then
+				local diff_lines = vim.split(snap.diff, "\n")
+				for j = #diff_lines, 1, -1 do
+					table.insert(content, 1, diff_lines[j])
+				end
+			end
+		end
+	end
+
+	local preview_buf = api.nvim_create_buf(false, true)
+
+	if full_id == root_branch_id then
+		-- vim.api.nvim_set_option_value("filetype", "gitcommit", { scope = "local", buf = preview_buf })
+	else
+		vim.api.nvim_set_option_value("filetype", "diff", { scope = "local", buf = preview_buf })
+	end
+
+	api.nvim_buf_set_lines(preview_buf, 0, -1, false, content)
+
+	create_native_float(preview_buf)
+end
+
+function M.handle_restore(history, line, bufnr, buf_path, main_bufnr)
+	local full_id = M.get_id_from_line(bufnr, line)
+	if not full_id then
+		return
+	end
+
+	require("time-machine").restore_snapshot(history.snapshots[full_id], buf_path, main_bufnr)
+end
+
+return M
