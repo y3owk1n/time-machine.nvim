@@ -94,37 +94,38 @@ local function build_tree(history)
 	return nodes[root.id]
 end
 
-local function format_tree(node, depth, is_last, lines, id_map, current_id)
-	local max_indent = require("time-machine").config.max_indent
-	local snap = node.snap
-	local d = depth - 1
-
-	-- Determine indent and connector
-	local indent, connector, indented = "", "", false
-	if depth > 0 then
-		if d <= max_indent then
-			indent = string.rep("  ", d)
+--- Format tree with depth and sibling awareness
+local function format_tree(node, depth, ancestor_has_more, lines, id_map, current_id)
+	-- Build indent + connectors
+	local prefix = ""
+	for d = 1, depth do
+		if ancestor_has_more[d] then
+			prefix = prefix .. "│  "
 		else
-			indent = string.rep("  ", max_indent)
-			indented = true
+			prefix = prefix .. "   "
 		end
-		connector = is_last and "└─ " or "├─ "
 	end
 
-	-- Build line text
-	local is_current = (snap.id == current_id)
-	local time = os.date("%H:%M", snap.timestamp)
-	local tags = (#snap.tags > 0) and " ◼ " .. table.concat(snap.tags, ", ") or ""
-	local id_text = snap.id:sub(1, 4) == "root" and snap.id or snap.id:sub(5, 8)
-	local marker = is_current and "● " or ""
-	local ellipsis = indented and "... " or ""
+	local children = node.children
+	local last = ancestor_has_more[depth] == false -- if no further sibling at this level
+	local connector = depth == 0 and "" or (last and "└─ " or "├─ ")
 
-	table.insert(lines, indent .. connector .. string.format("%s[%s] %s%s%s", marker, time, ellipsis, id_text, tags))
+	-- Format line
+	local snap = node.snap
+	local time = os.date("%H:%M", snap.timestamp)
+	local short_id = (snap.id:sub(1, 4) == "root") and snap.id or snap.id:sub(5, 8)
+	local tag_str = (#snap.tags > 0) and (" ◼ " .. table.concat(snap.tags, ", ")) or ""
+	local marker = (snap.id == current_id) and "● " or ""
+	local line = prefix .. connector .. string.format("%s[%s] %s%s", marker, time, short_id, tag_str)
+	table.insert(lines, line)
 	id_map[#lines] = snap.id
 
-	-- Recurse children
-	for i, child in ipairs(node.children) do
-		format_tree(child, depth + 1, (i == #node.children), lines, id_map, current_id)
+	-- Recurse into children
+	for i, child in ipairs(children) do
+		local is_last_child = (i == #children)
+		-- Track if current node has more siblings beyond this child
+		ancestor_has_more[depth + 1] = not is_last_child
+		format_tree(child, depth + 1, ancestor_has_more, lines, id_map, current_id)
 	end
 end
 
@@ -141,7 +142,7 @@ function M.refresh(bufnr, buf_path)
 	local lines = {}
 	local id_map = {}
 
-	format_tree(tree, 0, true, lines, id_map, history.current.id)
+	format_tree(tree, 0, {}, lines, id_map, history.current.id)
 	-- format_tree(tree, "", true, lines, 0, id_map, history.current.id)
 
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
@@ -153,7 +154,7 @@ function M.show(history, buf_path, main_bufnr)
 	local lines = {}
 	local id_map = {} -- Maps line numbers to full IDs
 
-	format_tree(tree, 0, true, lines, id_map, history.current.id)
+	format_tree(tree, 0, {}, lines, id_map, history.current.id)
 	-- format_tree(tree, "", true, lines, 0, id_map, history.current.id)
 
 	local bufnr = api.nvim_create_buf(false, true)
@@ -198,7 +199,7 @@ function M.preview_snapshot(history, line, bufnr, buf_path)
 	local root_branch_id = require("time-machine").root_branch_id(buf_path)
 
 	if full_id == root_branch_id then
-		content = vim.split(history.root.content, "\n")
+		content = vim.split(history.root.content, "\
 	else
 		local current = history.snapshots[full_id]
 		local chain = {}
@@ -213,7 +214,7 @@ function M.preview_snapshot(history, line, bufnr, buf_path)
 		for i = #chain, 1, -1 do
 			local snap = chain[i]
 			if snap.diff then
-				local diff_lines = vim.split(snap.diff, "\n")
+				local diff_lines = vim.split(snap.diff, "\
 				for j = #diff_lines, 1, -1 do
 					table.insert(content, 1, diff_lines[j])
 				end
