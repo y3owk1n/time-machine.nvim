@@ -25,6 +25,37 @@ local function augroup(name)
 	return vim.api.nvim_create_augroup("TimeMachine" .. name, { clear = true })
 end
 
+--- Setup Time Machine colors
+---@param opts TimeMachine.Config
+---@return nil
+function M.setup_highlights(opts)
+	opts = opts or {}
+	local groups = {
+		current = "TimeMachineCurrent",
+		preview = "TimeMachinePreview",
+		tag = "TimeMachineTag",
+	}
+	local defaults_colors = {
+		current = { bg = "#3c3836", fg = "#fabd2f", bold = true },
+		preview = { bg = "#504945", fg = "#83a598" },
+		tag = { fg = "#8ec07c", italic = true },
+	}
+
+	for key, group in pairs(groups) do
+		local setting = opts[key]
+		if type(setting) == "string" then
+			-- Link to an existing highlight group
+			vim.cmd(string.format("highlight! link %s %s", group, setting))
+		elseif type(setting) == "table" then
+			-- User-defined highlight attributes
+			vim.api.nvim_set_hl(0, group, setting)
+		else
+			-- Apply default attributes
+			vim.api.nvim_set_hl(0, group, defaults_colors[key])
+		end
+	end
+end
+
 --- Setup Time Machine auto-save timer
 ---@return nil
 local function setup_auto_save_timer()
@@ -152,6 +183,8 @@ function M.setup(user_config)
 	if M.config.enable_telescope then
 		require("time-machine.telescope").setup()
 	end
+
+	M.setup_highlights(user_config)
 end
 
 return M

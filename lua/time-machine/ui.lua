@@ -55,6 +55,65 @@ local function set_standard_buf_options(bufnr)
 	api.nvim_set_option_value("buflisted", false, { scope = "local", buf = bufnr })
 end
 
+--- Set highlights for the UI
+---@param bufnr integer The buffer number
+---@param id_map table<integer, string> The map of line numbers to snapshot IDs
+---@param current TimeMachine.Snapshot The current snapshot
+---@param lines table<integer, string> The lines of the snapshot
+---@return nil
+local function set_highlights(bufnr, id_map, current, lines)
+	api.nvim_buf_clear_namespace(bufnr, constants.ns, 0, -1)
+
+	-- Highlight current snapshot line
+	for lineno, id in ipairs(id_map) do
+		if id == current.id then
+			local line = vim.api.nvim_buf_get_lines(bufnr, lineno - 1, lineno, false)[1]
+			local end_col = line and #line or 0
+
+			api.nvim_buf_set_extmark(bufnr, constants.ns, lineno - 1, 0, {
+				end_col = end_col,
+				hl_group = "TimeMachineCurrent",
+			})
+			break
+		end
+	end
+
+	-- Highlight preview markers and tags
+	for i, line in ipairs(lines) do
+		if line:sub(1, 1) == ">" then
+			api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, 0, {
+				end_col = 1,
+				hl_group = "TimeMachinePreview",
+			})
+		end
+
+		for tag in line:gmatch("%b[]") do
+			local start_col = line:find(tag, 1, true) - 1
+			api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
+				end_col = start_col + #tag,
+				hl_group = "TimeMachineTag",
+			})
+		end
+	end
+end
+
+--- Set header for the UI
+---@param lines table<integer, string> The lines of the snapshot
+---@param id_map table<integer, string> The map of line numbers to snapshot IDs
+---@return nil
+local function set_header(lines, id_map)
+	-- Insert keymap hints at the top
+	table.insert(lines, 1, "")
+	table.insert(
+		lines,
+		1,
+		"[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [<leader>R] Refresh [<leader>t] Tag [q] Close"
+	)
+
+	table.insert(id_map, 1, "")
+	table.insert(id_map, 1, "")
+end
+
 --- Refresh the UI
 ---@param bufnr integer The buffer number
 ---@param buf_path string The path to the buffer
@@ -87,18 +146,18 @@ function M.refresh(bufnr, buf_path, id_map)
 
 	require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
 
-	table.insert(id_map, 1, "")
-	table.insert(id_map, 1, "")
-
+	set_header(lines, id_map)
 	api.nvim_set_option_value("modifiable", true, { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("readonly", false, { scope = "local", buf = bufnr })
 
-	vim.api.nvim_buf_set_lines(bufnr, 2, -1, false, lines)
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 
 	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
 
 	vim.api.nvim_buf_set_var(bufnr, constants.id_map_buf_var, id_map)
+
+	set_highlights(bufnr, id_map, current, lines)
 end
 
 --- Show the Snapshot for a buffer
@@ -114,16 +173,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 
 	require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
 
-	-- Insert keymap hints at the top
-	table.insert(lines, 1, "")
-	table.insert(
-		lines,
-		1,
-		"[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [<leader>R] Refresh [<leader>t] Tag [q] Close"
-	)
-
-	table.insert(id_map, 1, "")
-	table.insert(id_map, 1, "")
+	set_header(lines, id_map)
 
 	local bufnr = api.nvim_create_buf(false, true)
 
@@ -132,6 +182,8 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 	api.nvim_set_option_value("filetype", constants.native_float_buftype, { scope = "local", buf = bufnr })
 
 	set_standard_buf_options(bufnr)
+
+	set_highlights(bufnr, id_map, current, lines)
 
 	api.nvim_buf_set_keymap(bufnr, "n", "<CR>", "", {
 		nowait = true,
