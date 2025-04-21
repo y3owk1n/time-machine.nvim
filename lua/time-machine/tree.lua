@@ -35,22 +35,6 @@ function M.build_tree(history)
 	return nodes[root.id]
 end
 
---- Flatten the tree into a graph-like list
----@param node TimeMachine.TreeNode The current node
----@param flat_nodes table<string, any>[] Accumulated flat list
----@param visited table<string, boolean> Set of visited node IDs
-function M.flatten_tree(node, flat_nodes, visited)
-	if visited[node.snap.id] then
-		return
-	end
-	visited[node.snap.id] = true
-
-	table.insert(flat_nodes, node)
-	for _, child in ipairs(node.children or {}) do
-		M.flatten_tree(child, flat_nodes, visited)
-	end
-end
-
 --- Format snapshots like a git commit graph
 ---@param root TimeMachine.TreeNode Root node of the tree
 ---@param lines string[] The output lines
