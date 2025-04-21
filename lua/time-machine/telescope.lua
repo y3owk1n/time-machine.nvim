@@ -6,6 +6,9 @@ local action_state = require("telescope.actions.state")
 
 local M = {}
 
+--- Finder function for snapshots
+---@param buf_path string The path to the buffer
+---@return TimeMachine.Snapshot[] snapshots The list of snapshots
 local function snapshot_finder(buf_path)
 	local history = require("time-machine").load_history(buf_path)
 	local items = {}
@@ -35,6 +38,8 @@ local function snapshot_finder(buf_path)
 	})
 end
 
+--- Show the history for the current buffer
+---@return nil
 function M.show_history()
 	local buf_path = require("time-machine").get_buf_path(0)
 	if not buf_path then

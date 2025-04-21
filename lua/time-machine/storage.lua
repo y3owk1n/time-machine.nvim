@@ -4,8 +4,35 @@ local sqlite_cmd = "sqlite3"
 local git = require("time-machine.git")
 local utils = require("time-machine.utils")
 
+--- Perform a database action
+---@param sql string The SQL statement
+---@param opts? { separator?: string }
+---@return string[]|nil output The output lines if return_output is true
+local function db_action(sql, opts)
+	opts = opts or {}
+	local db_path = require("time-machine.config").config.db_path
+	if not db_path then
+		vim.notify("No database path configured", vim.log.levels.ERROR)
+		return nil
+	end
+
+	local cmd = { sqlite_cmd, db_path }
+	if opts.separator then
+		vim.list_extend(cmd, { "-separator", opts.separator })
+	end
+	table.insert(cmd, sql)
+
+	return vim.fn.systemlist(cmd)
+end
+
+--- Initialize the database
+---@param db_path string The path to the database file
+---@return nil
 function M.init(db_path)
-	M.db_path = db_path
+	if not db_path then
+		vim.notify("No database path configured", vim.log.levels.ERROR)
+		return
+	end
 
 	if uv.fs_stat(db_path) then
 		return
@@ -30,10 +57,13 @@ function M.init(db_path)
     );
     CREATE INDEX IF NOT EXISTS idx_snapshots_buf_branch ON snapshots(buf_path, branch);
   ]]
-	vim.fn.system({ sqlite_cmd, db_path, sql })
+
+	db_action(sql)
 end
 
--- Clear current flag for a buffer
+--- Clear current flag for a buffer
+---@param buf_path string The path to the buffer
+---@return nil
 function M.clear_current(buf_path)
 	local branch = git.get_git_branch(buf_path)
 
@@ -43,13 +73,18 @@ function M.clear_current(buf_path)
 		safe,
 		branch
 	)
-	vim.fn.system({ sqlite_cmd, M.db_path, sql })
+
+	db_action(sql)
 end
 
 -- Set a specific snapshot as current
+---@param buf_path string The path to the buffer
+---@param snap_id string The snapshot ID
+---@return nil
 function M.set_current(buf_path, snap_id)
 	M.clear_current(buf_path)
 	local branch = git.get_git_branch(buf_path)
+
 	local safe = buf_path:gsub("'", "''")
 	local sql = string.format(
 		"UPDATE snapshots SET is_current=1 WHERE buf_path='%s' AND branch='%s' AND id='%s';",
@@ -57,9 +92,14 @@ function M.set_current(buf_path, snap_id)
 		branch,
 		snap_id:gsub("'", "''")
 	)
-	vim.fn.system({ sqlite_cmd, M.db_path, sql })
+
+	db_action(sql)
 end
 
+--- Insert a snapshot into the database
+---@param buf_path string The path to the buffer
+---@param snap TimeMachine.Snapshot The snapshot to insert
+---@return nil
 function M.insert_snapshot(buf_path, snap)
 	local branch = git.get_git_branch(buf_path)
 
@@ -84,9 +124,12 @@ function M.insert_snapshot(buf_path, snap)
 		is_curr
 	)
 
-	vim.fn.system({ sqlite_cmd, M.db_path, sql })
+	db_action(sql)
 end
 
+--- Load a snapshot history for a buffer
+---@param buf_path string The path to the buffer
+---@return TimeMachine.History|nil history The snapshot history
 function M.load_history(buf_path)
 	local branch = git.get_git_branch(buf_path)
 
@@ -98,13 +141,13 @@ function M.load_history(buf_path)
 		safe,
 		safe_branch
 	)
-	local rows = vim.fn.systemlist({ sqlite_cmd, M.db_path, "-separator", "|", sql })
-	if vim.v.shell_error ~= 0 or #rows == 0 then
+	local rows = db_action(sql, { separator = "|" })
+	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
 		return nil
 	end
 	local history = { snapshots = {}, root = nil, current = nil }
 	for _, row in ipairs(rows) do
-		local fields = vim.split(row, "|", true)
+		local fields = vim.split(row, "|")
 		local id, parent, diff_enc, content_enc, ts, binary, tags, is_curr = unpack(fields)
 		local snap = {
 			id = id,
@@ -113,7 +156,7 @@ function M.load_history(buf_path)
 			content = utils.decode(content_enc),
 			timestamp = tonumber(ts),
 			binary = (binary == "1"),
-			tags = (tags and #tags > 0) and vim.split(tags, ",", true) or {},
+			tags = (tags and #tags > 0) and vim.split(tags, ",") or {},
 			is_current = (is_curr == "1"),
 		}
 		history.snapshots[id] = snap
@@ -131,31 +174,38 @@ function M.load_history(buf_path)
 	return history
 end
 
+--- Prune snapshots older than a certain number of days
+---@param retention_days number The number of days to retain snapshots
+---@return nil
 function M.prune(retention_days)
 	local cutoff = os.time() - retention_days * 86400
 	local sql = string.format("DELETE FROM snapshots WHERE timestamp < %d;", cutoff)
-	vim.fn.system({ sqlite_cmd, M.db_path, sql })
+	db_action(sql)
 end
 
 -- Delete all snapshot records
+---@return nil
 function M.purge_all()
 	local sql = "DELETE FROM snapshots;"
-	vim.fn.system({ sqlite_cmd, M.db_path, sql })
+	db_action(sql)
 end
 
 -- Delete records for a single buffer path
+---@param buf_path string The path to the buffer
+---@return nil
 function M.purge_current(buf_path)
 	local branch = git.get_git_branch(buf_path)
 	local safe = buf_path:gsub("'", "''")
 	local safe_branch = branch:gsub("'", "''")
 	local sql = string.format("DELETE FROM snapshots WHERE buf_path='%s' AND branch='%s';", safe, safe_branch)
-	vim.fn.system({ sqlite_cmd, M.db_path, sql })
+	db_action(sql)
 end
 
 -- Remove snapshots for files that no longer exist
+---@return integer count The number of orphaned snapshots removed
 function M.clean_orphans()
 	local sql = "SELECT DISTINCT buf_path, branch FROM snapshots;"
-	local rows = vim.fn.systemlist({ sqlite_cmd, M.db_path, "-separator", "|", sql })
+	local rows = db_action(sql, { separator = "|" }) or {}
 	local count = 0
 
 	local branches = git.get_git_branches()
@@ -167,7 +217,7 @@ function M.clean_orphans()
 
 	for _, row in ipairs(rows) do
 		-- Split each row into buf_path and branch
-		local buf_path, branch = unpack(vim.split(row, "|", true))
+		local buf_path, branch = unpack(vim.split(row, "|"))
 
 		-- Check if the file exists
 		local file_exists = vim.fn.filereadable(buf_path) == 1
@@ -180,7 +230,7 @@ function M.clean_orphans()
 			local safe_branch = branch:gsub("'", "''")
 			local del =
 				string.format("DELETE FROM snapshots WHERE buf_path='%s' AND branch='%s';", safe_path, safe_branch)
-			vim.fn.system({ sqlite_cmd, M.db_path, del })
+			db_action(del)
 			count = count + 1
 		end
 	end
@@ -188,11 +238,15 @@ function M.clean_orphans()
 end
 
 -- Delete the database file itself
+---@return boolean ok Whether the file was deleted
+---@return unknown|nil err The error message
 function M.delete_db()
-	local path = M.db_path
+	local db_path = require("time-machine.config").config.db_path
+	if not db_path then
+		return false, "No database path configured"
+	end
 	local ok, err = pcall(function()
-		-- remove file via Lua io
-		os.remove(path)
+		os.remove(db_path)
 	end)
 	return ok, err
 end

@@ -1,11 +1,13 @@
 local M = {}
 local utils = require("time-machine.utils")
 
+--- Build a tree from a snapshot history
+---@param history TimeMachine.History The snapshot history
+---@return TimeMachine.TreeNode[] nodes The list of tree nodes
 function M.build_tree(history)
 	local root_key = utils.find_key_with_prefix(history.snapshots, "root")
 	local root = history.snapshots[root_key]
 	local nodes = {}
-	local tree = {}
 
 	-- Build node map with children
 	for id, snap in pairs(history.snapshots) do
@@ -16,7 +18,7 @@ function M.build_tree(history)
 	end
 
 	-- Build parent-child relationships
-	for id, node in pairs(nodes) do
+	for _, node in pairs(nodes) do
 		local parent = node.snap.parent
 		if parent and nodes[parent] then
 			table.insert(nodes[parent].children, node)
@@ -33,14 +35,15 @@ function M.build_tree(history)
 	return nodes[root.id]
 end
 
---- Format tree: connectors only where siblings exist
--- node: table with .snap and .children
--- depth: current depth (root=0)
--- ancestor_has_more: boolean array per depth, true if ancestor has more siblings after it
--- is_last: boolean, true if node is last among siblings
--- lines: array to accumulate output lines
--- id_map: maps line index to snapshot ID
--- current_id: ID of the currently selected snapshot
+--- Format a tree node
+---@param node TimeMachine.TreeNode The tree node
+---@param depth integer The current depth
+---@param ancestor_has_more boolean[] The ancestor has more siblings after it
+---@param is_last boolean Whether the node is the last among siblings
+---@param lines string[] The output lines
+---@param id_map table<integer, string> The map of line numbers to snapshot IDs
+---@param current_id string The ID of the currently selected snapshot
+---@return nil
 function M.format_tree(node, depth, ancestor_has_more, is_last, lines, id_map, current_id)
 	-- Build prefix from ancestor levels (only up to depth-1)
 	local prefix = ""

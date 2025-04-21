@@ -3,10 +3,59 @@ local storage = require("time-machine.storage")
 
 local M = {}
 
+--- Create a snapshot for a binary buffer
+---@param buf number The buffer to snapshot
+---@return nil
+local function create_binary_snapshot(buf)
+	local buf_path = utils.get_buf_path(buf)
+
+	if not buf_path then
+		vim.notify("No buffer path found", vim.log.levels.ERROR)
+		return
+	end
+
+	local history = storage.load_history(buf_path)
+
+	if not history then
+		local id = utils.root_branch_id(buf_path)
+		storage.insert_snapshot(buf_path, {
+			id = id,
+			parent = nil,
+			content = "",
+			timestamp = os.time(),
+			tags = {},
+			binary = false,
+			is_current = true,
+		})
+		return
+	end
+
+	local content = table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, true), "\n")
+	local new_id = ("%x"):format(os.time()) .. "-" .. math.random(1000, 9999)
+
+	storage.insert_snapshot(buf_path, {
+		id = new_id,
+		parent = nil,
+		content = content,
+		timestamp = os.time(),
+		tags = {},
+		binary = true,
+		is_current = true,
+	})
+
+	local config = require("time-machine.config").config
+
+	storage.prune(config.retention_days)
+end
+
+--- Create a snapshot for the current buffer
+---@param buf? number The buffer to snapshot
+---@param for_root? boolean Whether to create a snapshot for the root branch
+---@return nil
 function M.create_snapshot(buf, for_root)
 	buf = buf or vim.api.nvim_get_current_buf()
 	if utils.is_binary(buf) then
-		return M.create_binary_snapshot(buf)
+		return create_binary_snapshot(buf)
 	end
 
 	local config = require("time-machine.config").config
@@ -48,6 +97,10 @@ function M.create_snapshot(buf, for_root)
 	local old_content = current.content or ""
 	local diff = vim.diff(old_content, new_content, { result_type = "unified", ctxlen = 6 })
 
+	if type(diff) ~= "string" then
+		diff = ""
+	end
+
 	if diff == "" then
 		vim.notify("No changes detected", vim.log.levels.WARN)
 		return "no_changes"
@@ -69,42 +122,8 @@ function M.create_snapshot(buf, for_root)
 	storage.prune(config.retention_days)
 end
 
-function M.create_binary_snapshot(buf)
-	local buf_path = utils.get_buf_path(buf)
-
-	local history = storage.load_history(buf_path)
-
-	if not history then
-		local id = utils.root_branch_id(buf_path)
-		storage.insert_snapshot(buf_path, {
-			id = id,
-			parent = nil,
-			content = "",
-			timestamp = os.time(),
-			tags = {},
-			binary = false,
-		})
-		return
-	end
-
-	local content = table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, true), "\n")
-	local new_id = ("%x"):format(os.time()) .. "-" .. math.random(1000, 9999)
-
-	storage.insert_snapshot(buf_path, {
-		id = new_id,
-		parent = nil,
-		content = content,
-		timestamp = os.time(),
-		tags = {},
-		binary = true,
-		is_current = true,
-	})
-
-	local config = require("time-machine.config").config
-
-	storage.prune(config.retention_days)
-end
-
+--- Show the history for a buffer
+---@return nil
 function M.show_history()
 	local buf_path = utils.get_buf_path(0)
 	local bufnr = vim.api.nvim_get_current_buf()
@@ -119,6 +138,9 @@ function M.show_history()
 	require("time-machine.ui").show(history, buf_path, bufnr)
 end
 
+--- Tag a snapshot
+---@param tag_name? string The tag name
+---@return nil
 function M.tag_snapshot(tag_name)
 	local buf_path = utils.get_buf_path(0)
 	if not buf_path then
@@ -145,10 +167,16 @@ function M.tag_snapshot(tag_name)
 			timestamp = history.current.timestamp,
 			tags = vim.tbl_extend("force", history.snapshots[current_id].tags, { tag_name }),
 			binary = history.snapshots[current_id].binary,
+			is_current = history.current.is_current,
 		})
 	end
 end
 
+--- Restore a snapshot
+---@param target_snap TimeMachine.Snapshot The snapshot to restore
+---@param buf_path string The path to the buffer
+---@param main_bufnr integer The main buffer number
+---@return nil
 function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 	local bufnr = main_bufnr
 
@@ -195,6 +223,9 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 end
 
+--- Purge all snapshots
+---@param force? boolean Whether to force the purge
+---@return nil
 function M.purge_all(force)
 	if not force then
 		local confirm = vim.fn.input("Delete ALL history? [y/N] ")
@@ -211,6 +242,9 @@ function M.purge_all(force)
 	end
 end
 
+--- Purge the current buffer snapshot
+---@param force? boolean Whether to force the purge
+---@return nil
 function M.purge_current(force)
 	local buf_path = utils.get_buf_path(0)
 	if not buf_path then
@@ -226,11 +260,16 @@ function M.purge_current(force)
 	vim.notify("Cleared history for current file", vim.log.levels.INFO)
 end
 
+--- Purge orphaned snapshots
+---@return nil
 function M.clean_orphans()
 	local count = storage.clean_orphans()
 	vim.notify(string.format("Removed %d orphaned histories", count), vim.log.levels.INFO)
 end
 
+--- Reset the database
+---@param force? boolean Whether to force the reset
+---@return nil
 function M.reset_database(force)
 	local config = require("time-machine.config").config
 	if not force then

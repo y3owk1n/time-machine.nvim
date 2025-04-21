@@ -19,6 +19,7 @@ local shared_win_opts = {
 
 --- Create a floating window for native
 ---@param buf integer The buffer to open
+---@return nil
 local function create_native_float(buf)
 	if native_float then
 		if vim.api.nvim_win_is_valid(native_float) then
@@ -39,6 +40,11 @@ local function create_native_float(buf)
 	vim.api.nvim_open_win(buf, true, win_opts)
 end
 
+--- Refresh the UI
+---@param bufnr integer The buffer number
+---@param buf_path string The path to the buffer
+---@param id_map table<integer, string> The map of line numbers to snapshot IDs
+---@return nil
 function M.refresh(bufnr, buf_path, id_map)
 	if not bufnr or not api.nvim_buf_is_valid(bufnr) then
 		return
@@ -71,6 +77,11 @@ function M.refresh(bufnr, buf_path, id_map)
 	vim.api.nvim_buf_set_var(bufnr, "time_machine_id_map", id_map)
 end
 
+--- Show the history for a buffer
+---@param history TimeMachine.History The snapshot history
+---@param buf_path string The path to the buffer
+---@param main_bufnr integer The main buffer number
+---@return nil
 function M.show(history, buf_path, main_bufnr)
 	local tree = require("time-machine.tree").build_tree(history)
 	local lines = {}
@@ -141,6 +152,8 @@ function M.show(history, buf_path, main_bufnr)
 	vim.api.nvim_buf_set_var(bufnr, "time_machine_id_map", id_map)
 end
 
+--- Show the help text
+---@return nil
 function M.show_help()
 	local help_lines = {
 		"## Actions/Help",
@@ -173,6 +186,13 @@ function M.show_help()
 	create_native_float(bufnr)
 end
 
+--- Preview a snapshot
+---@param history TimeMachine.History The snapshot history
+---@param line integer The line number
+---@param bufnr integer The buffer number
+---@param buf_path string The path to the buffer
+---@param main_bufnr integer The main buffer number
+---@return nil
 function M.preview_snapshot(history, line, bufnr, buf_path, main_bufnr)
 	local full_id = utils.get_id_from_line(bufnr, line)
 	if not full_id then
@@ -237,6 +257,13 @@ function M.preview_snapshot(history, line, bufnr, buf_path, main_bufnr)
 	create_native_float(preview_buf)
 end
 
+--- Handle the restore action
+---@param history TimeMachine.History The snapshot history
+---@param line integer The line number
+---@param bufnr integer The buffer number
+---@param buf_path string The path to the buffer
+---@param main_bufnr integer The main buffer number
+---@return nil
 function M.handle_restore(history, line, bufnr, buf_path, main_bufnr)
 	local full_id = utils.get_id_from_line(bufnr, line)
 	if not full_id or full_id == "" then

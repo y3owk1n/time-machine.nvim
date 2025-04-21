@@ -1,5 +1,8 @@
 local M = {}
 
+--- Get the current git branch for a buffer
+---@param buf_path string The path to the buffer
+---@return string branch_name The current git branch
 function M.get_git_branch(buf_path)
 	local dir = vim.fn.fnamemodify(buf_path, ":h")
 	local git_cmd = { "git", "-C", dir, "rev-parse", "--abbrev-ref", "HEAD" }
@@ -10,6 +13,8 @@ function M.get_git_branch(buf_path)
 	return branch
 end
 
+--- Get all git branches
+---@return string[] branches The list of git branches
 function M.get_git_branches()
 	local handle = vim.fn.systemlist("git branch --list") -- Run the git command to list branches
 	if vim.v.shell_error ~= 0 then

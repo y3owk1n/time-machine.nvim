@@ -2,6 +2,9 @@ local M = {}
 
 local storage = require("time-machine.storage")
 
+M.config = {}
+
+---@type TimeMachine.Config
 local defaults = {
 	db_path = vim.fn.stdpath("data") .. "/time_machine.db",
 	auto_save = false,
@@ -12,17 +15,22 @@ local defaults = {
 	max_snapshots = 1000,
 	ignored_buftypes = { "terminal", "nofile", "time-machine-history" },
 	enable_telescope = false,
-	default_tags = { "restore-point", "important" },
 }
 
-M.config = {}
-
+--- Setup Time Machine auto-save timer
+---@return nil
 local function setup_auto_save_timer()
 	local interval_ms = M.config.interval_ms or 2000
 	local debounce_ms = M.config.debounce_ms or 500
 	local last_changed = {}
 
 	local timer = vim.uv.new_timer()
+
+	if not timer then
+		vim.notify("TimeMachine: timer is nil", vim.log.levels.ERROR)
+		return
+	end
+
 	timer:start(
 		0,
 		interval_ms,
@@ -68,7 +76,8 @@ local function setup_auto_save_timer()
 	})
 end
 
--- Update the setup_autocmds function in init.lua
+--- Setup Time Machine autocommands
+---@return nil
 local function setup_autocmds()
 	local group = vim.api.nvim_create_augroup("TimeMachine", { clear = true })
 	local timers = setmetatable({}, { __mode = "v" }) -- Weak references
@@ -119,6 +128,9 @@ local function setup_autocmds()
 	})
 end
 
+--- Setup Time Machine
+---@param user_config TimeMachine.Config
+---@return nil
 function M.setup(user_config)
 	M.config = vim.tbl_deep_extend("force", defaults, user_config or {})
 

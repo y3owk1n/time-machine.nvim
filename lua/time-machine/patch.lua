@@ -1,5 +1,8 @@
 local M = {}
 
+--- Parse a hunk header
+---@param line string The hunk header line
+---@return TimeMachine.HunkHeader|nil parsed_hunk_header The parsed hunk header
 function M.parse_hunk_header(line)
 	-- Allow flexible whitespace and trailing context
 	local old_part, new_part = line:match("^@@%s*-%s*(%d+,?%d*)%s+%+%s*(%d+,?%d*)%s*@@.*")
@@ -25,10 +28,18 @@ function M.parse_hunk_header(line)
 	}
 end
 
+--- Apply a diff to a parent content
+---@param parent_content string The parent content
+---@param diff string The diff to apply
+---@return string diffed_content The updated parent content
 function M.apply_diff(parent_content, diff)
+	---@type string[]
 	local parent_lines = parent_content ~= "" and vim.split(parent_content, "\n") or {}
+
+	---@type TimeMachine.Hunk[]
 	local hunks = {}
 
+	---@type TimeMachine.Hunk|nil
 	local current_hunk = nil
 
 	for _, line in ipairs(vim.split(diff, "\n")) do
