@@ -4,60 +4,12 @@ local ui = require("time-machine.ui")
 
 local M = {}
 
---- Create a snapshot for a binary buffer
----@param buf number The buffer to snapshot
----@return nil
-local function create_binary_snapshot(buf)
-	local buf_path = utils.get_buf_path(buf)
-
-	if not buf_path then
-		vim.notify("No buffer path found", vim.log.levels.ERROR)
-		return
-	end
-
-	local history = storage.load_history(buf_path)
-
-	if not history then
-		local id = utils.root_branch_id(buf_path)
-		storage.insert_snapshot(buf_path, {
-			id = id,
-			parent = nil,
-			content = "",
-			timestamp = os.time(),
-			tags = {},
-			binary = false,
-			is_current = true,
-		})
-		return
-	end
-
-	local content = table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, true), "\n")
-	local new_id = ("%x"):format(os.time()) .. "-" .. math.random(1000, 9999)
-
-	storage.insert_snapshot(buf_path, {
-		id = new_id,
-		parent = nil,
-		content = content,
-		timestamp = os.time(),
-		tags = {},
-		binary = true,
-		is_current = true,
-	})
-
-	local config = require("time-machine.config").config
-
-	storage.prune(config.retention_days)
-end
-
 --- Create a snapshot for the current buffer
 ---@param buf? number The buffer to snapshot
 ---@param for_root? boolean Whether to create a snapshot for the root branch
 ---@return nil
 function M.create_snapshot(buf, for_root)
 	buf = buf or vim.api.nvim_get_current_buf()
-	if utils.is_binary(buf) then
-		return create_binary_snapshot(buf)
-	end
 
 	local config = require("time-machine.config").config
 
@@ -84,7 +36,6 @@ function M.create_snapshot(buf, for_root)
 			content = new_content,
 			timestamp = os.time(),
 			tags = {},
-			binary = false,
 			is_current = true,
 		})
 		return
@@ -129,7 +80,6 @@ function M.create_snapshot(buf, for_root)
 			content = current.content,
 			timestamp = os.time(),
 			tags = tags,
-			binary = false,
 			is_current = false,
 		})
 
@@ -140,7 +90,6 @@ function M.create_snapshot(buf, for_root)
 			content = new_content,
 			timestamp = os.time(),
 			tags = {},
-			binary = false,
 			is_current = true,
 		})
 	else
@@ -151,7 +100,6 @@ function M.create_snapshot(buf, for_root)
 			content = new_content,
 			timestamp = os.time(),
 			tags = {},
-			binary = false,
 			is_current = true,
 		})
 	end
@@ -172,7 +120,7 @@ function M.show_history()
 		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
-	require("time-machine.ui").show(history, buf_path, bufnr)
+	ui.show(history, buf_path, bufnr)
 end
 
 --- Tag a snapshot
@@ -212,7 +160,6 @@ function M.tag_snapshot(tag_name, target_snap, buf_path)
 			content = target_snap.content,
 			timestamp = target_snap.timestamp,
 			tags = tags,
-			binary = target_snap.binary,
 			is_current = target_snap.is_current,
 		})
 	end

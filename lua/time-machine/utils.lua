@@ -8,13 +8,6 @@ function M.get_buf_path(buf)
 	return path ~= "" and path or nil
 end
 
---- Check if a buffer is binary
----@param buf integer The buffer number
----@return boolean is_binary Whether the buffer is binary
-function M.is_binary(buf)
-	return vim.bo[buf].binary or vim.bo[buf].filetype == "git"
-end
-
 --- Get the root branch ID for a buffer
 ---@param buf_path string The path to the buffer
 ---@return string root_branch_id The root branch ID

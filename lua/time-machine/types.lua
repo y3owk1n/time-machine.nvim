@@ -20,7 +20,6 @@
 ---@field diff? string The diff between the parent and current snapshot
 ---@field content string The content of the snapshot
 ---@field timestamp integer The timestamp of the snapshot
----@field binary boolean Whether the snapshot is binary
 ---@field tags string[] The tags associated with the snapshot
 ---@field is_current boolean Whether the snapshot is the current snapshot
 

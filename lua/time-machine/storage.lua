@@ -51,7 +51,6 @@ function M.init(db_path)
       diff TEXT,
       content TEXT,
       timestamp INTEGER,
-      binary INTEGER,
       tags TEXT,
       is_current INTEGER DEFAULT 0
     );
@@ -104,14 +103,13 @@ function M.insert_snapshot(buf_path, snap)
 	local branch = git.get_git_branch(buf_path)
 
 	local tags_enc = snap.tags and table.concat(snap.tags, ",") or ""
-	local binary_val = snap.binary and 1 or 0
 	local diff_enc = utils.encode(snap.diff or "")
 	local content_enc = utils.encode(snap.content or "")
 	local is_curr = snap.is_current and 1 or 0
 	local safe_path = buf_path:gsub("'", "''")
 	local safe_branch = branch:gsub("'", "''")
 	local sql = string.format(
-		"INSERT OR REPLACE INTO snapshots VALUES('%s','%s','%s','%s','%s','%s',%d,%d,'%s',%d);",
+		"INSERT OR REPLACE INTO snapshots VALUES('%s','%s','%s','%s','%s','%s',%d,'%s',%d);",
 		snap.id,
 		safe_branch,
 		safe_path,
@@ -119,7 +117,6 @@ function M.insert_snapshot(buf_path, snap)
 		diff_enc,
 		content_enc,
 		snap.timestamp,
-		binary_val,
 		tags_enc,
 		is_curr
 	)
@@ -136,7 +133,7 @@ function M.load_history(buf_path)
 	local safe = buf_path:gsub("'", "''")
 	local safe_branch = branch:gsub("'", "''")
 	local sql = string.format(
-		"SELECT id,parent,diff,content,timestamp,binary,tags,is_current,branch "
+		"SELECT id,parent,diff,content,timestamp,tags,is_current,branch "
 			.. "FROM snapshots WHERE buf_path='%s' AND branch='%s' ORDER BY timestamp;",
 		safe,
 		safe_branch
@@ -148,14 +145,13 @@ function M.load_history(buf_path)
 	local history = { snapshots = {}, root = nil, current = nil }
 	for _, row in ipairs(rows) do
 		local fields = vim.split(row, "|")
-		local id, parent, diff_enc, content_enc, ts, binary, tags, is_curr = unpack(fields)
+		local id, parent, diff_enc, content_enc, ts, tags, is_curr = unpack(fields)
 		local snap = {
 			id = id,
 			parent = (parent ~= "") and parent or nil,
 			diff = (diff_enc ~= "") and utils.decode(diff_enc) or nil,
 			content = utils.decode(content_enc),
 			timestamp = tonumber(ts),
-			binary = (binary == "1"),
 			tags = (tags and #tags > 0) and vim.split(tags, ",") or {},
 			is_current = (is_curr == "1"),
 		}
