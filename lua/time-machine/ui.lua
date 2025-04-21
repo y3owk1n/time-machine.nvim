@@ -374,7 +374,7 @@ function M.handle_restore(history, line, bufnr, buf_path, main_bufnr)
 		return
 	end
 
-	require("time-machine").restore_snapshot(history.snapshots[full_id], buf_path, main_bufnr)
+	require("time-machine.actions").restore_snapshot(history.snapshots[full_id], buf_path, main_bufnr)
 end
 
 return M

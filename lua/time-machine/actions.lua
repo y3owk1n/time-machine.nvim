@@ -180,7 +180,7 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 	for i = 2, #chain do
 		local snap = chain[i]
 		if snap.diff then
-			content = utils.apply_diff(content, snap.diff)
+			content = require("time-machine.patch").apply_diff(content, snap.diff)
 		else
 			vim.notify("Missing diff for snapshot " .. snap.id, vim.log.levels.WARN)
 		end
