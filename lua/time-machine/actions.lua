@@ -103,6 +103,8 @@ function M.create_snapshot(buf, for_root)
 			tags = {},
 			is_current = true,
 		})
+
+		storage.set_current_snapshot(buf_path, new_id)
 	else
 		storage.insert_snapshot(buf_path, {
 			id = new_id,
@@ -113,6 +115,8 @@ function M.create_snapshot(buf, for_root)
 			tags = {},
 			is_current = true,
 		})
+
+		storage.set_current_snapshot(buf_path, new_id)
 	end
 
 	storage.prune(config.retention_days)
