@@ -20,8 +20,9 @@ local shared_win_opts = {
 
 --- Create a floating window for native
 ---@param buf integer The buffer to open
+---@param title? string The title appended after `Time Machine`
 ---@return nil
-local function create_native_float(buf)
+local function create_native_float(buf, title)
 	if native_float then
 		if vim.api.nvim_win_is_valid(native_float) then
 			vim.api.nvim_win_set_buf(native_float, buf)
@@ -30,7 +31,7 @@ local function create_native_float(buf)
 	end
 
 	local win_opts = vim.tbl_deep_extend("force", shared_win_opts, {
-		title = "Time Machine",
+		title = "Time Machine" .. (title and (" - " .. title) or ""),
 	})
 
 	win_opts.width = math.floor(vim.o.columns * win_opts.width)
@@ -188,7 +189,7 @@ function M.show_help()
 		end,
 	})
 
-	create_native_float(bufnr)
+	create_native_float(bufnr, "Help")
 end
 
 --- Preview a snapshot
@@ -254,7 +255,7 @@ function M.preview_snapshot(history, line, bufnr, buf_path, main_bufnr)
 		end,
 	})
 
-	create_native_float(preview_buf)
+	create_native_float(preview_buf, "Preview")
 end
 
 --- Handle the restore action
