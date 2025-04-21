@@ -312,7 +312,7 @@ function M.preview_snapshot(history, line, bufnr, buf_path, main_bufnr)
 
 	local content = {}
 
-	local root_branch_id = require("time-machine").root_branch_id(buf_path)
+	local root_branch_id = require("time-machine.utils").root_branch_id(buf_path)
 
 	if full_id == root_branch_id then
 		content = vim.split(history.root.content, "\n")
