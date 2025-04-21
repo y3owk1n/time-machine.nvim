@@ -1,6 +1,7 @@
 local uv = vim.loop
 local M = {}
 local sqlite_cmd = "sqlite3"
+local git = require("time-machine.git")
 
 local function encode(str)
 	return str:gsub("\\", "\\\\"):gsub("\n", "\\n"):gsub("'", "''")
@@ -41,7 +42,7 @@ end
 
 -- Clear current flag for a buffer
 function M.clear_current(buf_path)
-	local branch = require("time-machine").get_git_branch(buf_path)
+	local branch = git.get_git_branch(buf_path)
 
 	local safe = buf_path:gsub("'", "''")
 	local sql = string.format(
@@ -55,7 +56,7 @@ end
 -- Set a specific snapshot as current
 function M.set_current(buf_path, snap_id)
 	M.clear_current(buf_path)
-	local branch = require("time-machine").get_git_branch(buf_path)
+	local branch = git.get_git_branch(buf_path)
 	local safe = buf_path:gsub("'", "''")
 	local sql = string.format(
 		"UPDATE snapshots SET is_current=1 WHERE buf_path='%s' AND branch='%s' AND id='%s';",
@@ -67,7 +68,7 @@ function M.set_current(buf_path, snap_id)
 end
 
 function M.insert_snapshot(buf_path, snap)
-	local branch = require("time-machine").get_git_branch(buf_path)
+	local branch = git.get_git_branch(buf_path)
 
 	local tags_enc = snap.tags and table.concat(snap.tags, ",") or ""
 	local binary_val = snap.binary and 1 or 0
@@ -94,7 +95,7 @@ function M.insert_snapshot(buf_path, snap)
 end
 
 function M.load_history(buf_path)
-	local branch = require("time-machine").get_git_branch(buf_path)
+	local branch = git.get_git_branch(buf_path)
 
 	local safe = buf_path:gsub("'", "''")
 	local safe_branch = branch:gsub("'", "''")
@@ -151,7 +152,7 @@ end
 
 -- Delete records for a single buffer path
 function M.purge_current(buf_path)
-	local branch = require("time-machine").get_git_branch(buf_path)
+	local branch = git.get_git_branch(buf_path)
 	local safe = buf_path:gsub("'", "''")
 	local safe_branch = branch:gsub("'", "''")
 	local sql = string.format("DELETE FROM snapshots WHERE buf_path='%s' AND branch='%s';", safe, safe_branch)
@@ -164,7 +165,7 @@ function M.clean_orphans()
 	local rows = vim.fn.systemlist({ sqlite_cmd, M.db_path, "-separator", "|", sql })
 	local count = 0
 
-	local branches = require("time-machine.git").get_git_branches()
+	local branches = git.get_git_branches()
 
 	local branch_set = {}
 	for _, branch in ipairs(branches) do

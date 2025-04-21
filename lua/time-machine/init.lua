@@ -11,6 +11,8 @@ local config = {
 	default_tags = { "restore-point", "important" },
 }
 
+local git = require("time-machine.git")
+
 local M = {}
 
 function M.setup(user_config)
@@ -130,16 +132,6 @@ function M.setup_autocmds()
 	})
 end
 
-function M.get_git_branch(buf_path)
-	local dir = vim.fn.fnamemodify(buf_path, ":h")
-	local git_cmd = { "git", "-C", dir, "rev-parse", "--abbrev-ref", "HEAD" }
-	local branch = vim.fn.systemlist(git_cmd)[1]
-	if vim.v.shell_error ~= 0 then
-		return "detached"
-	end
-	return branch
-end
-
 local function get_buf_path(buf)
 	local path = vim.api.nvim_buf_get_name(buf)
 	return path ~= "" and path or nil
@@ -150,7 +142,7 @@ local function is_binary(buf)
 end
 
 function M.root_branch_id(buf_path)
-	local branch = require("time-machine").get_git_branch(buf_path)
+	local branch = git.get_git_branch(buf_path)
 	if not branch or branch == "detached" then
 		return "root"
 	end

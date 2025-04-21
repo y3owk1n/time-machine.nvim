@@ -1,4 +1,3 @@
--- Create time_machine/patch.lua
 local M = {}
 
 local function parse_hunk_header(header)
