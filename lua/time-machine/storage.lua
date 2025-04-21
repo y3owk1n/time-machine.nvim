@@ -60,6 +60,38 @@ function M.init(db_path)
 	db_action(sql)
 end
 
+--- Get the current snapshot for a buffer
+---@param buf_path string The path to the buffer
+---@return TimeMachine.Snapshot|nil snapshot The current snapshot
+function M.get_current(buf_path)
+	local branch = git.get_git_branch(buf_path)
+
+	local safe = buf_path:gsub("'", "''")
+	local safe_branch = branch:gsub("'", "''")
+	local sql = string.format(
+		"SELECT id,parent,diff,content,timestamp,tags,is_current,branch "
+			.. "FROM snapshots WHERE buf_path='%s' AND branch='%s' AND is_current=1;",
+		safe,
+		safe_branch
+	)
+	local rows = db_action(sql, { separator = "|" })
+	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
+		return nil
+	end
+	local fields = vim.split(rows[1], "|")
+	local id, parent, diff_enc, content_enc, ts, tags, is_curr = unpack(fields)
+	local snap = {
+		id = id,
+		parent = (parent ~= "") and parent or nil,
+		diff = (diff_enc ~= "") and utils.decode(diff_enc) or nil,
+		content = utils.decode(content_enc),
+		timestamp = tonumber(ts),
+		tags = (tags and #tags > 0) and vim.split(tags, ",") or {},
+		is_current = (is_curr == "1"),
+	}
+	return snap
+end
+
 --- Clear current flag for a buffer
 ---@param buf_path string The path to the buffer
 ---@return nil
@@ -124,10 +156,107 @@ function M.insert_snapshot(buf_path, snap)
 	db_action(sql)
 end
 
+--- Count the number of snapshots for a buffer
+---@param buf_path string The path to the buffer
+---@return integer|nil count The number of snapshots
+function M.count_history(buf_path)
+	local branch = git.get_git_branch(buf_path)
+
+	local safe = buf_path:gsub("'", "''")
+	local safe_branch = branch:gsub("'", "''")
+	local sql = string.format("SELECT COUNT(*) FROM snapshots WHERE buf_path='%s' AND branch='%s';", safe, safe_branch)
+	local rows = db_action(sql, { separator = "|" })
+	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
+		return nil
+	end
+	local fields = vim.split(rows[1], "|")
+	local count = tonumber(fields[1])
+	return count
+end
+
+function M.get_root_history(buf_path)
+	local branch = git.get_git_branch(buf_path)
+
+	local safe = buf_path:gsub("'", "''")
+	local safe_branch = branch:gsub("'", "''")
+	local sql = string.format(
+		[[
+    SELECT s.id,
+           s.parent,
+           s.diff,
+           s.content,
+           s.timestamp,
+           s.tags,
+           s.is_current,
+           s.branch
+    FROM snapshots AS s
+    LEFT JOIN snapshots AS p
+      ON p.id = s.parent
+    WHERE s.buf_path = '%s'
+      AND s.branch   = '%s'
+      AND s.parent IS NOT NULL
+      AND p.id     IS NULL;
+  ]],
+		safe,
+		safe_branch
+	)
+	local rows = db_action(sql, { separator = "|" })
+	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
+		return nil
+	end
+
+	local fields = vim.split(rows[1], "|")
+	local id, parent, diff_enc, content_enc, ts, tags, is_curr = unpack(fields)
+	local snap = {
+		id = id,
+		parent = (parent ~= "") and parent or nil,
+		diff = (diff_enc ~= "") and utils.decode(diff_enc) or nil,
+		content = utils.decode(content_enc),
+		timestamp = tonumber(ts),
+		tags = (tags and #tags > 0) and vim.split(tags, ",") or {},
+		is_current = (is_curr == "1"),
+	}
+	return snap
+end
+
+--- Get a snapshot history by ID
+---@param history_id string The snapshot ID
+---@param buf_path string The path to the buffer
+---@return TimeMachine.Snapshot|nil history The snapshot history
+function M.get_history(history_id, buf_path)
+	local branch = git.get_git_branch(buf_path)
+
+	local safe = buf_path:gsub("'", "''")
+	local safe_branch = branch:gsub("'", "''")
+	local sql = string.format(
+		"SELECT id,parent,diff,content,timestamp,tags,is_current,branch "
+			.. "FROM snapshots WHERE buf_path='%s' AND branch='%s' AND id='%s';",
+		safe,
+		safe_branch,
+		history_id
+	)
+	local rows = db_action(sql, { separator = "|" })
+	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
+		return nil
+	end
+	local fields = vim.split(rows[1], "|")
+	local id, parent, diff_enc, content_enc, ts, tags, is_curr = unpack(fields)
+	local snap = {
+		id = id,
+		parent = (parent ~= "") and parent or nil,
+		diff = (diff_enc ~= "") and utils.decode(diff_enc) or nil,
+		content = utils.decode(content_enc),
+		timestamp = tonumber(ts),
+		tags = (tags and #tags > 0) and vim.split(tags, ",") or {},
+		is_current = (is_curr == "1"),
+	}
+	return snap
+end
+
 --- Load a snapshot history for a buffer
 ---@param buf_path string The path to the buffer
 ---@return TimeMachine.History|nil history The snapshot history
-function M.load_history(buf_path)
+function M.get_histories(buf_path)
 	local branch = git.get_git_branch(buf_path)
 
 	local safe = buf_path:gsub("'", "''")

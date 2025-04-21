@@ -65,7 +65,7 @@ function M.refresh(bufnr, buf_path, id_map)
 		return
 	end
 
-	local history = require("time-machine.storage").load_history(buf_path)
+	local history = storage.get_histories(buf_path)
 
 	if not history then
 		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
@@ -239,7 +239,7 @@ function M.preview_snapshot(line, bufnr, buf_path, main_bufnr)
 		return
 	end
 
-	local history = storage.load_history(buf_path)
+	local history = storage.get_histories(buf_path)
 	if not history then
 		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
@@ -310,13 +310,14 @@ function M.handle_restore(line, bufnr, buf_path, main_bufnr)
 		return
 	end
 
-	local history = storage.load_history(buf_path)
+	local history = storage.get_history(full_id, buf_path)
+
 	if not history then
 		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
 
-	require("time-machine.actions").restore_snapshot(history.snapshots[full_id], buf_path, main_bufnr)
+	require("time-machine.actions").restore_snapshot(history, buf_path, main_bufnr)
 end
 
 --- Handle the restore action
@@ -330,13 +331,14 @@ function M.handle_tag(line, bufnr, buf_path)
 		return
 	end
 
-	local history = storage.load_history(buf_path)
+	local history = storage.get_history(full_id, buf_path)
+
 	if not history then
 		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
 
-	require("time-machine.actions").tag_snapshot(nil, history.snapshots[full_id], buf_path)
+	require("time-machine.actions").tag_snapshot(nil, history, buf_path)
 end
 
 return M

@@ -22,13 +22,25 @@ function M.create_snapshot(buf, for_root)
 		return
 	end
 
-	local history = storage.load_history(buf_path)
+	local count = storage.count_history(buf_path)
+	local current = storage.get_current(buf_path)
+
+	if not current then
+		vim.notify("No current snapshot found", vim.log.levels.ERROR)
+		return
+	end
+
+	if not count then
+		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+		return
+	end
+
 	local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
 
 	--- Convert lines to string
 	local new_content = table.concat(lines, "\n")
 
-	if not history then
+	if count == 0 then
 		local id = utils.root_branch_id(buf_path)
 		storage.insert_snapshot(buf_path, {
 			id = id,
@@ -45,7 +57,6 @@ function M.create_snapshot(buf, for_root)
 		return
 	end
 
-	local current = history.current
 	local old_content = current.content or ""
 	local diff = vim.diff(old_content, new_content, { result_type = "unified", ctxlen = 6 })
 
@@ -115,7 +126,7 @@ function M.show_history()
 	if not buf_path then
 		return
 	end
-	local history = storage.load_history(buf_path)
+	local history = storage.get_histories(buf_path)
 	if not history then
 		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
@@ -135,12 +146,12 @@ function M.tag_snapshot(tag_name, target_snap, buf_path)
 	end
 
 	if not target_snap then
-		local history = storage.load_history(buf_path)
-		if not history then
+		local current = storage.get_current(buf_path)
+		if not current then
 			return
 		end
 
-		target_snap = history.current
+		target_snap = current
 	end
 
 	local current_id = target_snap.id
@@ -182,7 +193,14 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 		return
 	end
 
-	local history = storage.load_history(buf_path)
+	local root = storage.get_root_history(buf_path)
+
+	if not root then
+		vim.notify("No root snapshot found", vim.log.levels.ERROR)
+		return
+	end
+
+	local history = storage.get_histories(buf_path)
 	if not history then
 		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
@@ -196,7 +214,7 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 		current_snap = history.snapshots[current_snap.parent]
 	end
 
-	local content = history.root.content
+	local content = root.content
 
 	for i = 2, #chain do
 		local snap = chain[i]
