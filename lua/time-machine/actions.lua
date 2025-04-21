@@ -1,5 +1,6 @@
 local utils = require("time-machine.utils")
 local storage = require("time-machine.storage")
+local ui = require("time-machine.ui")
 
 local M = {}
 

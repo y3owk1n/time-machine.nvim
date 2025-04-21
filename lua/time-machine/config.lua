@@ -1,6 +1,7 @@
 local M = {}
 
 local storage = require("time-machine.storage")
+local constants = require("time-machine.constants").constants
 
 M.config = {}
 
@@ -16,6 +17,13 @@ local defaults = {
 	ignored_buftypes = { "terminal", "nofile", "time-machine-history" },
 	enable_telescope = false,
 }
+
+--- Create an augroup
+---@param name string The name of the augroup
+---@return integer The augroup ID
+local function augroup(name)
+	return vim.api.nvim_create_augroup("TimeMachine" .. name, { clear = true })
+end
 
 --- Setup Time Machine auto-save timer
 ---@return nil
