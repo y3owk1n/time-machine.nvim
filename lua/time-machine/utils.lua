@@ -1,5 +1,12 @@
 local M = {}
 
+--- Create an augroup
+---@param name string The name of the augroup
+---@return integer The augroup ID
+function M.augroup(name)
+	return vim.api.nvim_create_augroup("TimeMachine" .. name, { clear = true })
+end
+
 --- Get the path to a buffer
 ---@param buf integer The buffer number
 ---@return string|nil buf_path The path to the buffer

@@ -1,14 +1,16 @@
 local utils = require("time-machine.utils")
 local storage = require("time-machine.storage")
 local ui = require("time-machine.ui")
+local constants = require("time-machine.constants").constants
 
 local M = {}
 
 --- Create a snapshot for the current buffer
 ---@param buf? number The buffer to snapshot
 ---@param for_root? boolean Whether to create a snapshot for the root branch
+---@param silent? boolean Whether to suppress notifications
 ---@return nil
-function M.create_snapshot(buf, for_root)
+function M.create_snapshot(buf, for_root, silent)
 	buf = buf or vim.api.nvim_get_current_buf()
 
 	local config = require("time-machine.config").config
@@ -24,11 +26,6 @@ function M.create_snapshot(buf, for_root)
 
 	local count = storage.count_snapshots(buf_path)
 	local current = storage.get_current_snapshot(buf_path)
-
-	if not current then
-		vim.notify("No current snapshot found", vim.log.levels.ERROR)
-		return
-	end
 
 	if not count then
 		vim.notify("No snapshot count", vim.log.levels.ERROR)
@@ -50,10 +47,17 @@ function M.create_snapshot(buf, for_root)
 			tags = {},
 			is_current = true,
 		})
+
+		vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
 		return
 	end
 
 	if for_root then
+		return
+	end
+
+	if not current then
+		vim.notify("No current snapshot found", vim.log.levels.ERROR)
 		return
 	end
 
@@ -65,7 +69,9 @@ function M.create_snapshot(buf, for_root)
 	end
 
 	if diff == "" then
-		vim.notify("No changes detected", vim.log.levels.WARN)
+		if not silent then
+			vim.notify("No changes detected", vim.log.levels.WARN)
+		end
 		return "no_changes"
 	end
 
@@ -118,6 +124,8 @@ function M.create_snapshot(buf, for_root)
 
 		storage.set_current_snapshot(buf_path, new_id)
 	end
+
+	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
 
 	storage.prune(config.retention_days)
 end
@@ -186,6 +194,8 @@ function M.tag_snapshot(tag_name, target_snap, buf_path)
 			tags = tags,
 			is_current = target_snap.is_current,
 		})
+
+		vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
 	end
 end
 
@@ -245,6 +255,8 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 
 	-- Apply to buffer and save
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+
+	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
 end
 
 --- Purge all snapshots

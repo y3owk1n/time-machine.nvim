@@ -2,28 +2,24 @@ local M = {}
 
 local storage = require("time-machine.storage")
 local constants = require("time-machine.constants").constants
+local actions = require("time-machine.actions")
+local utils = require("time-machine.utils")
 
 M.config = {}
 
 ---@type TimeMachine.Config
 local defaults = {
 	db_path = vim.fn.stdpath("data") .. "/time_machine.db",
-	auto_save = false,
-	max_indent = 4,
-	interval_ms = 30 * 1000,
-	debounce_ms = 500,
+	auto_save = {
+		enabled = false,
+		debounce_ms = 2 * 1000,
+		events = { "TextChanged", "TextChangedI" },
+	},
 	retention_days = 30,
 	max_snapshots = 1000,
 	ignored_buftypes = { "terminal", "nofile", constants.native_float_buftype },
 	enable_telescope = false,
 }
-
---- Create an augroup
----@param name string The name of the augroup
----@return integer The augroup ID
-local function augroup(name)
-	return vim.api.nvim_create_augroup("TimeMachine" .. name, { clear = true })
-end
 
 --- Setup Time Machine colors
 ---@param opts TimeMachine.Config
@@ -56,72 +52,21 @@ function M.setup_highlights(opts)
 	end
 end
 
---- Setup Time Machine auto-save timer
----@return nil
-local function setup_auto_save_timer()
-	local interval_ms = M.config.interval_ms or 2000
-	local debounce_ms = M.config.debounce_ms or 500
-	local last_changed = {}
-
-	local timer = vim.uv.new_timer()
-
-	if not timer then
-		vim.notify("TimeMachine: timer is nil", vim.log.levels.ERROR)
-		return
-	end
-
-	timer:start(
-		0,
-		interval_ms,
-		vim.schedule_wrap(function()
-			for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-				if
-					vim.api.nvim_buf_is_loaded(buf)
-					and vim.bo[buf].modified
-					and not vim.tbl_contains(M.config.ignored_buftypes, vim.bo[buf].buftype)
-				then
-					local now = math.floor(vim.loop.hrtime() / 1e6) -- convert ns to ms
-					local last = last_changed[buf]
-
-					if not last then
-						last_changed[buf] = now -- start tracking anew
-					elseif now - last >= debounce_ms then
-						local result = M.create_snapshot(buf, true)
-
-						if result == "no_changes" then
-							last_changed[buf] = nil -- stop tracking until next change
-							return
-						end
-
-						last_changed[buf] = now
-						vim.notify("Time Machine: Snapshot saved", vim.log.levels.DEBUG)
-					end
-				elseif not vim.bo[buf].modified then
-					last_changed[buf] = nil -- Reset if not modified
-				end
-			end
-		end)
-	)
-
-	-- Track modification time per buffer
-	vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI", "InsertLeave" }, {
-		group = vim.api.nvim_create_augroup("TimeMachineAutoSave", { clear = true }),
-		callback = function(args)
-			local buf = args.buf
-			if not vim.tbl_contains(M.config.ignored_buftypes, vim.bo[buf].buftype) then
-				last_changed[buf] = math.floor(vim.loop.hrtime() / 1e6)
-			end
-		end,
-	})
-end
-
 --- Setup Time Machine autocommands
 ---@return nil
 local function setup_autocmds()
-	local group = vim.api.nvim_create_augroup("TimeMachine", { clear = true })
 	local timers = setmetatable({}, { __mode = "v" }) -- Weak references
 
-	local function debounced_snapshot(buf, for_root)
+	--- Debounced snapshot creation
+	---@param buf integer The buffer number
+	---@param for_root? boolean Whether to create a snapshot for the root buffer
+	---@param silent? boolean Whether to suppress notifications
+	---@return nil
+	local function debounced_snapshot(buf, for_root, silent)
+		if not M.config.auto_save.enabled then
+			return
+		end
+
 		local prev_timer = timers[buf]
 		if prev_timer and not prev_timer:is_closing() then
 			prev_timer:close()
@@ -136,35 +81,37 @@ local function setup_autocmds()
 		end
 
 		timer:start(
-			M.config.debounce_ms,
+			M.config.auto_save.debounce_ms,
 			0,
 			vim.schedule_wrap(function()
 				timer:close()
-				M.create_snapshot(buf, for_root)
+				actions.create_snapshot(buf, for_root, silent)
 				timers[buf] = nil
 			end)
 		)
 	end
 
-	vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
-		group = group,
-		callback = function(args)
-			if vim.tbl_contains(M.config.ignored_buftypes, vim.bo[args.buf].buftype) then
-				return
-			end
-			debounced_snapshot(args.buf)
-		end,
-	})
+	if M.config.auto_save.enabled then
+		vim.api.nvim_create_autocmd(M.config.auto_save.events, {
+			group = utils.augroup("auto_save_text_changed"),
+			callback = function(args)
+				if vim.tbl_contains(M.config.ignored_buftypes, vim.bo[args.buf].buftype) then
+					return
+				end
+				debounced_snapshot(args.buf, nil, true)
+			end,
+		})
 
-	vim.api.nvim_create_autocmd({ "BufReadPost" }, {
-		group = group,
-		callback = function(args)
-			if vim.tbl_contains(M.config.ignored_buftypes, vim.bo[args.buf].buftype) then
-				return
-			end
-			debounced_snapshot(args.buf, true)
-		end,
-	})
+		vim.api.nvim_create_autocmd({ "BufReadPost" }, {
+			group = utils.augroup("auto_save_buf_read_post"),
+			callback = function(args)
+				if vim.tbl_contains(M.config.ignored_buftypes, vim.bo[args.buf].buftype) then
+					return
+				end
+				actions.create_snapshot(args.buf, true)
+			end,
+		})
+	end
 end
 
 --- Setup Time Machine
@@ -175,10 +122,7 @@ function M.setup(user_config)
 
 	storage.init(M.config.db_path)
 
-	if M.config.auto_save then
-		setup_auto_save_timer()
-	end
-	-- setup_autocmds()
+	setup_autocmds()
 
 	if M.config.enable_telescope then
 		require("time-machine.telescope").setup()

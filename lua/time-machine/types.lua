@@ -1,13 +1,15 @@
 ---@class TimeMachine.Config
 ---@field db_path? string The path to the database file
----@field auto_save? boolean Whether to automatically save snapshots
----@field max_indent? number The maximum indent level for snapshots
----@field interval_ms? number The interval in milliseconds to check for changes
----@field debounce_ms? number The debounce time in milliseconds
+---@field auto_save? TimeMachine.Config.AutoSave The auto-save configuration
 ---@field retention_days? number The number of days to retain snapshots
 ---@field max_snapshots? number The maximum number of snapshots to retain
 ---@field ignored_buftypes? string[] The buffer types to ignore
 ---@field enable_telescope? boolean Whether to enable the Telescope extension
+
+---@class TimeMachine.Config.AutoSave
+---@field enabled? boolean Whether to automatically save snapshots
+---@field debounce_ms? number The debounce time in milliseconds
+---@field events? string[] The events to trigger auto snapshot saving
 
 ---@class TimeMachine.Snapshot
 ---@field id string The snapshot ID

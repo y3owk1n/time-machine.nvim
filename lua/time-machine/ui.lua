@@ -200,9 +200,6 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		silent = true,
 		callback = function()
 			M.handle_restore(api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
-			vim.schedule(function()
-				M.refresh(bufnr, buf_path, id_map)
-			end)
 		end,
 	})
 
@@ -212,9 +209,6 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		silent = true,
 		callback = function()
 			M.handle_tag(api.nvim_win_get_cursor(0)[1], bufnr, buf_path)
-			vim.schedule(function()
-				M.refresh(bufnr, buf_path, id_map)
-			end)
 		end,
 	})
 
@@ -251,6 +245,23 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 	})
 
 	vim.api.nvim_buf_set_var(bufnr, constants.id_map_buf_var, id_map)
+
+	local ui_refresh_group = utils.augroup("ui_refresh")
+
+	vim.api.nvim_create_autocmd("User", {
+		group = ui_refresh_group,
+		pattern = constants.events.snapshot_created,
+		-- buffer = bufnr,
+		callback = function()
+			-- only refresh if that buffer is still open
+			if api.nvim_buf_is_valid(bufnr) then
+				M.refresh(bufnr, buf_path, id_map)
+			else
+				-- buffer was closed, clean up the augroup
+				api.nvim_del_augroup_by_id(ui_refresh_group)
+			end
+		end,
+	})
 end
 
 --- Show the help text
