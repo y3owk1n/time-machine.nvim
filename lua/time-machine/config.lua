@@ -14,7 +14,7 @@ local defaults = {
 	debounce_ms = 500,
 	retention_days = 30,
 	max_snapshots = 1000,
-	ignored_buftypes = { "terminal", "nofile", "time-machine-history" },
+	ignored_buftypes = { "terminal", "nofile", constants.native_float_buftype },
 	enable_telescope = false,
 }
 

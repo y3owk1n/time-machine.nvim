@@ -22,8 +22,8 @@ function M.create_snapshot(buf, for_root)
 		return
 	end
 
-	local count = storage.count_history(buf_path)
-	local current = storage.get_current(buf_path)
+	local count = storage.count_snapshots(buf_path)
+	local current = storage.get_current_snapshot(buf_path)
 
 	if not current then
 		vim.notify("No current snapshot found", vim.log.levels.ERROR)
@@ -31,7 +31,7 @@ function M.create_snapshot(buf, for_root)
 	end
 
 	if not count then
-		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+		vim.notify("No snapshot count", vim.log.levels.ERROR)
 		return
 	end
 
@@ -69,7 +69,7 @@ function M.create_snapshot(buf, for_root)
 		return "no_changes"
 	end
 
-	local children = storage.get_history_children(current.id)
+	local children = storage.get_snapshot_children(current.id)
 
 	local num_children = #children
 
@@ -118,20 +118,29 @@ function M.create_snapshot(buf, for_root)
 	storage.prune(config.retention_days)
 end
 
---- Show the history for a buffer
+--- Show the snapshot for a buffer
 ---@return nil
-function M.show_history()
+function M.show_snapshots()
 	local buf_path = utils.get_buf_path(0)
 	local bufnr = vim.api.nvim_get_current_buf()
 	if not buf_path then
 		return
 	end
-	local history = storage.get_histories(buf_path)
-	if not history then
-		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+	local snapshots = storage.get_snapshots(buf_path)
+
+	local current = storage.get_current_snapshot(buf_path)
+
+	if not snapshots then
+		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
-	ui.show(history, buf_path, bufnr)
+
+	if not current then
+		vim.notify("No current snapshot found", vim.log.levels.ERROR)
+		return
+	end
+
+	ui.show(snapshots, current, buf_path, bufnr)
 end
 
 --- Tag a snapshot
@@ -146,7 +155,7 @@ function M.tag_snapshot(tag_name, target_snap, buf_path)
 	end
 
 	if not target_snap then
-		local current = storage.get_current(buf_path)
+		local current = storage.get_current_snapshot(buf_path)
 		if not current then
 			return
 		end
@@ -193,16 +202,16 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 		return
 	end
 
-	local root = storage.get_root_history(buf_path)
+	local root = storage.get_root_snapshot(buf_path)
 
 	if not root then
 		vim.notify("No root snapshot found", vim.log.levels.ERROR)
 		return
 	end
 
-	local history = storage.get_histories(buf_path)
-	if not history then
-		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+	local snapshots = storage.get_snapshots(buf_path)
+	if not snapshots then
+		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
 
@@ -211,7 +220,7 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 	local current_snap = target_snap
 	while current_snap do
 		table.insert(chain, 1, current_snap) -- Insert at front to reverse order
-		current_snap = history.snapshots[current_snap.parent]
+		current_snap = snapshots[current_snap.parent]
 	end
 
 	local content = root.content
@@ -228,7 +237,7 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 	-- Split into lines for buffer operations
 	local lines = vim.split(content, "\n")
 
-	storage.set_current(buf_path, target_snap.id)
+	storage.set_current_snapshot(buf_path, target_snap.id)
 
 	-- Apply to buffer and save
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
@@ -239,17 +248,17 @@ end
 ---@return nil
 function M.purge_all(force)
 	if not force then
-		local confirm = vim.fn.input("Delete ALL history? [y/N] ")
+		local confirm = vim.fn.input("Delete ALL snapshots? [y/N] ")
 		if confirm:lower() ~= "y" then
 			return
 		end
 	end
 	local ok, err = pcall(function()
 		storage.purge_all()
-		vim.notify("Cleared all Time Machine history", vim.log.levels.INFO)
+		vim.notify("Cleared all Time Machine snapshots", vim.log.levels.INFO)
 	end)
 	if not ok then
-		vim.notify("Failed to purge all history: " .. tostring(err), vim.log.levels.ERROR)
+		vim.notify("Failed to purge all snapshots: " .. tostring(err), vim.log.levels.ERROR)
 	end
 end
 
@@ -262,20 +271,20 @@ function M.purge_current(force)
 		return
 	end
 	if not force then
-		local confirm = vim.fn.input("Delete history for " .. vim.fn.fnamemodify(buf_path, ":~:.") .. "? [y/N] ")
+		local confirm = vim.fn.input("Delete snapshots for " .. vim.fn.fnamemodify(buf_path, ":~:.") .. "? [y/N] ")
 		if confirm:lower() ~= "y" then
 			return
 		end
 	end
 	storage.purge_current(buf_path)
-	vim.notify("Cleared history for current file", vim.log.levels.INFO)
+	vim.notify("Cleared snapshots for current file", vim.log.levels.INFO)
 end
 
 --- Purge orphaned snapshots
 ---@return nil
 function M.clean_orphans()
 	local count = storage.clean_orphans()
-	vim.notify(string.format("Removed %d orphaned histories", count), vim.log.levels.INFO)
+	vim.notify(string.format("Removed %d orphaned snapshots", count), vim.log.levels.INFO)
 end
 
 --- Reset the database

@@ -9,11 +9,6 @@
 ---@field ignored_buftypes? string[] The buffer types to ignore
 ---@field enable_telescope? boolean Whether to enable the Telescope extension
 
----@class TimeMachine.History
----@field snapshots TimeMachine.Snapshot[] The list of snapshots
----@field root TimeMachine.Snapshot The root snapshot
----@field current TimeMachine.Snapshot The current snapshot
-
 ---@class TimeMachine.Snapshot
 ---@field id string The snapshot ID
 ---@field parent string|nil The parent snapshot ID

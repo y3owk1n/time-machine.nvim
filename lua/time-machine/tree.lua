@@ -2,15 +2,15 @@ local M = {}
 local utils = require("time-machine.utils")
 
 --- Build a tree from a snapshot history
----@param history TimeMachine.History The snapshot history
+---@param snapshots TimeMachine.Snapshot The snapshot history
 ---@return TimeMachine.TreeNode nodes The root node
-function M.build_tree(history)
-	local root_key = utils.find_key_with_prefix(history.snapshots, "root")
-	local root = history.snapshots[root_key]
+function M.build_tree(snapshots)
+	local root_key = utils.find_key_with_prefix(snapshots, "root")
+	local root = snapshots[root_key]
 	local nodes = {}
 
 	-- Build node map with children
-	for id, snap in pairs(history.snapshots) do
+	for id, snap in pairs(snapshots) do
 		nodes[id] = {
 			snap = snap,
 			children = {},

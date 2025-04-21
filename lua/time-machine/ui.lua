@@ -65,21 +65,27 @@ function M.refresh(bufnr, buf_path, id_map)
 		return
 	end
 
-	local history = storage.get_histories(buf_path)
+	local snapshots = storage.get_snapshots(buf_path)
 
-	if not history then
-		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+	local current = storage.get_current_snapshot(buf_path)
+
+	if not snapshots then
+		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
 
-	local tree = require("time-machine.tree").build_tree(history)
+	if not current then
+		vim.notify("No current snapshot found", vim.log.levels.ERROR)
+		return
+	end
+
+	local tree = require("time-machine.tree").build_tree(snapshots)
 
 	local lines = {}
 
 	id_map = {}
 
-	-- require("time-machine.tree").format_tree(tree, 1, {}, true, lines, id_map, history.current.id)
-	require("time-machine.tree").format_graph(tree, lines, id_map, history.current.id)
+	require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
 
 	table.insert(id_map, 1, "")
 	table.insert(id_map, 1, "")
@@ -95,18 +101,18 @@ function M.refresh(bufnr, buf_path, id_map)
 	vim.api.nvim_buf_set_var(bufnr, constants.id_map_buf_var, id_map)
 end
 
---- Show the history for a buffer
----@param history TimeMachine.History The snapshot history
+--- Show the Snapshot for a buffer
+---@param snapshot TimeMachine.Snapshot The snapshot history
+---@param current TimeMachine.Snapshot The current snapshot
 ---@param buf_path string The path to the buffer
 ---@param main_bufnr integer The main buffer number
 ---@return nil
-function M.show(history, buf_path, main_bufnr)
-	local tree = require("time-machine.tree").build_tree(history)
+function M.show(snapshot, current, buf_path, main_bufnr)
+	local tree = require("time-machine.tree").build_tree(snapshot)
 	local lines = {}
 	local id_map = {} -- Maps line numbers to full IDs
 
-	-- require("time-machine.tree").format_tree(tree, 1, {}, true, lines, id_map, history.current.id)
-	require("time-machine.tree").format_graph(tree, lines, id_map, history.current.id)
+	require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
 
 	-- Insert keymap hints at the top
 	table.insert(lines, 1, "")
@@ -239,9 +245,15 @@ function M.preview_snapshot(line, bufnr, buf_path, main_bufnr)
 		return
 	end
 
-	local history = storage.get_histories(buf_path)
-	if not history then
-		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+	local snapshots = storage.get_snapshots(buf_path)
+	if not snapshots then
+		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+		return
+	end
+
+	local root = storage.get_root_snapshot(buf_path)
+	if not root then
+		vim.notify("No root snapshot found", vim.log.levels.ERROR)
 		return
 	end
 
@@ -250,15 +262,15 @@ function M.preview_snapshot(line, bufnr, buf_path, main_bufnr)
 	local root_branch_id = require("time-machine.utils").root_branch_id(buf_path)
 
 	if full_id == root_branch_id then
-		content = vim.split(history.root.content, "\n")
+		content = vim.split(root.content, "\n")
 	else
-		local current = history.snapshots[full_id]
+		local current = snapshots[full_id]
 		local chain = {}
 
 		-- Collect chain of snapshots from selected to root
 		while current do
 			table.insert(chain, current)
-			current = history.snapshots[current.parent]
+			current = snapshots[current.parent]
 		end
 
 		-- Append each snapshot diff in order: newest to oldest
@@ -310,14 +322,14 @@ function M.handle_restore(line, bufnr, buf_path, main_bufnr)
 		return
 	end
 
-	local history = storage.get_history(full_id, buf_path)
+	local snapshot = storage.get_snapshot_by_id(full_id, buf_path)
 
-	if not history then
-		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+	if not snapshot then
+		vim.notify("No snapshot found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
 
-	require("time-machine.actions").restore_snapshot(history, buf_path, main_bufnr)
+	require("time-machine.actions").restore_snapshot(snapshot, buf_path, main_bufnr)
 end
 
 --- Handle the restore action
@@ -331,14 +343,14 @@ function M.handle_tag(line, bufnr, buf_path)
 		return
 	end
 
-	local history = storage.get_history(full_id, buf_path)
+	local snapshot = storage.get_snapshot_by_id(full_id, buf_path)
 
-	if not history then
-		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+	if not snapshot then
+		vim.notify("No snapshot found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
 
-	require("time-machine.actions").tag_snapshot(nil, history, buf_path)
+	require("time-machine.actions").tag_snapshot(nil, snapshot, buf_path)
 end
 
 return M
