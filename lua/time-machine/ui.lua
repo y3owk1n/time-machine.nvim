@@ -191,6 +191,10 @@ function M.show(history, buf_path, main_bufnr)
 	format_tree(tree, 0, {}, true, lines, id_map, history.current.id)
 	-- format_tree(tree, "", true, lines, 0, id_map, history.current.id)
 
+	-- Insert keymap hints at the top
+	table.insert(lines, 1, "")
+	table.insert(lines, 1, "[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [q] Close")
+
 	local bufnr = api.nvim_create_buf(false, true)
 
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
@@ -231,6 +235,15 @@ function M.show(history, buf_path, main_bufnr)
 		end,
 	})
 
+	api.nvim_buf_set_keymap(bufnr, "n", "g?", "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
+		callback = function()
+			M.show_help()
+		end,
+	})
+
 	vim.api.nvim_open_win(bufnr, true, {
 		split = "right",
 	})
@@ -241,6 +254,38 @@ end
 function M.get_id_from_line(bufnr, line_num)
 	local ok, id_map = pcall(vim.api.nvim_buf_get_var, bufnr, "time_machine_id_map")
 	return ok and id_map[line_num] or nil
+end
+
+function M.show_help()
+	local help_lines = {
+		"## Actions/Help",
+		"",
+		"`<CR>` **Preview** - Show the diff of the selected snapshot",
+		"`<leader>r` **Restore** - Restore the selected snapshot",
+		"`q` **Close** - Close the history window",
+		"",
+	}
+
+	local bufnr = api.nvim_create_buf(false, true)
+	api.nvim_buf_set_lines(bufnr, 0, -1, false, help_lines)
+	api.nvim_set_option_value("filetype", "markdown", { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("bufhidden", "wipe", { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("swapfile", false, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("buflisted", false, { scope = "local", buf = bufnr })
+
+	api.nvim_buf_set_keymap(bufnr, "n", "q", "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
+		callback = function()
+			vim.api.nvim_win_close(0, true)
+		end,
+	})
+
+	create_native_float(bufnr)
 end
 
 function M.preview_snapshot(history, line, bufnr, buf_path, main_bufnr)
