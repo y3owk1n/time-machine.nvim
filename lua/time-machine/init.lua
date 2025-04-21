@@ -151,6 +151,9 @@ end
 
 function M.root_branch_id(buf_path)
 	local branch = require("time-machine").get_git_branch(buf_path)
+	if not branch or branch == "detached" then
+		return "root"
+	end
 	return ("root-%s"):format(branch)
 end
 
