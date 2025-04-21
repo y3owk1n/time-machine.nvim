@@ -118,6 +118,9 @@ function M.create_snapshot(buf, for_root)
 	if children and num_children > 0 then
 		local tag = "branch-" .. current.id:sub(5, 8)
 
+		local tags = current.tags or {}
+		table.insert(tags, tag)
+
 		--- duplicate the same content but with tag
 		storage.insert_snapshot(buf_path, {
 			id = new_branch_id,
@@ -125,7 +128,7 @@ function M.create_snapshot(buf, for_root)
 			diff = current.diff,
 			content = current.content,
 			timestamp = os.time(),
-			tags = { tag },
+			tags = tags,
 			binary = false,
 			is_current = false,
 		})
@@ -193,13 +196,16 @@ function M.tag_snapshot(tag_name)
 	end
 
 	if tag_name and tag_name ~= "" then
+		local tags = history.current.tags or {}
+		table.insert(tags, tag_name)
+
 		storage.insert_snapshot(buf_path, {
 			id = current_id,
 			parent = history.current.parent,
-			diff = history.snapshots[current_id].diff,
+			diff = history.current.diff,
 			content = history.current.content,
 			timestamp = history.current.timestamp,
-			tags = vim.tbl_extend("force", history.snapshots[current_id].tags, { tag_name }),
+			tags = tags,
 			binary = history.snapshots[current_id].binary,
 			is_current = history.current.is_current,
 		})
