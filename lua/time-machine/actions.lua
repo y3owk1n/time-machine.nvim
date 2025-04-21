@@ -24,6 +24,8 @@ function M.create_snapshot(buf, for_root, silent)
 		return
 	end
 
+	storage.try_init(buf_path)
+
 	local count = storage.count_snapshots(buf_path)
 	local current = storage.get_current_snapshot(buf_path)
 
@@ -75,7 +77,7 @@ function M.create_snapshot(buf, for_root, silent)
 		return "no_changes"
 	end
 
-	local children = storage.get_snapshot_children(current.id)
+	local children = storage.get_snapshot_children(buf_path, current.id)
 
 	local num_children = #children
 
@@ -138,6 +140,9 @@ function M.show_snapshots()
 	if not buf_path then
 		return
 	end
+
+	storage.try_init(buf_path)
+
 	local snapshots = storage.get_snapshots(buf_path)
 
 	local current = storage.get_current_snapshot(buf_path)
@@ -165,6 +170,8 @@ function M.tag_snapshot(tag_name, target_snap, buf_path)
 	if not buf_path then
 		return
 	end
+
+	storage.try_init(buf_path)
 
 	if not target_snap then
 		local current = storage.get_current_snapshot(buf_path)
@@ -215,6 +222,8 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 	if not buf_path then
 		return
 	end
+
+	storage.try_init(buf_path)
 
 	local root = storage.get_root_snapshot(buf_path)
 
@@ -307,9 +316,8 @@ end
 ---@param force? boolean Whether to force the reset
 ---@return nil
 function M.reset_database(force)
-	local config = require("time-machine.config").config
 	if not force then
-		local confirm = vim.fn.input("Delete TimeMachine database at " .. config.db_path .. "? [y/N] ")
+		local confirm = vim.fn.input("Delete all the databases" .. "? [y/N] ")
 		if confirm:lower() ~= "y" then
 			return
 		end
@@ -319,7 +327,6 @@ function M.reset_database(force)
 		vim.notify("Failed to delete TimeMachine database: " .. tostring(err), vim.log.levels.ERROR)
 		return
 	end
-	storage.init(config.db_path)
 	vim.notify("TimeMachine database has been reset", vim.log.levels.INFO)
 end
 

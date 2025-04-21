@@ -1,6 +1,5 @@
 local M = {}
 
-local storage = require("time-machine.storage")
 local constants = require("time-machine.constants").constants
 local actions = require("time-machine.actions")
 local utils = require("time-machine.utils")
@@ -9,7 +8,7 @@ M.config = {}
 
 ---@type TimeMachine.Config
 local defaults = {
-	db_path = vim.fn.stdpath("data") .. "/time_machine.db",
+	db_dir = vim.fn.stdpath("data") .. "/time-machine",
 	auto_save = {
 		enabled = false,
 		debounce_ms = 2 * 1000,
@@ -119,8 +118,6 @@ end
 ---@return nil
 function M.setup(user_config)
 	M.config = vim.tbl_deep_extend("force", defaults, user_config or {})
-
-	storage.init(M.config.db_path)
 
 	setup_autocmds()
 

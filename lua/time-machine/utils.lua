@@ -1,10 +1,86 @@
 local M = {}
 
+local bit = require("bit")
+
 --- Create an augroup
 ---@param name string The name of the augroup
 ---@return integer The augroup ID
 function M.augroup(name)
 	return vim.api.nvim_create_augroup("TimeMachine" .. name, { clear = true })
+end
+
+--- Encode data to standard Base64
+-- @param data string
+-- @return string base64 encoded
+function M.base64_encode(data)
+	local b64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+	local result = {}
+	for i = 1, #data, 3 do
+		local a, b, c = data:byte(i, i + 2)
+		local n = (a * 65536) + ((b or 0) * 256) + (c or 0)
+
+		table.insert(result, b64chars:sub((math.floor(n / 262144) % 64) + 1, (math.floor(n / 262144) % 64) + 1))
+		table.insert(result, b64chars:sub((math.floor(n / 4096) % 64) + 1, (math.floor(n / 4096) % 64) + 1))
+		table.insert(result, b and b64chars:sub((math.floor(n / 64) % 64) + 1, (math.floor(n / 64) % 64) + 1) or "=")
+		table.insert(result, c and b64chars:sub((n % 64) + 1, (n % 64) + 1) or "=")
+	end
+	return table.concat(result)
+end
+
+--- Decode standard Base64
+-- @param data string
+-- @return string decoded
+function M.base64_decode(data)
+	local b64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+	local b64lookup = {}
+	for i = 1, #b64chars do
+		b64lookup[b64chars:sub(i, i)] = i - 1
+	end
+
+	data = data:gsub("[^" .. b64chars .. "=]", "")
+	local result = {}
+	for i = 1, #data, 4 do
+		local a, b, c, d = data:sub(i, i), data:sub(i + 1, i + 1), data:sub(i + 2, i + 2), data:sub(i + 3, i + 3)
+		local n = bit.bor(
+			bit.lshift(b64lookup[a] or 0, 18),
+			bit.lshift(b64lookup[b] or 0, 12),
+			bit.lshift(b64lookup[c] or 0, 6),
+			(b64lookup[d] or 0)
+		)
+		table.insert(result, string.char(bit.band(bit.rshift(n, 16), 0xFF)))
+		if c ~= "=" then
+			table.insert(result, string.char(bit.band(bit.rshift(n, 8), 0xFF)))
+		end
+		if d ~= "=" then
+			table.insert(result, string.char(bit.band(n, 0xFF)))
+		end
+	end
+	return table.concat(result)
+end
+
+--- URL-safe Base64 encode (no padding)
+function M.base64url_encode(data)
+	return M.base64_encode(data):gsub("+", "-"):gsub("/", "_"):gsub("=", "")
+end
+
+--- URL-safe Base64 decode
+function M.base64url_decode(data)
+	local mod = #data % 4
+	if mod > 0 then
+		data = data .. string.rep("=", 4 - mod)
+	end
+	data = data:gsub("-", "+"):gsub("_", "/")
+	return M.base64_decode(data)
+end
+
+--- Slugify a buffer path using URL-safe Base64
+function M.slugify_buf_path(buf_path)
+	return M.base64url_encode(buf_path)
+end
+
+--- Un-slugify a Base64-encoded buffer path
+function M.unslugify_buf_path(slug)
+	return M.base64url_decode(slug)
 end
 
 --- Get the path to a buffer
@@ -85,6 +161,26 @@ end
 ---@return string id The new snapshot ID
 function M.create_id()
 	return ("%x"):format(os.time()) .. "-" .. math.random(1000, 9999)
+end
+
+--- Get all files in a directory
+---@param dir string The directory to search
+---@return string[] files The list of files
+function M.get_files(dir)
+	local handle = vim.uv.fs_scandir(dir)
+	if not handle then
+		return {}
+	end
+
+	local files = {}
+	while true do
+		local name, t = vim.uv.fs_scandir_next(handle)
+		if not name then
+			break
+		end
+		files[#files + 1] = dir .. "/" .. name
+	end
+	return files
 end
 
 return M

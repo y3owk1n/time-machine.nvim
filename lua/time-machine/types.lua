@@ -1,5 +1,5 @@
 ---@class TimeMachine.Config
----@field db_path? string The path to the database file
+---@field db_dir? string The directory to the database files
 ---@field auto_save? TimeMachine.Config.AutoSave The auto-save configuration
 ---@field retention_days? number The number of days to retain snapshots
 ---@field max_snapshots? number The maximum number of snapshots to retain
