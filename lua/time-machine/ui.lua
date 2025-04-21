@@ -13,7 +13,7 @@ local shared_win_opts = {
 	height = 0.8,
 	border = winborder,
 	title_pos = "center",
-	footer = "Remember to :wq to save and exit",
+	footer = "Press `q` to exit",
 	footer_pos = "center",
 }
 
@@ -38,6 +38,18 @@ local function create_native_float(buf)
 	win_opts.col = math.floor((vim.o.columns - win_opts.width) / 2)
 
 	vim.api.nvim_open_win(buf, true, win_opts)
+end
+
+--- Set standard buffer options
+---@param bufnr integer The buffer number
+---@return nil
+local function set_standard_buf_options(bufnr)
+	api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("bufhidden", "wipe", { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("swapfile", false, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("buflisted", false, { scope = "local", buf = bufnr })
 end
 
 --- Refresh the UI
@@ -101,12 +113,8 @@ function M.show(history, buf_path, main_bufnr)
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 
 	api.nvim_set_option_value("filetype", "time-machine-history", { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("bufhidden", "wipe", { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("swapfile", false, { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("buflisted", false, { scope = "local", buf = bufnr })
+
+	set_standard_buf_options(bufnr)
 
 	api.nvim_buf_set_keymap(bufnr, "n", "<CR>", "", {
 		nowait = true,
@@ -160,19 +168,15 @@ function M.show_help()
 		"",
 		"`<CR>` **Preview** - Show the diff of the selected snapshot",
 		"`<leader>r` **Restore** - Restore the selected snapshot",
-		"`q` **Close** - Close the history window",
+		"`q` **Close** - Close the window",
 		"",
 	}
 
 	local bufnr = api.nvim_create_buf(false, true)
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, help_lines)
 	api.nvim_set_option_value("filetype", "markdown", { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("bufhidden", "wipe", { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("swapfile", false, { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("buflisted", false, { scope = "local", buf = bufnr })
+
+	set_standard_buf_options(bufnr)
 
 	api.nvim_buf_set_keymap(bufnr, "n", "q", "", {
 		nowait = true,
@@ -238,12 +242,7 @@ function M.preview_snapshot(history, line, bufnr, buf_path, main_bufnr)
 		vim.api.nvim_set_option_value("filetype", "diff", { scope = "local", buf = preview_buf })
 	end
 
-	api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = preview_buf })
-	api.nvim_set_option_value("bufhidden", "wipe", { scope = "local", buf = preview_buf })
-	api.nvim_set_option_value("swapfile", false, { scope = "local", buf = preview_buf })
-	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = preview_buf })
-	api.nvim_set_option_value("readonly", true, { scope = "local", buf = preview_buf })
-	api.nvim_set_option_value("buflisted", false, { scope = "local", buf = preview_buf })
+	set_standard_buf_options(preview_buf)
 
 	api.nvim_buf_set_keymap(preview_buf, "n", "q", "", {
 		nowait = true,
