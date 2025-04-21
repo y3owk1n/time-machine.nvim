@@ -163,7 +163,11 @@ local function format_tree(node, depth, ancestor_has_more, is_last, lines, id_ma
 	end
 end
 
-function M.refresh(bufnr, buf_path)
+function M.refresh(bufnr, buf_path, id_map)
+	if not bufnr or not api.nvim_buf_is_valid(bufnr) then
+		return
+	end
+
 	local history = require("time-machine.storage").load_history(buf_path)
 
 	if not history then
@@ -174,12 +178,21 @@ function M.refresh(bufnr, buf_path)
 	local tree = build_tree(history)
 
 	local lines = {}
-	local id_map = {}
 
 	format_tree(tree, 0, {}, true, lines, id_map, history.current.id)
 	-- format_tree(tree, "", true, lines, 0, id_map, history.current.id)
 
-	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+	table.insert(id_map, 1, "")
+	table.insert(id_map, 1, "")
+
+	api.nvim_set_option_value("modifiable", true, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("readonly", false, { scope = "local", buf = bufnr })
+
+	vim.api.nvim_buf_set_lines(bufnr, 2, -1, false, lines)
+
+	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
+
 	vim.api.nvim_buf_set_var(bufnr, "time_machine_id_map", id_map)
 end
 
@@ -194,6 +207,9 @@ function M.show(history, buf_path, main_bufnr)
 	-- Insert keymap hints at the top
 	table.insert(lines, 1, "")
 	table.insert(lines, 1, "[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [q] Close")
+
+	table.insert(id_map, 1, "")
+	table.insert(id_map, 1, "")
 
 	local bufnr = api.nvim_create_buf(false, true)
 
@@ -222,7 +238,7 @@ function M.show(history, buf_path, main_bufnr)
 		silent = true,
 		callback = function()
 			M.handle_restore(history, api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
-			M.refresh(bufnr, buf_path)
+			M.refresh(bufnr, buf_path, id_map)
 		end,
 	})
 
