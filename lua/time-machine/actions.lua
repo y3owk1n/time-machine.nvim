@@ -177,37 +177,43 @@ end
 
 --- Tag a snapshot
 ---@param tag_name? string The tag name
+---@param target_snap? TimeMachine.Snapshot The snapshot to restore
+---@param buf_path? string The path to the buffer
 ---@return nil
-function M.tag_snapshot(tag_name)
-	local buf_path = utils.get_buf_path(0)
+function M.tag_snapshot(tag_name, target_snap, buf_path)
+	buf_path = buf_path or utils.get_buf_path(0)
 	if not buf_path then
 		return
 	end
 
-	local history = storage.load_history(buf_path)
-	if not history then
-		return
+	if not target_snap then
+		local history = storage.load_history(buf_path)
+		if not history then
+			return
+		end
+
+		target_snap = history.current
 	end
 
-	local current_id = history.current.id
+	local current_id = target_snap.id
 
 	if not tag_name or tag_name == "" then
 		tag_name = vim.fn.input("Tag name: ")
 	end
 
 	if tag_name and tag_name ~= "" then
-		local tags = history.current.tags or {}
+		local tags = target_snap.tags or {}
 		table.insert(tags, tag_name)
 
 		storage.insert_snapshot(buf_path, {
 			id = current_id,
-			parent = history.current.parent,
-			diff = history.current.diff,
-			content = history.current.content,
-			timestamp = history.current.timestamp,
+			parent = target_snap.parent,
+			diff = target_snap.diff,
+			content = target_snap.content,
+			timestamp = target_snap.timestamp,
 			tags = tags,
-			binary = history.snapshots[current_id].binary,
-			is_current = history.current.is_current,
+			binary = target_snap.binary,
+			is_current = target_snap.is_current,
 		})
 	end
 end
