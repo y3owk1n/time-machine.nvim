@@ -1,5 +1,6 @@
 local api = vim.api
 local utils = require("time-machine.utils")
+local constants = require("time-machine.constants").constants
 local M = {}
 
 local native_float = nil
@@ -86,7 +87,7 @@ function M.refresh(bufnr, buf_path, id_map)
 	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
 
-	vim.api.nvim_buf_set_var(bufnr, "time_machine_id_map", id_map)
+	vim.api.nvim_buf_set_var(bufnr, constants.id_map_buf_var, id_map)
 end
 
 --- Show the history for a buffer
@@ -112,7 +113,7 @@ function M.show(history, buf_path, main_bufnr)
 
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 
-	api.nvim_set_option_value("filetype", "time-machine-history", { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("filetype", constants.native_float_buftype, { scope = "local", buf = bufnr })
 
 	set_standard_buf_options(bufnr)
 
@@ -157,7 +158,7 @@ function M.show(history, buf_path, main_bufnr)
 		split = "right",
 	})
 
-	vim.api.nvim_buf_set_var(bufnr, "time_machine_id_map", id_map)
+	vim.api.nvim_buf_set_var(bufnr, constants.id_map_buf_var, id_map)
 end
 
 --- Show the help text
@@ -236,7 +237,7 @@ function M.preview_snapshot(history, line, bufnr, buf_path, main_bufnr)
 	api.nvim_buf_set_lines(preview_buf, 0, -1, false, content)
 
 	if full_id == root_branch_id then
-		local filetype = api.nvim_get_option_value("filetype", { scope = "local", buf = main_bufnr })
+		local filetype = api.nvim_get_option_value("filetype", { scope = "local", buf = main_bufnr }) or "nofile"
 		vim.api.nvim_set_option_value("filetype", filetype, { scope = "local", buf = preview_buf })
 	else
 		vim.api.nvim_set_option_value("filetype", "diff", { scope = "local", buf = preview_buf })
