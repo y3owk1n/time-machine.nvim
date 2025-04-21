@@ -1,6 +1,7 @@
 local api = vim.api
 local utils = require("time-machine.utils")
 local constants = require("time-machine.constants").constants
+local storage = require("time-machine.storage")
 local M = {}
 
 local native_float = nil
@@ -75,7 +76,10 @@ function M.refresh(bufnr, buf_path, id_map)
 
 	local lines = {}
 
-	require("time-machine.tree").format_tree(tree, 0, {}, true, lines, id_map, history.current.id)
+	id_map = {}
+
+	-- require("time-machine.tree").format_tree(tree, 1, {}, true, lines, id_map, history.current.id)
+	require("time-machine.tree").format_graph(tree, lines, id_map, history.current.id)
 
 	table.insert(id_map, 1, "")
 	table.insert(id_map, 1, "")
@@ -101,11 +105,12 @@ function M.show(history, buf_path, main_bufnr)
 	local lines = {}
 	local id_map = {} -- Maps line numbers to full IDs
 
-	require("time-machine.tree").format_tree(tree, 0, {}, true, lines, id_map, history.current.id)
+	-- require("time-machine.tree").format_tree(tree, 1, {}, true, lines, id_map, history.current.id)
+	require("time-machine.tree").format_graph(tree, lines, id_map, history.current.id)
 
 	-- Insert keymap hints at the top
 	table.insert(lines, 1, "")
-	table.insert(lines, 1, "[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [q] Close")
+	table.insert(lines, 1, "[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [<leader>R] Refresh [q] Close")
 
 	table.insert(id_map, 1, "")
 	table.insert(id_map, 1, "")
@@ -123,7 +128,7 @@ function M.show(history, buf_path, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.preview_snapshot(history, api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
+			M.preview_snapshot(api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
 		end,
 	})
 
@@ -132,8 +137,18 @@ function M.show(history, buf_path, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.handle_restore(history, api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
+			M.handle_restore(api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
 			M.refresh(bufnr, buf_path, id_map)
+		end,
+	})
+
+	api.nvim_buf_set_keymap(bufnr, "n", "<leader>R", "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
+		callback = function()
+			M.refresh(bufnr, buf_path, id_map, history)
+			vim.notify("Refreshed", vim.log.levels.INFO)
 		end,
 	})
 
@@ -170,6 +185,7 @@ function M.show_help()
 		"",
 		"`<CR>` **Preview** - Show the diff of the selected snapshot",
 		"`<leader>r` **Restore** - Restore the selected snapshot",
+		"`<leader>R` **Refresh** - Refresh the data",
 		"`q` **Close** - Close the window",
 		"",
 	}
@@ -193,15 +209,20 @@ function M.show_help()
 end
 
 --- Preview a snapshot
----@param history TimeMachine.History The snapshot history
 ---@param line integer The line number
 ---@param bufnr integer The buffer number
 ---@param buf_path string The path to the buffer
 ---@param main_bufnr integer The main buffer number
 ---@return nil
-function M.preview_snapshot(history, line, bufnr, buf_path, main_bufnr)
+function M.preview_snapshot(line, bufnr, buf_path, main_bufnr)
 	local full_id = utils.get_id_from_line(bufnr, line)
 	if not full_id then
+		return
+	end
+
+	local history = storage.load_history(buf_path)
+	if not history then
+		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
 
@@ -259,15 +280,20 @@ function M.preview_snapshot(history, line, bufnr, buf_path, main_bufnr)
 end
 
 --- Handle the restore action
----@param history TimeMachine.History The snapshot history
 ---@param line integer The line number
 ---@param bufnr integer The buffer number
 ---@param buf_path string The path to the buffer
 ---@param main_bufnr integer The main buffer number
 ---@return nil
-function M.handle_restore(history, line, bufnr, buf_path, main_bufnr)
+function M.handle_restore(line, bufnr, buf_path, main_bufnr)
 	local full_id = utils.get_id_from_line(bufnr, line)
 	if not full_id or full_id == "" then
+		return
+	end
+
+	local history = storage.load_history(buf_path)
+	if not history then
+		vim.notify("No history found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
 

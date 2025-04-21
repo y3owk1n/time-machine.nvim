@@ -3,7 +3,7 @@ local utils = require("time-machine.utils")
 
 --- Build a tree from a snapshot history
 ---@param history TimeMachine.History The snapshot history
----@return TimeMachine.TreeNode[] nodes The list of tree nodes
+---@return TimeMachine.TreeNode nodes The root node
 function M.build_tree(history)
 	local root_key = utils.find_key_with_prefix(history.snapshots, "root")
 	local root = history.snapshots[root_key]
@@ -35,49 +35,61 @@ function M.build_tree(history)
 	return nodes[root.id]
 end
 
---- Format a tree node
----@param node TimeMachine.TreeNode The tree node
----@param depth integer The current depth
----@param ancestor_has_more boolean[] The ancestor has more siblings after it
----@param is_last boolean Whether the node is the last among siblings
+--- Flatten the tree into a graph-like list
+---@param node TimeMachine.TreeNode The current node
+---@param flat_nodes table<string, any>[] Accumulated flat list
+---@param visited table<string, boolean> Set of visited node IDs
+function M.flatten_tree(node, flat_nodes, visited)
+	if visited[node.snap.id] then
+		return
+	end
+	visited[node.snap.id] = true
+
+	table.insert(flat_nodes, node)
+	for _, child in ipairs(node.children or {}) do
+		M.flatten_tree(child, flat_nodes, visited)
+	end
+end
+
+--- Format snapshots like a git commit graph
+---@param root TimeMachine.TreeNode Root node of the tree
 ---@param lines string[] The output lines
----@param id_map table<integer, string> The map of line numbers to snapshot IDs
----@param current_id string The ID of the currently selected snapshot
----@return nil
-function M.format_tree(node, depth, ancestor_has_more, is_last, lines, id_map, current_id)
-	-- only draw prefixes for *branching* ancestors
-	local prefix = ""
-	for d = 1, depth - 1 do
-		if ancestor_has_more[d] then
-			prefix = prefix .. "│  "
+---@param id_map table<integer, string> Line number to snapshot ID
+---@param current_id string The currently selected snapshot ID
+function M.format_graph(root, lines, id_map, current_id)
+	local queue = {}
+	table.insert(queue, { node = root, indent = 0 })
+
+	while #queue > 0 do
+		local entry = table.remove(queue, 1)
+		local node = entry.node
+		local current_indent = entry.indent
+
+		local snap = node.snap
+		local short_id = (snap.id:sub(1, 4) == "root") and snap.id or snap.id:sub(5, 8)
+		local time_str = utils.relative_time(snap.timestamp)
+		local tags = (#snap.tags > 0) and (" ◼ " .. table.concat(snap.tags, ", ")) or ""
+		local marker = (snap.id == current_id) and "● " or "* "
+		local prefix = string.rep("| ", current_indent)
+
+		local line = string.format("%s%s %s%s (%s)", prefix, marker, short_id, tags, time_str)
+		table.insert(lines, line)
+		id_map[#lines] = snap.id
+
+		local children = node.children or {}
+		table.sort(children, function(a, b)
+			return a.snap.timestamp < b.snap.timestamp
+		end)
+
+		local num_children = #children
+		for i = #children, 1, -1 do
+			local child = children[i]
+			local child_indent = current_indent
+			if num_children > 1 then
+				child_indent = current_indent + 1
+			end
+			table.insert(queue, 1, { node = child, indent = child_indent })
 		end
-	end
-
-	local connector = ""
-	if depth > 0 then
-		connector = is_last and "└─ " or "├─ "
-	end
-
-	local snap = node.snap
-	local time_str = utils.relative_time(snap.timestamp)
-	local short_id = (snap.id:sub(1, 4) == "root") and snap.id or snap.id:sub(5, 8)
-	local tags = (#snap.tags > 0) and (" ◼ " .. table.concat(snap.tags, ", ")) or ""
-	local marker = (snap.id == current_id) and "● " or ""
-	local line = prefix .. connector .. string.format("%s%s%s (%s)", marker, short_id, tags, time_str)
-
-	table.insert(lines, line)
-	id_map[#lines] = snap.id
-
-	local children = node.children or {}
-	local count = #children
-	for i, child in ipairs(children) do
-		local child_anc = {}
-		for d = 1, depth - 1 do
-			child_anc[d] = ancestor_has_more[d]
-		end
-		-- only mark “has more” if this parent actually has >1 child
-		child_anc[depth] = (count > 1) and (i ~= count) or not is_last
-		M.format_tree(child, depth + 1, child_anc, i == count, lines, id_map, current_id)
 	end
 end
 
