@@ -2,14 +2,7 @@ local uv = vim.loop
 local M = {}
 local sqlite_cmd = "sqlite3"
 local git = require("time-machine.git")
-
-local function encode(str)
-	return str:gsub("\\", "\\\\"):gsub("\n", "\\n"):gsub("'", "''")
-end
-
-local function decode(str)
-	return str:gsub("\\n", "\n"):gsub("\\\\", "\\")
-end
+local utils = require("time-machine.utils")
 
 function M.init(db_path)
 	M.db_path = db_path
@@ -72,8 +65,8 @@ function M.insert_snapshot(buf_path, snap)
 
 	local tags_enc = snap.tags and table.concat(snap.tags, ",") or ""
 	local binary_val = snap.binary and 1 or 0
-	local diff_enc = encode(snap.diff or "")
-	local content_enc = encode(snap.content or "")
+	local diff_enc = utils.encode(snap.diff or "")
+	local content_enc = utils.encode(snap.content or "")
 	local is_curr = snap.is_current and 1 or 0
 	local safe_path = buf_path:gsub("'", "''")
 	local safe_branch = branch:gsub("'", "''")
@@ -116,8 +109,8 @@ function M.load_history(buf_path)
 		local snap = {
 			id = id,
 			parent = (parent ~= "") and parent or nil,
-			diff = (diff_enc ~= "") and decode(diff_enc) or nil,
-			content = decode(content_enc),
+			diff = (diff_enc ~= "") and utils.decode(diff_enc) or nil,
+			content = utils.decode(content_enc),
 			timestamp = tonumber(ts),
 			binary = (binary == "1"),
 			tags = (tags and #tags > 0) and vim.split(tags, ",", true) or {},
