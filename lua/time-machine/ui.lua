@@ -370,7 +370,7 @@ end
 
 function M.handle_restore(history, line, bufnr, buf_path, main_bufnr)
 	local full_id = M.get_id_from_line(bufnr, line)
-	if not full_id then
+	if not full_id or full_id == "" then
 		return
 	end
 
