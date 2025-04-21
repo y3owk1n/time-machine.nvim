@@ -147,7 +147,7 @@ function M.show(history, buf_path, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.refresh(bufnr, buf_path, id_map, history)
+			M.refresh(bufnr, buf_path, id_map)
 			vim.notify("Refreshed", vim.log.levels.INFO)
 		end,
 	})

@@ -174,6 +174,17 @@ function M.load_history(buf_path)
 	return history
 end
 
+--- Get the children of a snapshot
+---@param id string The snapshot ID
+---@return string[]|nil children The children of the snapshot
+function M.get_history_children(id)
+	if not id then
+		return nil
+	end
+	local sql = string.format("SELECT id FROM snapshots WHERE parent='%s';", id)
+	return db_action(sql)
+end
+
 --- Prune snapshots older than a certain number of days
 ---@param retention_days number The number of days to retain snapshots
 ---@return nil

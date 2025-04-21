@@ -81,4 +81,10 @@ function M.get_id_from_line(bufnr, line_num)
 	return ok and id_map[line_num] or nil
 end
 
+--- Create a new snapshot ID
+---@return string id The new snapshot ID
+function M.create_id()
+	return ("%x"):format(os.time()) .. "-" .. math.random(1000, 9999)
+end
+
 return M

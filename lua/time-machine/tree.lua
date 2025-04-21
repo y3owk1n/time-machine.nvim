@@ -41,13 +41,16 @@ end
 ---@param id_map table<integer, string> Line number to snapshot ID
 ---@param current_id string The currently selected snapshot ID
 function M.format_graph(root, lines, id_map, current_id)
+	---@type { node: TimeMachine.TreeNode, indent: integer, parent_is_branched: boolean }[]
 	local queue = {}
-	table.insert(queue, { node = root, indent = 0 })
+	table.insert(queue, { node = root, indent = 0, parent_is_branched = true })
 
 	while #queue > 0 do
+		---@type { node: TimeMachine.TreeNode, indent: integer, parent_is_branched: boolean }
 		local entry = table.remove(queue, 1)
 		local node = entry.node
 		local current_indent = entry.indent
+		local parent_is_branched = entry.parent_is_branched
 
 		local snap = node.snap
 		local short_id = (snap.id:sub(1, 4) == "root") and snap.id or snap.id:sub(5, 8)
@@ -65,14 +68,15 @@ function M.format_graph(root, lines, id_map, current_id)
 			return a.snap.timestamp < b.snap.timestamp
 		end)
 
-		local num_children = #children
 		for i = #children, 1, -1 do
 			local child = children[i]
 			local child_indent = current_indent
-			if num_children > 1 then
+
+			if parent_is_branched then
 				child_indent = current_indent + 1
 			end
-			table.insert(queue, 1, { node = child, indent = child_indent })
+
+			table.insert(queue, 1, { node = child, indent = child_indent, parent_is_branched = #children > 1 })
 		end
 	end
 end

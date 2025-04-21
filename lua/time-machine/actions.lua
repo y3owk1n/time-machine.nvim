@@ -107,18 +107,51 @@ function M.create_snapshot(buf, for_root)
 		return "no_changes"
 	end
 
-	local new_id = ("%x"):format(os.time()) .. "-" .. math.random(1000, 9999)
+	local children = storage.get_history_children(current.id)
 
-	storage.insert_snapshot(buf_path, {
-		id = new_id,
-		parent = current.id,
-		diff = diff,
-		content = new_content,
-		timestamp = os.time(),
-		tags = {},
-		binary = false,
-		is_current = true,
-	})
+	local num_children = #children
+
+	local new_branch_id = utils.create_id()
+	local new_id = utils.create_id()
+
+	--- there is a children, branch out
+	if children and num_children > 0 then
+		local tag = "branch-" .. current.id:sub(5, 8)
+
+		--- duplicate the same content but with tag
+		storage.insert_snapshot(buf_path, {
+			id = new_branch_id,
+			parent = current.parent,
+			diff = current.diff,
+			content = current.content,
+			timestamp = os.time(),
+			tags = { tag },
+			binary = false,
+			is_current = false,
+		})
+
+		storage.insert_snapshot(buf_path, {
+			id = new_id,
+			parent = new_branch_id,
+			diff = diff,
+			content = new_content,
+			timestamp = os.time(),
+			tags = {},
+			binary = false,
+			is_current = true,
+		})
+	else
+		storage.insert_snapshot(buf_path, {
+			id = new_id,
+			parent = current.id,
+			diff = diff,
+			content = new_content,
+			timestamp = os.time(),
+			tags = {},
+			binary = false,
+			is_current = true,
+		})
+	end
 
 	storage.prune(config.retention_days)
 end
