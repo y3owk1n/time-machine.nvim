@@ -2,6 +2,7 @@ local api = vim.api
 local utils = require("time-machine.utils")
 local constants = require("time-machine.constants").constants
 local storage = require("time-machine.storage")
+
 local M = {}
 
 local native_float = nil
@@ -248,18 +249,24 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 
 	vim.api.nvim_buf_set_var(bufnr, constants.id_map_buf_var, id_map)
 
-	local ui_refresh_group = utils.augroup("ui_refresh")
-
 	vim.api.nvim_create_autocmd("User", {
-		group = ui_refresh_group,
+		group = utils.augroup("ui_refresh"),
 		pattern = { constants.events.snapshot_created, constants.events.snapshot_set_current },
 		callback = function()
 			-- only refresh if that buffer is still open
 			if api.nvim_buf_is_valid(bufnr) then
 				M.refresh(bufnr, buf_path, id_map)
-			else
-				-- buffer was closed, clean up the augroup
-				api.nvim_del_augroup_by_id(ui_refresh_group)
+			end
+		end,
+	})
+
+	vim.api.nvim_create_autocmd("User", {
+		group = utils.augroup("ui_close"),
+		pattern = constants.events.snapshot_deleted,
+		callback = function()
+			-- only close if that buffer is still open
+			if api.nvim_buf_is_valid(bufnr) then
+				vim.api.nvim_buf_delete(bufnr, { force = true })
 			end
 		end,
 	})
