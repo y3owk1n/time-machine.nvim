@@ -376,8 +376,8 @@ function M.preview_snapshot(line, bufnr, buf_path, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			if api.nvim_buf_is_valid(bufnr) then
-				vim.api.nvim_buf_delete(bufnr, { force = true })
+			if api.nvim_buf_is_valid(preview_buf) then
+				vim.api.nvim_buf_delete(preview_buf, { force = true })
 			end
 		end,
 	})
