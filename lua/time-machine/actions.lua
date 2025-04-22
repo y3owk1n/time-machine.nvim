@@ -92,8 +92,6 @@ function M.create_snapshot(buf, for_root, silent)
 	storage.set_current_snapshot(buf_path, new_id)
 
 	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
-
-	storage.prune(config.retention_days)
 end
 
 --- Show the snapshot for a buffer
