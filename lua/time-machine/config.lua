@@ -13,6 +13,8 @@ local defaults = {
 		enabled = false,
 		debounce_ms = 2 * 1000,
 		events = { "TextChanged", "InsertLeave" },
+		save_on_buf_read = false,
+		save_on_write = false,
 	},
 	ignored_filetypes = {
 		"terminal",
@@ -99,30 +101,35 @@ local function setup_autocmds()
 			end,
 		})
 
-		vim.api.nvim_create_autocmd({ "BufReadPost" }, {
-			group = utils.augroup("auto_save_buf_read_post"),
-			callback = function(args)
-				if vim.bo[args.buf].buftype ~= "" then
-					return
-				end
-				if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
-					return
-				end
-				actions.create_snapshot(args.buf, true)
-			end,
-		})
-		vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-			group = utils.augroup("auto_save_buf_write_post"),
-			callback = function(args)
-				if vim.bo[args.buf].buftype ~= "" then
-					return
-				end
-				if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
-					return
-				end
-				actions.create_snapshot(args.buf, nil, true)
-			end,
-		})
+		if M.config.auto_save.save_on_buf_read then
+			vim.api.nvim_create_autocmd({ "BufReadPost" }, {
+				group = utils.augroup("auto_save_buf_read_post"),
+				callback = function(args)
+					if vim.bo[args.buf].buftype ~= "" then
+						return
+					end
+					if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
+						return
+					end
+					actions.create_snapshot(args.buf, true)
+				end,
+			})
+		end
+
+		if M.config.auto_save.save_on_write then
+			vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+				group = utils.augroup("auto_save_buf_write_post"),
+				callback = function(args)
+					if vim.bo[args.buf].buftype ~= "" then
+						return
+					end
+					if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
+						return
+					end
+					actions.create_snapshot(args.buf, nil, true)
+				end,
+			})
+		end
 	end
 end
 

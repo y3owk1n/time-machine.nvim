@@ -7,6 +7,8 @@
 ---@field enabled? boolean Whether to automatically save snapshots
 ---@field debounce_ms? number The debounce time in milliseconds
 ---@field events? string[] The events to trigger auto snapshot saving
+---@field save_on_buf_read? boolean Whether to save a snapshot on `BufReadPost`
+---@field save_on_write? boolean Wether to save a snapshot on write
 
 ---@class TimeMachine.Snapshot
 ---@field id string The snapshot ID
