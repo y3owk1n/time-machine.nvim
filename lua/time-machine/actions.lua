@@ -77,56 +77,19 @@ function M.create_snapshot(buf, for_root, silent)
 		return "no_changes"
 	end
 
-	local children = storage.get_snapshot_children(buf_path, current.id)
-
-	local num_children = #children
-
-	local new_branch_id = utils.create_id()
 	local new_id = utils.create_id()
 
-	--- there is a children, branch out
-	if children and num_children > 0 then
-		local short_id = utils.get_short_id(current)
-		local tag = "branch-" .. short_id
+	storage.insert_snapshot(buf_path, {
+		id = new_id,
+		parent = current.id,
+		diff = diff,
+		content = new_content,
+		timestamp = os.time(),
+		tags = {},
+		is_current = true,
+	})
 
-		local tags = current.tags or {}
-		table.insert(tags, tag)
-
-		--- duplicate the same content but with tag
-		storage.insert_snapshot(buf_path, {
-			id = new_branch_id,
-			parent = current.parent,
-			diff = current.diff,
-			content = current.content,
-			timestamp = os.time(),
-			tags = tags,
-			is_current = false,
-		})
-
-		storage.insert_snapshot(buf_path, {
-			id = new_id,
-			parent = new_branch_id,
-			diff = diff,
-			content = new_content,
-			timestamp = os.time(),
-			tags = {},
-			is_current = true,
-		})
-
-		storage.set_current_snapshot(buf_path, new_id)
-	else
-		storage.insert_snapshot(buf_path, {
-			id = new_id,
-			parent = current.id,
-			diff = diff,
-			content = new_content,
-			timestamp = os.time(),
-			tags = {},
-			is_current = true,
-		})
-
-		storage.set_current_snapshot(buf_path, new_id)
-	end
+	storage.set_current_snapshot(buf_path, new_id)
 
 	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
 
