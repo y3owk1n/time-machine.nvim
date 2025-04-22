@@ -12,7 +12,7 @@ local defaults = {
 	auto_save = {
 		enabled = false,
 		debounce_ms = 2 * 1000,
-		events = { "TextChanged", "TextChangedI" },
+		events = { "TextChanged", "InsertLeave" },
 	},
 	ignored_buftypes = { "terminal", "nofile", constants.snapshot_ft },
 }
