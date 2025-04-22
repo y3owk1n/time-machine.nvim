@@ -1,7 +1,7 @@
 ---@class TimeMachine.Config
 ---@field db_dir? string The directory to the database files
 ---@field auto_save? TimeMachine.Config.AutoSave The auto-save configuration
----@field ignored_buftypes? string[] The buffer types to ignore
+---@field ignored_filetypes? string[] The file types to ignore
 
 ---@class TimeMachine.Config.AutoSave
 ---@field enabled? boolean Whether to automatically save snapshots

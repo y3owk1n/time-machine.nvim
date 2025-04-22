@@ -15,7 +15,7 @@ function M.create_snapshot(buf, for_root, silent)
 
 	local config = require("time-machine.config").config
 
-	if vim.tbl_contains(config.ignored_buftypes, vim.bo[buf].buftype) then
+	if vim.tbl_contains(config.ignored_filetypes, vim.bo[buf].filetype) then
 		return
 	end
 

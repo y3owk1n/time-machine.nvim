@@ -14,7 +14,15 @@ local defaults = {
 		debounce_ms = 2 * 1000,
 		events = { "TextChanged", "InsertLeave" },
 	},
-	ignored_buftypes = { "terminal", "nofile", constants.snapshot_ft },
+	ignored_filetypes = {
+		"terminal",
+		"nofile",
+		constants.snapshot_ft,
+		"mason",
+		"snacks_picker_list",
+		"snacks_picker_input",
+		"lazy",
+	},
 }
 
 --- Setup Time Machine colors
@@ -76,7 +84,7 @@ local function setup_autocmds()
 		vim.api.nvim_create_autocmd(M.config.auto_save.events, {
 			group = utils.augroup("auto_save_text_changed"),
 			callback = function(args)
-				if vim.tbl_contains(M.config.ignored_buftypes, vim.bo[args.buf].buftype) then
+				if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
 					return
 				end
 				debounced_snapshot(args.buf, nil, true)
@@ -86,7 +94,7 @@ local function setup_autocmds()
 		vim.api.nvim_create_autocmd({ "BufReadPost" }, {
 			group = utils.augroup("auto_save_buf_read_post"),
 			callback = function(args)
-				if vim.tbl_contains(M.config.ignored_buftypes, vim.bo[args.buf].buftype) then
+				if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
 					return
 				end
 				actions.create_snapshot(args.buf, true)
