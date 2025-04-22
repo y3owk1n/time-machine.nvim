@@ -41,6 +41,7 @@ end
 ---@param id_map table<integer, string> Line number to snapshot ID
 ---@param current_id string The currently selected snapshot ID
 function M.format_graph(root, lines, id_map, current_id)
+	local formatted = {}
 	---@type { node: TimeMachine.TreeNode, indent: integer, parent_is_branched: boolean }[]
 	local queue = {}
 	table.insert(queue, { node = root, indent = 0, parent_is_branched = true })
@@ -60,8 +61,7 @@ function M.format_graph(root, lines, id_map, current_id)
 		local prefix = string.rep("| ", current_indent)
 
 		local line = string.format("%s%s %s%s (%s)", prefix, marker, short_id, tags, time_str)
-		table.insert(lines, line)
-		id_map[#lines] = snap.id
+		table.insert(formatted, { text = line, id = snap.id })
 
 		local children = node.children or {}
 		table.sort(children, function(a, b)
@@ -78,6 +78,12 @@ function M.format_graph(root, lines, id_map, current_id)
 
 			table.insert(queue, 1, { node = child, indent = child_indent, parent_is_branched = #children > 1 })
 		end
+	end
+
+	-- reverse and insert into the lines
+	for i = #formatted, 1, -1 do
+		table.insert(lines, formatted[i].text)
+		id_map[#lines] = formatted[i].id
 	end
 end
 
