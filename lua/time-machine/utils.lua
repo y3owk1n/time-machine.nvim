@@ -106,7 +106,7 @@ end
 ---@param snap TimeMachine.Snapshot The snapshot
 ---@return string short_id The short ID
 function M.get_short_id(snap)
-	local short_id = (snap.id:sub(1, 4) == "root") and snap.id or snap.id:sub(5, 8)
+	local short_id = (snap.id:sub(1, 4) == "root") and snap.id or snap.id:sub(1, 5)
 	return short_id
 end
 
@@ -165,10 +165,25 @@ function M.get_id_from_line(bufnr, line_num)
 	return ok and id_map[line_num] or nil
 end
 
+--- Generate a UUID
+---@return string uuid The UUID
+function M.uuid4()
+	local template = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+	local id = template:gsub("[xy]", function(c)
+		local v = math.random(0, 15)
+		if c == "y" then
+			v = (v % 4) + 8 -- ensure the high bits are 10xx
+		end
+		return string.format("%x", v)
+	end)
+
+	return id
+end
+
 --- Create a new snapshot ID
 ---@return string id The new snapshot ID
 function M.create_id()
-	return ("%x"):format(os.time()) .. "-" .. math.random(1000, 9999)
+	return M.uuid4()
 end
 
 --- Get all files in a directory
