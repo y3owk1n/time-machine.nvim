@@ -206,4 +206,18 @@ function M.get_files(dir)
 	return files
 end
 
+function M.find_snapshot_list_buf()
+	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+		if
+			vim.api.nvim_buf_is_valid(bufnr)
+			and vim.api.nvim_buf_is_loaded(bufnr)
+			and vim.api.nvim_get_option_value("filetype", { scope = "local", buf = bufnr })
+				== require("time-machine.constants").constants.snapshot_ft
+		then
+			return bufnr
+		end
+	end
+	return nil
+end
+
 return M

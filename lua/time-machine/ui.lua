@@ -172,6 +172,14 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 	local lines = {}
 	local id_map = {} -- Maps line numbers to full IDs
 
+	local found_bufnr = utils.find_snapshot_list_buf()
+
+	if found_bufnr then
+		if api.nvim_buf_is_valid(found_bufnr) then
+			vim.api.nvim_buf_delete(found_bufnr, { force = true })
+		end
+	end
+
 	require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
 
 	set_header(lines, id_map)
