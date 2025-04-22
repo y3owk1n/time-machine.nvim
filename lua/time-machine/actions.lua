@@ -67,7 +67,8 @@ function M.create_snapshot(buf, for_root, silent)
 	end
 
 	local old_content = current.content or ""
-	local diff = vim.diff(old_content, new_content, { result_type = "unified", ctxlen = 6 })
+	--- Remember to decode the new_content!!
+	local diff = vim.diff(old_content, utils.decode(new_content), { result_type = "unified", ctxlen = 6 })
 
 	if type(diff) ~= "string" then
 		diff = ""
