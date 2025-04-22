@@ -66,12 +66,12 @@ end
 local function set_highlights(bufnr, id_map, current, lines)
 	api.nvim_buf_clear_namespace(bufnr, constants.ns, 0, -1)
 
-	for lineno, id in ipairs(id_map) do
+	for i, id in ipairs(id_map) do
 		if id == current.id then
-			local line = vim.api.nvim_buf_get_lines(bufnr, lineno - 1, lineno, false)[1]
+			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
 			local end_col = line and #line or 0
 
-			api.nvim_buf_set_extmark(bufnr, constants.ns, lineno - 1, 0, {
+			api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, 0, {
 				end_col = end_col,
 				hl_group = constants.hl.current,
 			})
@@ -88,7 +88,7 @@ local function set_highlights(bufnr, id_map, current, lines)
 			})
 		end
 
-		local info_matches = { "Current DB Path:", "Current file:" }
+		local info_matches = { "DB Path:", "File:" }
 
 		for _, info_match in ipairs(info_matches) do
 			if line:find(info_match) then
@@ -114,22 +114,18 @@ local function set_header(lines, id_map, buf_path)
 
 	local db_path = require("time-machine.config").config.db_dir .. "/" .. utils.slugify_buf_path(buf_path)
 
-	table.insert(lines, 1, "")
-	table.insert(lines, 1, "Current DB Path: " .. db_path)
-	table.insert(lines, 1, "Current file: " .. buf_path)
+	local header_lines = {
+		"[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [<leader>R] Refresh [<leader>t] Tag [q] Close",
+		"",
+		"DB Path: " .. db_path,
+		"File: " .. buf_path,
+		"",
+	}
 
-	table.insert(lines, 1, "")
-	table.insert(
-		lines,
-		1,
-		"[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [<leader>R] Refresh [<leader>t] Tag [q] Close"
-	)
-
-	table.insert(id_map, 1, "")
-	table.insert(id_map, 1, "")
-	table.insert(id_map, 1, "")
-	table.insert(id_map, 1, "")
-	table.insert(id_map, 1, "")
+	for i = #header_lines, 1, -1 do
+		table.insert(lines, 1, header_lines[i])
+		table.insert(id_map, 1, "")
+	end
 end
 
 --- Refresh the UI
