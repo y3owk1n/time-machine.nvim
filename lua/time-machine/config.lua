@@ -16,7 +16,6 @@ local defaults = {
 	},
 	retention_days = 30,
 	ignored_buftypes = { "terminal", "nofile", constants.snapshot_ft },
-	enable_telescope = false,
 }
 
 --- Setup Time Machine colors
@@ -121,10 +120,6 @@ function M.setup(user_config)
 	M.config = vim.tbl_deep_extend("force", defaults, user_config or {})
 
 	setup_autocmds()
-
-	if M.config.enable_telescope then
-		require("time-machine.telescope").setup()
-	end
 
 	M.setup_highlights(user_config)
 end

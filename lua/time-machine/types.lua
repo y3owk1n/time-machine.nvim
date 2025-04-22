@@ -2,7 +2,6 @@
 ---@field db_dir? string The directory to the database files
 ---@field auto_save? TimeMachine.Config.AutoSave The auto-save configuration
 ---@field ignored_buftypes? string[] The buffer types to ignore
----@field enable_telescope? boolean Whether to enable the Telescope extension
 
 ---@class TimeMachine.Config.AutoSave
 ---@field enabled? boolean Whether to automatically save snapshots
