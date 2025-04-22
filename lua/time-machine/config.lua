@@ -14,7 +14,6 @@ local defaults = {
 		debounce_ms = 2 * 1000,
 		events = { "TextChanged", "TextChangedI" },
 	},
-	retention_days = 30,
 	ignored_buftypes = { "terminal", "nofile", constants.snapshot_ft },
 }
 
