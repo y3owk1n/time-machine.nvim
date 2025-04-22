@@ -203,7 +203,7 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 	local chain = {}
 	local current_snap = target_snap
 	while current_snap do
-		table.insert(chain, 1, current_snap) -- Insert at front to reverse order
+		table.insert(chain, 1, current_snap)
 		current_snap = snapshots[current_snap.parent]
 	end
 
@@ -218,12 +218,10 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 		end
 	end
 
-	-- Split into lines for buffer operations
 	local lines = vim.split(content, "\n")
 
 	storage.set_current_snapshot(buf_path, target_snap.id)
 
-	-- Apply to buffer and save
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 
 	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })

@@ -35,10 +35,8 @@ local function db_action_async(buf_path, sql, opts, on_done)
 	local output = {}
 
 	vim.fn.jobstart(cmd, {
-		-- collect stdout in one go
 		stdout_buffered = true,
 		on_stdout = function(_, data, _)
-			-- 'data' is an array of lines (or nil)
 			if data then
 				for _, line in ipairs(data) do
 					if line ~= "" then
@@ -47,7 +45,6 @@ local function db_action_async(buf_path, sql, opts, on_done)
 				end
 			end
 		end,
-		-- log any stderr lines
 		on_stderr = function(_, err_data, _)
 			if err_data then
 				for _, line in ipairs(err_data) do
@@ -65,7 +62,6 @@ local function db_action_async(buf_path, sql, opts, on_done)
 					vim.notify(string.format("SQLite exited with code %d: %s", exit_code, sql), vim.log.levels.ERROR)
 				end
 				if on_done then
-					-- pass success bool + the buffered lines
 					on_done(exit_code == 0, output)
 				end
 			end)
@@ -482,13 +478,8 @@ function M.clean_orphans()
 			end
 
 			for _, row in ipairs(rows) do
-				-- Split each row into buf_path and branch
 				local buf_path, branch = unpack(vim.split(row, "|"))
-
-				-- Check if the file exists
 				local file_exists = vim.fn.filereadable(buf_path) == 1
-
-				-- Check if the branch exists in the repository
 				local branch_exists = branch_set[branch] ~= nil
 
 				if not file_exists or not branch_exists then
@@ -529,8 +520,8 @@ function M.delete_db()
 	end
 
 	local ok, err = pcall(function()
-		vim.fn.delete(db_dir, "rf") -- recursive + force
-		vim.fn.mkdir(db_dir, "p") -- recreate the (now empty) directory
+		vim.fn.delete(db_dir, "rf")
+		vim.fn.mkdir(db_dir, "p")
 		vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_deleted })
 	end)
 	return ok, err

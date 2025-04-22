@@ -9,6 +9,11 @@ M.constants = {
 		snapshot_set_current = "TimeMachineSnapshotSetCurrent",
 		snapshot_deleted = "TimeMachineSnapshotDeleted",
 	},
+	hl = {
+		current = "TimeMachineCurrent",
+		keymap = "TimeMachineKeymap",
+		info = "TimeMachineInfo",
+	},
 }
 
 return M

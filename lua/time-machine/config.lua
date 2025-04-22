@@ -20,17 +20,11 @@ local defaults = {
 --- Setup Time Machine colors
 ---@return nil
 function M.setup_highlights()
-	local groups = {
-		current = "TimeMachineCurrent",
-		preview = "TimeMachinePreview",
-		tag = "TimeMachineTag",
-		info = "TimeMachineInfo",
-	}
+	local groups = constants.hl
 
 	local defaults_colors = {
 		current = { bg = "#3c3836", fg = "#fabd2f", bold = true },
-		preview = { bg = "#504945", fg = "#83a598" },
-		tag = { fg = "#8ec07c", italic = true },
+		keymap = { fg = "#8ec07c", italic = true },
 		info = { fg = "#939AB7", italic = true },
 	}
 
@@ -109,7 +103,7 @@ function M.setup(user_config)
 
 	setup_autocmds()
 
-	M.setup_highlights(user_config)
+	M.setup_highlights()
 end
 
 return M

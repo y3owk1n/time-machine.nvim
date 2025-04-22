@@ -65,7 +65,6 @@ end
 local function set_highlights(bufnr, id_map, current, lines)
 	api.nvim_buf_clear_namespace(bufnr, constants.ns, 0, -1)
 
-	-- Highlight current snapshot line
 	for lineno, id in ipairs(id_map) do
 		if id == current.id then
 			local line = vim.api.nvim_buf_get_lines(bufnr, lineno - 1, lineno, false)[1]
@@ -73,26 +72,18 @@ local function set_highlights(bufnr, id_map, current, lines)
 
 			api.nvim_buf_set_extmark(bufnr, constants.ns, lineno - 1, 0, {
 				end_col = end_col,
-				hl_group = "TimeMachineCurrent",
+				hl_group = constants.hl.current,
 			})
 			break
 		end
 	end
 
-	-- Highlight preview markers and tags
 	for i, line in ipairs(lines) do
-		if line:sub(1, 1) == ">" then
-			api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, 0, {
-				end_col = 1,
-				hl_group = "TimeMachinePreview",
-			})
-		end
-
 		for tag in line:gmatch("%b[]") do
 			local start_col = line:find(tag, 1, true) - 1
 			api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
 				end_col = start_col + #tag,
-				hl_group = "TimeMachineTag",
+				hl_group = constants.hl.keymap,
 			})
 		end
 
@@ -105,7 +96,7 @@ local function set_highlights(bufnr, id_map, current, lines)
 
 				api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, 0, {
 					end_col = end_col,
-					hl_group = "TimeMachineInfo",
+					hl_group = constants.hl.info,
 				})
 			end
 		end
@@ -195,7 +186,7 @@ end
 function M.show(snapshot, current, buf_path, main_bufnr)
 	local tree = require("time-machine.tree").build_tree(snapshot)
 	local lines = {}
-	local id_map = {} -- Maps line numbers to full IDs
+	local id_map = {}
 
 	local found_bufnr = utils.find_snapshot_list_buf()
 
@@ -379,7 +370,7 @@ function M.preview_snapshot(line, bufnr, buf_path, main_bufnr)
 			current = snapshots[current.parent]
 		end
 
-		-- Append each snapshot diff in order: newest to oldest
+		-- Append each snapshot diff in order, newest to oldest
 		for i = #chain, 1, -1 do
 			local snap = chain[i]
 			if snap.diff then

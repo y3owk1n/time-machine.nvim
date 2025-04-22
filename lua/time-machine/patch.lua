@@ -75,7 +75,6 @@ function M.apply_diff(parent_content, diff)
 		return table.concat(new_content, "\n")
 	end
 
-	-- Validate hunks before processing
 	if #hunks == 0 then
 		vim.notify("No valid hunks found in diff", vim.log.levels.WARN)
 		return parent_content
@@ -84,7 +83,7 @@ function M.apply_diff(parent_content, diff)
 	-- Apply hunks in reverse order to maintain correct line numbers
 	for i = #hunks, 1, -1 do
 		local hunk = hunks[i]
-		local pos = hunk.old_start - 1 -- Convert to 0-based index
+		local pos = hunk.old_start - 1
 		local to_remove = hunk.old_count
 		local new_lines = {}
 
@@ -94,7 +93,6 @@ function M.apply_diff(parent_content, diff)
 			local content = line:sub(2)
 
 			if prefix == " " then
-				-- Verify context matches
 				if parent_lines[pos + 1] ~= content then
 					error(
 						string.format(
