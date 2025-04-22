@@ -227,7 +227,9 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			vim.api.nvim_win_close(0, true)
+			if api.nvim_buf_is_valid(bufnr) then
+				vim.api.nvim_buf_delete(bufnr, { force = true })
+			end
 		end,
 	})
 
@@ -288,7 +290,9 @@ function M.show_help()
 		noremap = true,
 		silent = true,
 		callback = function()
-			vim.api.nvim_win_close(0, true)
+			if api.nvim_buf_is_valid(bufnr) then
+				vim.api.nvim_buf_delete(bufnr, { force = true })
+			end
 		end,
 	})
 
@@ -365,7 +369,9 @@ function M.preview_snapshot(line, bufnr, buf_path, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			vim.api.nvim_win_close(0, true)
+			if api.nvim_buf_is_valid(bufnr) then
+				vim.api.nvim_buf_delete(bufnr, { force = true })
+			end
 		end,
 	})
 
