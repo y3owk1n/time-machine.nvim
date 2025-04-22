@@ -15,7 +15,7 @@ local defaults = {
 		events = { "TextChanged", "TextChangedI" },
 	},
 	retention_days = 30,
-	ignored_buftypes = { "terminal", "nofile", constants.native_float_buftype },
+	ignored_buftypes = { "terminal", "nofile", constants.snapshot_ft },
 	enable_telescope = false,
 }
 

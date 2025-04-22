@@ -1,7 +1,7 @@
 local M = {}
 
 M.constants = {
-	native_float_buftype = "time-machine-list",
+	snapshot_ft = "time-machine-list",
 	id_map_buf_var = "time_machine_id_map",
 	ns = vim.api.nvim_create_namespace("time-machine"),
 	events = {

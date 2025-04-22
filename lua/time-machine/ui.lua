@@ -180,7 +180,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 
-	api.nvim_set_option_value("filetype", constants.native_float_buftype, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("filetype", constants.snapshot_ft, { scope = "local", buf = bufnr })
 
 	set_standard_buf_options(bufnr)
 
