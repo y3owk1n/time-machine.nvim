@@ -48,6 +48,7 @@ end
 ---@param bufnr integer The buffer number
 ---@return nil
 local function set_standard_buf_options(bufnr)
+	api.nvim_set_option_value("filetype", constants.snapshot_ft, { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("bufhidden", "wipe", { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("swapfile", false, { scope = "local", buf = bufnr })
@@ -204,8 +205,6 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 
-	api.nvim_set_option_value("filetype", constants.snapshot_ft, { scope = "local", buf = bufnr })
-
 	set_standard_buf_options(bufnr)
 
 	set_highlights(bufnr, id_map, current, lines)
@@ -312,9 +311,9 @@ function M.show_help()
 
 	local bufnr = api.nvim_create_buf(false, true)
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, help_lines)
-	api.nvim_set_option_value("filetype", "markdown", { scope = "local", buf = bufnr })
 
 	set_standard_buf_options(bufnr)
+	api.nvim_set_option_value("syntax", "markdown", { scope = "local", buf = bufnr })
 
 	api.nvim_buf_set_keymap(bufnr, "n", "q", "", {
 		nowait = true,
@@ -381,14 +380,14 @@ function M.preview_snapshot(line, bufnr, buf_path, main_bufnr)
 
 	api.nvim_buf_set_lines(preview_buf, 0, -1, false, content)
 
+	set_standard_buf_options(preview_buf)
+
 	if full_id == root_branch_id then
 		local filetype = api.nvim_get_option_value("filetype", { scope = "local", buf = main_bufnr }) or "nofile"
-		vim.api.nvim_set_option_value("filetype", filetype, { scope = "local", buf = preview_buf })
+		api.nvim_set_option_value("syntax", filetype, { scope = "local", buf = preview_buf })
 	else
-		vim.api.nvim_set_option_value("filetype", "diff", { scope = "local", buf = preview_buf })
+		api.nvim_set_option_value("syntax", "diff", { scope = "local", buf = preview_buf })
 	end
-
-	set_standard_buf_options(preview_buf)
 
 	api.nvim_buf_set_keymap(preview_buf, "n", "q", "", {
 		nowait = true,
