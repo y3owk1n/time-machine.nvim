@@ -335,8 +335,9 @@ function M.get_snapshots(buf_path)
 
 	local safe = buf_path:gsub("'", "''")
 	local safe_branch = branch:gsub("'", "''")
+	--- NOTE: Make sure to load content and diff at last of the stirng...
 	local sql = string.format(
-		"SELECT id,parent,diff,content,timestamp,tags,is_current,branch "
+		"SELECT id,parent,timestamp,tags,is_current,branch,content,diff "
 			.. "FROM snapshots WHERE buf_path='%s' AND branch='%s' ORDER BY timestamp;",
 		safe,
 		safe_branch
@@ -348,7 +349,7 @@ function M.get_snapshots(buf_path)
 	local snapshots = {}
 	for _, row in ipairs(rows) do
 		local fields = vim.split(row, "|")
-		local id, parent, diff_enc, content_enc, ts, tags, is_curr = unpack(fields)
+		local id, parent, ts, tags, is_curr, content_enc, diff_enc = unpack(fields)
 		local snap = {
 			id = id,
 			parent = (parent ~= "") and parent or nil,
