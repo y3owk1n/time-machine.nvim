@@ -122,7 +122,7 @@ end
 ---@param str string The string to decode
 ---@return string decoded_str The decoded string
 function M.decode(str)
-	local decoded_str = str:gsub("\\n", "\n"):gsub("\\\\", "\\")
+	local decoded_str = str:gsub("\\\\", "\\"):gsub("\\n", "\n")
 	return decoded_str
 end
 
