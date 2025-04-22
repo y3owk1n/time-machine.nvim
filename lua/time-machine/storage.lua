@@ -26,10 +26,7 @@ local function db_action_async(buf_path, sql, opts, on_done)
 		return nil
 	end
 
-	local cmd = { sqlite_cmd, db_path }
-	if opts.separator then
-		vim.list_extend(cmd, { "-separator", opts.separator })
-	end
+	local cmd = { sqlite_cmd, "-separator", constants.separator, db_path }
 	table.insert(cmd, sql)
 
 	local output = {}
@@ -83,10 +80,7 @@ local function db_action_sync(buf_path, sql, opts)
 		return nil
 	end
 
-	local cmd = { sqlite_cmd, db_path }
-	if opts.separator then
-		vim.list_extend(cmd, { "-separator", opts.separator })
-	end
+	local cmd = { sqlite_cmd, "-separator", constants.separator, db_path }
 	table.insert(cmd, sql)
 
 	return vim.fn.systemlist(cmd)
@@ -144,7 +138,7 @@ function M.get_current_snapshot(buf_path)
 	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
 		return nil
 	end
-	local fields = vim.split(rows[1], "|")
+	local fields = vim.split(rows[1], constants.separator)
 	local id, parent, diff_enc, content_enc, ts, tags, is_curr = unpack(fields)
 	local snap = {
 		id = id,
@@ -243,7 +237,7 @@ function M.count_snapshots(buf_path)
 	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
 		return nil
 	end
-	local fields = vim.split(rows[1], "|")
+	local fields = vim.split(rows[1], constants.separator)
 	local count = tonumber(fields[1])
 	return count
 end
@@ -279,7 +273,7 @@ function M.get_root_snapshot(buf_path)
 		return nil
 	end
 
-	local fields = vim.split(rows[1], "|")
+	local fields = vim.split(rows[1], constants.separator)
 	local id, parent, diff_enc, content_enc, ts, tags, is_curr = unpack(fields)
 	local snap = {
 		id = id,
@@ -313,7 +307,7 @@ function M.get_snapshot_by_id(snapshot_id, buf_path)
 	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
 		return nil
 	end
-	local fields = vim.split(rows[1], "|")
+	local fields = vim.split(rows[1], constants.separator)
 	local id, parent, diff_enc, content_enc, ts, tags, is_curr = unpack(fields)
 	local snap = {
 		id = id,
@@ -348,7 +342,7 @@ function M.get_snapshots(buf_path)
 	end
 	local snapshots = {}
 	for _, row in ipairs(rows) do
-		local fields = vim.split(row, "|")
+		local fields = vim.split(row, constants.separator, { plain = true })
 		local id, parent, ts, tags, is_curr, content_enc, diff_enc = unpack(fields)
 		local snap = {
 			id = id,
@@ -479,7 +473,7 @@ function M.clean_orphans()
 			end
 
 			for _, row in ipairs(rows) do
-				local buf_path, branch = unpack(vim.split(row, "|"))
+				local buf_path, branch = unpack(vim.split(row, constants.separator))
 				local file_exists = vim.fn.filereadable(buf_path) == 1
 				local branch_exists = branch_set[branch] ~= nil
 

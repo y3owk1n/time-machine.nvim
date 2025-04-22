@@ -6,12 +6,16 @@ local constants = require("time-machine.constants").constants
 local M = {}
 
 --- Create a snapshot for the current buffer
----@param buf? number The buffer to snapshot
+---@param buf number The buffer to snapshot
 ---@param for_root? boolean Whether to create a snapshot for the root branch
 ---@param silent? boolean Whether to suppress notifications
 ---@return nil
 function M.create_snapshot(buf, for_root, silent)
-	buf = buf or vim.api.nvim_get_current_buf()
+	buf = buf
+
+	if not vim.api.nvim_buf_is_valid(buf) then
+		return
+	end
 
 	local config = require("time-machine.config").config
 

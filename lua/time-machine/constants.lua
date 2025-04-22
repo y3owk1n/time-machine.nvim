@@ -14,6 +14,7 @@ M.constants = {
 		keymap = "TimeMachineKeymap",
 		info = "TimeMachineInfo",
 	},
+	separator = string.char(31),
 }
 
 return M

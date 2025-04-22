@@ -21,6 +21,8 @@ local defaults = {
 		"mason",
 		"snacks_picker_list",
 		"snacks_picker_input",
+		"snacks_dashboard",
+		"snacks_notif_history",
 		"lazy",
 	},
 }
@@ -74,7 +76,10 @@ local function setup_autocmds()
 			0,
 			vim.schedule_wrap(function()
 				timer:close()
-				actions.create_snapshot(buf, for_root, silent)
+				if not vim.api.nvim_buf_is_valid(buf) or not vim.api.nvim_buf_is_loaded(buf) then
+					return
+				end
+				actions.create_snapshot(buf, for_root)
 				timers[buf] = nil
 			end)
 		)
@@ -84,6 +89,9 @@ local function setup_autocmds()
 		vim.api.nvim_create_autocmd(M.config.auto_save.events, {
 			group = utils.augroup("auto_save_text_changed"),
 			callback = function(args)
+				if vim.bo[args.buf].buftype ~= "" then
+					return
+				end
 				if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
 					return
 				end
@@ -94,10 +102,25 @@ local function setup_autocmds()
 		vim.api.nvim_create_autocmd({ "BufReadPost" }, {
 			group = utils.augroup("auto_save_buf_read_post"),
 			callback = function(args)
+				if vim.bo[args.buf].buftype ~= "" then
+					return
+				end
 				if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
 					return
 				end
 				actions.create_snapshot(args.buf, true)
+			end,
+		})
+		vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+			group = utils.augroup("auto_save_buf_write_post"),
+			callback = function(args)
+				if vim.bo[args.buf].buftype ~= "" then
+					return
+				end
+				if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
+					return
+				end
+				actions.create_snapshot(args.buf, nil, true)
 			end,
 		})
 	end
