@@ -18,16 +18,15 @@ local defaults = {
 }
 
 --- Setup Time Machine colors
----@param opts TimeMachine.Config
 ---@return nil
-function M.setup_highlights(opts)
-	opts = opts or {}
+function M.setup_highlights()
 	local groups = {
 		current = "TimeMachineCurrent",
 		preview = "TimeMachinePreview",
 		tag = "TimeMachineTag",
 		info = "TimeMachineInfo",
 	}
+
 	local defaults_colors = {
 		current = { bg = "#3c3836", fg = "#fabd2f", bold = true },
 		preview = { bg = "#504945", fg = "#83a598" },
@@ -36,17 +35,7 @@ function M.setup_highlights(opts)
 	}
 
 	for key, group in pairs(groups) do
-		local setting = opts[key]
-		if type(setting) == "string" then
-			-- Link to an existing highlight group
-			vim.cmd(string.format("highlight! link %s %s", group, setting))
-		elseif type(setting) == "table" then
-			-- User-defined highlight attributes
-			vim.api.nvim_set_hl(0, group, setting)
-		else
-			-- Apply default attributes
-			vim.api.nvim_set_hl(0, group, defaults_colors[key])
-		end
+		vim.api.nvim_set_hl(0, group, defaults_colors[key])
 	end
 end
 
