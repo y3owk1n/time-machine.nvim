@@ -29,7 +29,7 @@ function M.create_snapshot(buf, for_root, silent)
 	local count = storage.count_snapshots(buf_path)
 	local current = storage.get_current_snapshot(buf_path)
 
-	if not count then
+	if count == nil then
 		vim.notify("No snapshot count", vim.log.levels.ERROR)
 		return
 	end
@@ -50,7 +50,6 @@ function M.create_snapshot(buf, for_root, silent)
 			is_current = true,
 		})
 
-		vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
 		return
 	end
 
@@ -242,7 +241,6 @@ function M.purge_all(force)
 	end
 	local ok, err = pcall(function()
 		storage.purge_all()
-		vim.notify("Cleared all Time Machine snapshots", vim.log.levels.INFO)
 	end)
 	if not ok then
 		vim.notify("Failed to purge all snapshots: " .. tostring(err), vim.log.levels.ERROR)
@@ -264,7 +262,6 @@ function M.purge_current(force)
 		end
 	end
 	storage.purge_current(buf_path)
-	vim.notify("Cleared snapshots for current file", vim.log.levels.INFO)
 end
 
 --- Purge orphaned snapshots

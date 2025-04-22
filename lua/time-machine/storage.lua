@@ -3,6 +3,7 @@ local M = {}
 local sqlite_cmd = "sqlite3"
 local git = require("time-machine.git")
 local utils = require("time-machine.utils")
+local constants = require("time-machine.constants").constants
 
 --- Get the path to the database file for a buffer
 ---@param buf_path string The path to the buffer
@@ -11,12 +12,74 @@ local function get_db_path(buf_path)
 	return require("time-machine.config").config.db_dir .. "/" .. utils.slugify_buf_path(buf_path)
 end
 
---- Perform a database action
+--- Perform a database action async
+---@param buf_path string The path to the buffer
+---@param sql string The SQL statement
+---@param opts? { separator?: string }
+---@param on_done? function(ok: boolean, output: string[])
+---@return nil
+local function db_action_async(buf_path, sql, opts, on_done)
+	opts = opts or {}
+	local db_path = get_db_path(buf_path)
+	if not db_path then
+		vim.notify("No database path configured", vim.log.levels.ERROR)
+		return nil
+	end
+
+	local cmd = { sqlite_cmd, db_path }
+	if opts.separator then
+		vim.list_extend(cmd, { "-separator", opts.separator })
+	end
+	table.insert(cmd, sql)
+
+	local output = {}
+
+	vim.fn.jobstart(cmd, {
+		-- collect stdout in one go
+		stdout_buffered = true,
+		on_stdout = function(_, data, _)
+			-- 'data' is an array of lines (or nil)
+			if data then
+				for _, line in ipairs(data) do
+					if line ~= "" then
+						table.insert(output, line)
+					end
+				end
+			end
+		end,
+		-- log any stderr lines
+		on_stderr = function(_, err_data, _)
+			if err_data then
+				for _, line in ipairs(err_data) do
+					if line and line ~= "" then
+						vim.schedule(function()
+							vim.notify("SQLite error: " .. line, vim.log.levels.ERROR)
+						end)
+					end
+				end
+			end
+		end,
+		on_exit = function(_, exit_code, _)
+			vim.schedule(function()
+				if exit_code ~= 0 then
+					vim.notify(string.format("SQLite exited with code %d: %s", exit_code, sql), vim.log.levels.ERROR)
+				end
+				if on_done then
+					-- pass success bool + the buffered lines
+					on_done(exit_code == 0, output)
+				end
+			end)
+		end,
+		detach = true,
+	})
+end
+
+--- Perform a database action sync
 ---@param buf_path string The path to the buffer
 ---@param sql string The SQL statement
 ---@param opts? { separator?: string }
 ---@return string[]|nil output The output lines if return_output is true
-local function db_action(buf_path, sql, opts)
+local function db_action_sync(buf_path, sql, opts)
 	opts = opts or {}
 	local db_path = get_db_path(buf_path)
 	if not db_path then
@@ -62,7 +125,7 @@ function M.try_init(buf_path)
     CREATE INDEX IF NOT EXISTS idx_snapshots_buf_branch ON snapshots(buf_path, branch);
   ]]
 
-	db_action(buf_path, sql)
+	db_action_sync(buf_path, sql)
 end
 
 --- Get the current snapshot for a buffer
@@ -79,7 +142,9 @@ function M.get_current_snapshot(buf_path)
 		safe,
 		safe_branch
 	)
-	local rows = db_action(buf_path, sql, { separator = "|" })
+
+	local rows = db_action_sync(buf_path, sql, { separator = "|" })
+
 	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
 		return nil
 	end
@@ -110,7 +175,7 @@ function M.clear_current_snapshot(buf_path)
 		branch
 	)
 
-	db_action(buf_path, sql)
+	db_action_sync(buf_path, sql)
 end
 
 -- Set a specific snapshot as current
@@ -129,7 +194,11 @@ function M.set_current_snapshot(buf_path, snap_id)
 		snap_id:gsub("'", "''")
 	)
 
-	db_action(buf_path, sql)
+	db_action_async(buf_path, sql, nil, function(ok)
+		if ok then
+			vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_set_current })
+		end
+	end)
 end
 
 --- Insert a snapshot into the database
@@ -158,7 +227,11 @@ function M.insert_snapshot(buf_path, snap)
 		is_curr
 	)
 
-	db_action(buf_path, sql)
+	db_action_async(buf_path, sql, nil, function(ok)
+		if ok then
+			vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
+		end
+	end)
 end
 
 --- Count the number of snapshots for a buffer
@@ -170,7 +243,7 @@ function M.count_snapshots(buf_path)
 	local safe = buf_path:gsub("'", "''")
 	local safe_branch = branch:gsub("'", "''")
 	local sql = string.format("SELECT COUNT(*) FROM snapshots WHERE buf_path='%s' AND branch='%s';", safe, safe_branch)
-	local rows = db_action(buf_path, sql, { separator = "|" })
+	local rows = db_action_sync(buf_path, sql, { separator = "|" })
 	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
 		return nil
 	end
@@ -205,7 +278,7 @@ function M.get_root_snapshot(buf_path)
 		safe,
 		safe_branch
 	)
-	local rows = db_action(buf_path, sql, { separator = "|" })
+	local rows = db_action_sync(buf_path, sql, { separator = "|" })
 	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
 		return nil
 	end
@@ -240,7 +313,7 @@ function M.get_snapshot_by_id(snapshot_id, buf_path)
 		safe_branch,
 		snapshot_id
 	)
-	local rows = db_action(buf_path, sql, { separator = "|" })
+	local rows = db_action_sync(buf_path, sql, { separator = "|" })
 	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
 		return nil
 	end
@@ -272,7 +345,7 @@ function M.get_snapshots(buf_path)
 		safe,
 		safe_branch
 	)
-	local rows = db_action(buf_path, sql, { separator = "|" })
+	local rows = db_action_sync(buf_path, sql, { separator = "|" })
 	if vim.v.shell_error ~= 0 or not rows or #rows == 0 then
 		return nil
 	end
@@ -303,7 +376,7 @@ function M.get_snapshot_children(buf_path, id)
 		return nil
 	end
 	local sql = string.format("SELECT id FROM snapshots WHERE parent='%s';", id)
-	return db_action(buf_path, sql)
+	return db_action_sync(buf_path, sql)
 end
 
 --- Prune snapshots older than a certain number of days
@@ -328,7 +401,7 @@ function M.prune(retention_days)
 			local cutoff = os.time() - retention_days * 86400
 			local sql = string.format("DELETE FROM snapshots WHERE timestamp < %d;", cutoff)
 
-			db_action(file_path, sql)
+			db_action_async(file_path, sql)
 		end
 	end
 end
@@ -352,7 +425,12 @@ function M.purge_all()
 			local file_path = utils.unslugify_buf_path(filename)
 
 			local sql = "DELETE FROM snapshots;"
-			db_action(file_path, sql)
+			db_action_async(file_path, sql, nil, function(ok)
+				if ok then
+					vim.notify("Cleared Time Machine snapshot for " .. file_path, vim.log.levels.INFO)
+					vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_deleted })
+				end
+			end)
 		end
 	end
 end
@@ -365,7 +443,12 @@ function M.purge_current(buf_path)
 	local safe = buf_path:gsub("'", "''")
 	local safe_branch = branch:gsub("'", "''")
 	local sql = string.format("DELETE FROM snapshots WHERE buf_path='%s' AND branch='%s';", safe, safe_branch)
-	db_action(buf_path, sql)
+	db_action_async(buf_path, sql, nil, function(ok)
+		if ok then
+			vim.notify("Cleared Time Machine snapshot for " .. buf_path, vim.log.levels.INFO)
+			vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_deleted })
+		end
+	end)
 end
 
 -- Remove snapshots for files that no longer exist
@@ -389,7 +472,7 @@ function M.clean_orphans()
 			local file_path = utils.unslugify_buf_path(filename)
 
 			local sql = "SELECT DISTINCT buf_path, branch FROM snapshots;"
-			local rows = db_action(file_path, sql, { separator = "|" }) or {}
+			local rows = db_action_sync(file_path, sql, { separator = "|" }) or {}
 
 			local branches = git.get_git_branches()
 
@@ -416,7 +499,11 @@ function M.clean_orphans()
 						safe_path,
 						safe_branch
 					)
-					db_action(file, del)
+					db_action_async(file, del, nil, function(ok)
+						if ok then
+							vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_deleted })
+						end
+					end)
 					count = count + 1
 				end
 			end
@@ -444,6 +531,7 @@ function M.delete_db()
 	local ok, err = pcall(function()
 		vim.fn.delete(db_dir, "rf") -- recursive + force
 		vim.fn.mkdir(db_dir, "p") -- recreate the (now empty) directory
+		vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_deleted })
 	end)
 	return ok, err
 end

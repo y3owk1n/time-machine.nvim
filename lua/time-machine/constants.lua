@@ -6,6 +6,8 @@ M.constants = {
 	ns = vim.api.nvim_create_namespace("time-machine"),
 	events = {
 		snapshot_created = "TimeMachineSnapshotCreated",
+		snapshot_set_current = "TimeMachineSnapshotSetCurrent",
+		snapshot_deleted = "TimeMachineSnapshotDeleted",
 	},
 }
 

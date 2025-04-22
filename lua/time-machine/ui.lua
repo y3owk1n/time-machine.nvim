@@ -250,8 +250,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 
 	vim.api.nvim_create_autocmd("User", {
 		group = ui_refresh_group,
-		pattern = constants.events.snapshot_created,
-		-- buffer = bufnr,
+		pattern = { constants.events.snapshot_created, constants.events.snapshot_set_current },
 		callback = function()
 			-- only refresh if that buffer is still open
 			if api.nvim_buf_is_valid(bufnr) then
