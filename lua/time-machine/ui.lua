@@ -348,36 +348,31 @@ function M.preview_snapshot(line, bufnr, buf_path, main_bufnr)
 		return
 	end
 
-	local root = storage.get_root_snapshot(buf_path)
-	if not root then
-		vim.notify("No root snapshot found", vim.log.levels.ERROR)
-		return
-	end
-
 	local content = {}
 
 	local root_branch_id = require("time-machine.utils").root_branch_id(buf_path)
 
 	if full_id == root_branch_id then
-		content = vim.split(root.content, "\n")
-	else
-		local current = snapshots[full_id]
-		local chain = {}
+		local root = storage.get_root_snapshot(buf_path)
 
-		-- Collect chain of snapshots from selected to root
-		while current do
-			table.insert(chain, current)
-			current = snapshots[current.parent]
+		if not root then
+			vim.notify("No root snapshot found", vim.log.levels.ERROR)
+			return
 		end
 
-		-- Append each snapshot diff in order, newest to oldest
-		for i = #chain, 1, -1 do
-			local snap = chain[i]
-			if snap.diff then
-				local diff_lines = vim.split(snap.diff, "\n")
-				for j = #diff_lines, 1, -1 do
-					table.insert(content, 1, diff_lines[j])
-				end
+		content = vim.split(root.content, "\n")
+	else
+		local current_snapshot = storage.get_snapshot_by_id(full_id, buf_path)
+
+		if not current_snapshot then
+			vim.notify("No current snapshot found", vim.log.levels.ERROR)
+			return
+		end
+
+		if current_snapshot.diff then
+			local diff_lines = vim.split(current_snapshot.diff, "\n")
+			for j = #diff_lines, 1, -1 do
+				table.insert(content, 1, diff_lines[j])
 			end
 		end
 	end
