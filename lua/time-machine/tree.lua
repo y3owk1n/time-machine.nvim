@@ -53,7 +53,7 @@ function M.format_graph(root, lines, id_map, current_id)
 		local parent_is_branched = entry.parent_is_branched
 
 		local snap = node.snap
-		local short_id = (snap.id:sub(1, 4) == "root") and snap.id or snap.id:sub(5, 8)
+		local short_id = utils.get_short_id(snap)
 		local time_str = utils.relative_time(snap.timestamp)
 		local tags = (#snap.tags > 0) and (" ◼ " .. table.concat(snap.tags, ", ")) or ""
 		local marker = (snap.id == current_id) and "● " or "* "

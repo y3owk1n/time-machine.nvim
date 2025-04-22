@@ -102,6 +102,14 @@ function M.root_branch_id(buf_path)
 	return ("root-%s"):format(branch)
 end
 
+--- Get the short ID for a snapshot
+---@param snap TimeMachine.Snapshot The snapshot
+---@return string short_id The short ID
+function M.get_short_id(snap)
+	local short_id = (snap.id:sub(1, 4) == "root") and snap.id or snap.id:sub(5, 8)
+	return short_id
+end
+
 --- Encode a string
 ---@param str string The string to encode
 ---@return string encoded_str The encoded string

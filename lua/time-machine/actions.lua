@@ -86,7 +86,8 @@ function M.create_snapshot(buf, for_root, silent)
 
 	--- there is a children, branch out
 	if children and num_children > 0 then
-		local tag = "branch-" .. current.id:sub(5, 8)
+		local short_id = utils.get_short_id(current)
+		local tag = "branch-" .. short_id
 
 		local tags = current.tags or {}
 		table.insert(tags, tag)

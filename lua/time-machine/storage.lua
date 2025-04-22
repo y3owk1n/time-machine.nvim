@@ -295,10 +295,10 @@ function M.get_snapshots(buf_path)
 end
 
 --- Get the children of a snapshot
----@param id string The snapshot ID
 ---@param buf_path string The path to the buffer
+---@param id string The snapshot ID
 ---@return string[]|nil children The children of the snapshot
-function M.get_snapshot_children(id, buf_path)
+function M.get_snapshot_children(buf_path, id)
 	if not id then
 		return nil
 	end
