@@ -28,11 +28,13 @@ function M.setup_highlights(opts)
 		current = "TimeMachineCurrent",
 		preview = "TimeMachinePreview",
 		tag = "TimeMachineTag",
+		info = "TimeMachineInfo",
 	}
 	local defaults_colors = {
 		current = { bg = "#3c3836", fg = "#fabd2f", bold = true },
 		preview = { bg = "#504945", fg = "#83a598" },
 		tag = { fg = "#8ec07c", italic = true },
+		info = { fg = "#939AB7", italic = true },
 	}
 
 	for key, group in pairs(groups) do

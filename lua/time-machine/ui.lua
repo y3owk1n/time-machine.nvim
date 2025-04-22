@@ -95,15 +95,37 @@ local function set_highlights(bufnr, id_map, current, lines)
 				hl_group = "TimeMachineTag",
 			})
 		end
+
+		local info_matches = { "Current DB Path:", "Current file:" }
+
+		for _, info_match in ipairs(info_matches) do
+			if line:find(info_match) then
+				local current_line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
+				local end_col = current_line and #current_line or 0
+
+				api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, 0, {
+					end_col = end_col,
+					hl_group = "TimeMachineInfo",
+				})
+			end
+		end
 	end
 end
 
 --- Set header for the UI
 ---@param lines table<integer, string> The lines of the snapshot
 ---@param id_map table<integer, string> The map of line numbers to snapshot IDs
+---@param buf_path string The path to the buffer
 ---@return nil
-local function set_header(lines, id_map)
-	-- Insert keymap hints at the top
+local function set_header(lines, id_map, buf_path)
+	--- NOTE: lines are in reversed order
+
+	local db_path = require("time-machine.config").config.db_dir .. "/" .. utils.slugify_buf_path(buf_path)
+
+	table.insert(lines, 1, "")
+	table.insert(lines, 1, "Current DB Path: " .. db_path)
+	table.insert(lines, 1, "Current file: " .. buf_path)
+
 	table.insert(lines, 1, "")
 	table.insert(
 		lines,
@@ -111,6 +133,9 @@ local function set_header(lines, id_map)
 		"[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [<leader>R] Refresh [<leader>t] Tag [q] Close"
 	)
 
+	table.insert(id_map, 1, "")
+	table.insert(id_map, 1, "")
+	table.insert(id_map, 1, "")
 	table.insert(id_map, 1, "")
 	table.insert(id_map, 1, "")
 end
@@ -147,7 +172,7 @@ function M.refresh(bufnr, buf_path, id_map)
 
 	require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
 
-	set_header(lines, id_map)
+	set_header(lines, id_map, buf_path)
 	api.nvim_set_option_value("modifiable", true, { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("readonly", false, { scope = "local", buf = bufnr })
 
@@ -182,7 +207,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 
 	require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
 
-	set_header(lines, id_map)
+	set_header(lines, id_map, buf_path)
 
 	local bufnr = api.nvim_create_buf(false, true)
 
