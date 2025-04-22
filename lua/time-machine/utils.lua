@@ -220,4 +220,30 @@ function M.find_snapshot_list_buf()
 	return nil
 end
 
+--- Merge two lists (arrays), preserving order and removing duplicates.
+---@generic T
+---@param default T[] The default list
+---@param user T[] The user-provided list
+---@return T[] The merged, deduplicated list
+function M.merge_lists(default, user)
+	local seen = {}
+	local result = {}
+
+	for _, item in ipairs(default) do
+		if not seen[item] then
+			table.insert(result, item)
+			seen[item] = true
+		end
+	end
+
+	for _, item in ipairs(user) do
+		if not seen[item] then
+			table.insert(result, item)
+			seen[item] = true
+		end
+	end
+
+	return result
+end
+
 return M

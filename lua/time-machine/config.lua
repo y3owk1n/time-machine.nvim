@@ -139,6 +139,10 @@ end
 function M.setup(user_config)
 	M.config = vim.tbl_deep_extend("force", defaults, user_config or {})
 
+	if user_config.ignored_filetypes and #user_config.ignored_filetypes > 0 then
+		M.config.ignored_filetypes = utils.merge_lists(user_config.ignored_filetypes, defaults.ignored_filetypes)
+	end
+
 	setup_autocmds()
 
 	M.setup_highlights()
