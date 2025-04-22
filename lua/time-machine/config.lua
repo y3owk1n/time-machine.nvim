@@ -81,7 +81,7 @@ local function setup_autocmds()
 				if not vim.api.nvim_buf_is_valid(buf) or not vim.api.nvim_buf_is_loaded(buf) then
 					return
 				end
-				actions.create_snapshot(buf, for_root)
+				actions.create_snapshot(buf, for_root, silent)
 				timers[buf] = nil
 			end)
 		)
@@ -111,7 +111,7 @@ local function setup_autocmds()
 					if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
 						return
 					end
-					actions.create_snapshot(args.buf, true)
+					actions.create_snapshot(args.buf, true, true)
 				end,
 			})
 		end
