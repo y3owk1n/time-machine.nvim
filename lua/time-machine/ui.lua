@@ -2,6 +2,7 @@ local api = vim.api
 local utils = require("time-machine.utils")
 local constants = require("time-machine.constants").constants
 local storage = require("time-machine.storage")
+local data = require("time-machine.data")
 
 local M = {}
 
@@ -132,15 +133,16 @@ end
 ---@param bufnr integer The buffer number
 ---@param buf_path string The path to the buffer
 ---@param id_map table<integer, string> The map of line numbers to snapshot IDs
+---@param main_bufnr integer The main buffer number
 ---@return nil
-function M.refresh(bufnr, buf_path, id_map)
+function M.refresh(bufnr, buf_path, id_map, main_bufnr)
 	if not bufnr or not api.nvim_buf_is_valid(bufnr) then
 		return
 	end
 
-	local snapshots = storage.get_snapshots(buf_path)
+	local snapshots = data.get_snapshots(main_bufnr)
 
-	local current = storage.get_current_snapshot(buf_path)
+	local current = data.get_current_snapshot(main_bufnr)
 
 	if not snapshots then
 		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
@@ -237,7 +239,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.refresh(bufnr, buf_path, id_map)
+			M.refresh(bufnr, buf_path, id_map, main_bufnr)
 			vim.notify("Refreshed", vim.log.levels.INFO)
 		end,
 	})
@@ -274,7 +276,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		callback = function()
 			-- only refresh if that buffer is still open
 			if api.nvim_buf_is_valid(bufnr) then
-				M.refresh(bufnr, buf_path, id_map)
+				M.refresh(bufnr, buf_path, id_map, main_bufnr)
 			end
 		end,
 	})
@@ -411,14 +413,13 @@ function M.handle_restore(line, bufnr, buf_path, main_bufnr)
 		return
 	end
 
-	local snapshot = storage.get_snapshot_by_id(full_id, buf_path)
-
-	if not snapshot then
-		vim.notify("No snapshot found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+	local seq = tonumber(full_id)
+	if not seq then
+		vim.notify(("Invalid snapshot id: %q"):format(full_id), vim.log.levels.ERROR)
 		return
 	end
 
-	require("time-machine.actions").restore_snapshot(snapshot, buf_path, main_bufnr)
+	require("time-machine.actions").restore_snapshot(seq, buf_path, main_bufnr)
 end
 
 --- Handle the restore action

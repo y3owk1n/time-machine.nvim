@@ -2,101 +2,9 @@ local utils = require("time-machine.utils")
 local storage = require("time-machine.storage")
 local ui = require("time-machine.ui")
 local constants = require("time-machine.constants").constants
+local data = require("time-machine.data")
 
 local M = {}
-
---- Create a snapshot for the current buffer
----@param buf number The buffer to snapshot
----@param for_root? boolean Whether to create a snapshot for the root branch
----@param silent? boolean Whether to suppress notifications
----@return nil
-function M.create_snapshot(buf, for_root, silent)
-	buf = buf
-
-	if not vim.api.nvim_buf_is_valid(buf) then
-		return
-	end
-
-	local config = require("time-machine.config").config
-
-	if vim.tbl_contains(config.ignored_filetypes, vim.bo[buf].filetype) then
-		return
-	end
-
-	local buf_path = utils.get_buf_path(buf)
-	if not buf_path then
-		return
-	end
-
-	storage.try_init(buf_path)
-
-	local count = storage.count_snapshots(buf_path)
-	local current = storage.get_current_snapshot(buf_path)
-
-	if count == nil then
-		vim.notify("No snapshot count", vim.log.levels.ERROR)
-		return
-	end
-
-	local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-
-	--- Convert lines to string
-	local new_content = table.concat(lines, "\n")
-
-	if count == 0 then
-		local id = utils.root_branch_id(buf_path)
-		storage.insert_snapshot(buf_path, {
-			id = id,
-			parent = nil,
-			content = new_content,
-			timestamp = os.time(),
-			tags = {},
-			is_current = true,
-		})
-
-		return
-	end
-
-	if for_root then
-		return
-	end
-
-	if not current then
-		vim.notify("No current snapshot found", vim.log.levels.ERROR)
-		return
-	end
-
-	local old_content = current.content or ""
-	--- Remember to decode the new_content!!
-	local diff = vim.diff(old_content, utils.decode(new_content), { result_type = "unified", ctxlen = 6 })
-
-	if type(diff) ~= "string" then
-		diff = ""
-	end
-
-	if diff == "" then
-		if not silent then
-			vim.notify("No changes detected", vim.log.levels.WARN)
-		end
-		return "no_changes"
-	end
-
-	local new_id = utils.create_id()
-
-	storage.insert_snapshot(buf_path, {
-		id = new_id,
-		parent = current.id,
-		diff = diff,
-		content = new_content,
-		timestamp = os.time(),
-		tags = {},
-		is_current = true,
-	})
-
-	storage.set_current_snapshot(buf_path, new_id)
-
-	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
-end
 
 --- Show the snapshot for a buffer
 ---@return nil
@@ -107,11 +15,11 @@ function M.show_snapshots()
 		return
 	end
 
-	storage.try_init(buf_path)
+	local snapshots = data.get_snapshots(bufnr)
 
-	local snapshots = storage.get_snapshots(buf_path)
+	Snacks.debug(snapshots)
 
-	local current = storage.get_current_snapshot(buf_path)
+	local current = data.get_current_snapshot(bufnr)
 
 	if not snapshots then
 		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
@@ -126,58 +34,12 @@ function M.show_snapshots()
 	ui.show(snapshots, current, buf_path, bufnr)
 end
 
---- Tag a snapshot
----@param tag_name? string The tag name
----@param target_snap? TimeMachine.Snapshot The snapshot to restore
----@param buf_path? string The path to the buffer
----@return nil
-function M.tag_snapshot(tag_name, target_snap, buf_path)
-	buf_path = buf_path or utils.get_buf_path(0)
-	if not buf_path then
-		return
-	end
-
-	storage.try_init(buf_path)
-
-	if not target_snap then
-		local current = storage.get_current_snapshot(buf_path)
-		if not current then
-			return
-		end
-
-		target_snap = current
-	end
-
-	local current_id = target_snap.id
-
-	if not tag_name or tag_name == "" then
-		tag_name = vim.fn.input("Tag name: ")
-	end
-
-	if tag_name and tag_name ~= "" then
-		local tags = target_snap.tags or {}
-		table.insert(tags, tag_name)
-
-		storage.insert_snapshot(buf_path, {
-			id = current_id,
-			parent = target_snap.parent,
-			diff = target_snap.diff,
-			content = target_snap.content,
-			timestamp = target_snap.timestamp,
-			tags = tags,
-			is_current = target_snap.is_current,
-		})
-
-		vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
-	end
-end
-
 --- Restore a snapshot
----@param target_snap TimeMachine.Snapshot The snapshot to restore
+---@param id integer The snapshot id
 ---@param buf_path string The path to the buffer
 ---@param main_bufnr integer The main buffer number
 ---@return nil
-function M.restore_snapshot(target_snap, buf_path, main_bufnr)
+function M.restore_snapshot(id, buf_path, main_bufnr)
 	local bufnr = main_bufnr
 
 	if not bufnr then
@@ -189,46 +51,12 @@ function M.restore_snapshot(target_snap, buf_path, main_bufnr)
 		return
 	end
 
-	storage.try_init(buf_path)
-
-	local root = storage.get_root_snapshot(buf_path)
-
-	if not root then
-		vim.notify("No root snapshot found", vim.log.levels.ERROR)
-		return
-	end
-
-	local snapshots = storage.get_snapshots(buf_path)
-	if not snapshots then
-		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
-		return
-	end
-
-	-- Collect the snapshot chain from target to root
-	local chain = {}
-	local current_snap = target_snap
-	while current_snap do
-		table.insert(chain, 1, current_snap)
-		current_snap = snapshots[current_snap.parent]
-	end
-
-	local content = root.content
-
-	for i = 2, #chain do
-		local snap = chain[i]
-		if snap.diff then
-			content = require("time-machine.patch").apply_diff(content, snap.diff)
-		else
-			vim.notify("Missing diff for snapshot " .. snap.id, vim.log.levels.WARN)
-		end
-	end
-
-	local lines = vim.split(content, "\n")
-
-	storage.set_current_snapshot(buf_path, target_snap.id)
-
-	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
-
+	-- 3) in the target buffer, do undo {seq}
+	vim.api.nvim_buf_call(main_bufnr, function()
+		-- this jumps the undo‐tree to exactly that sequence
+		vim.cmd(("undo %d"):format(id))
+	end)
+	vim.notify(("Restored to snapshot %d"):format(id), vim.log.levels.INFO)
 	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
 end
 
@@ -264,7 +92,7 @@ function M.purge_current(force)
 			return
 		end
 	end
-	storage.purge_current(buf_path)
+	data.remove_undofile(0)
 end
 
 --- Purge orphaned snapshots
