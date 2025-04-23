@@ -357,42 +357,79 @@ local function assign_branch_ids(seq_map, entries)
 end
 
 -- Create the visual tree representation
-local function build_tree_representation(undotree)
+---@param undotree vim.fn.undotree.ret
+local function build_tree_representation(undotree, id_map)
 	if not undotree or not undotree.entries or #undotree.entries == 0 then
 		return {}
 	end
 
-	-- 1. Build enhanced sequence map with hierarchy information
-	local seq_map = build_seq_map(undotree.entries)
+	-- 1) Build seq_map with parent/children links using recursion
+	local seq_map = {}
+	local function walk(entry, parent_seq)
+		seq_map[entry.seq] = seq_map[entry.seq]
+			or {
+				entry = entry,
+				parent_seq = parent_seq,
+				children_seq = {},
+				branch_id = nil,
+			}
+		if parent_seq then
+			table.insert(seq_map[parent_seq].children_seq, entry.seq)
+		end
+		if entry.alt then
+			for _, child in ipairs(entry.alt) do
+				walk(child, entry.seq)
+			end
+		end
+	end
 
-	-- 2. Improved branch assignment with column tracking
-	local branch_columns = {}
+	for _, entry in ipairs(undotree.entries) do
+		walk(entry, nil)
+	end
+
+	-- Sort children
+	-- for _, info in pairs(seq_map) do
+	-- 	table.sort(info.children_seq)
+	-- end
+
+	-- table.sort(seq_map, function(a, b)
+	-- 	return a.entry.seq < b.entry.seq
+	-- end)
+
+	-- 2) BFS for branch assignment (O(N) queue + cycle guard)
+	local queue, head, tail = {}, 1, 0
+	local visited = {}
 	local next_column = 0
 	local main_branch_id = 0
 
-	-- Assign columns through BFS traversal
-	local queue = { { seq = undotree.seq_cur, branch_id = main_branch_id } }
-	branch_columns[main_branch_id] = next_column
+	-- Enqueue roots (pre_seq == 0)
+	for seq, info in pairs(seq_map) do
+		if not info.parent_seq then
+			tail = tail + 1
+			queue[tail] = { seq = seq, branch_id = main_branch_id }
+			info.branch_id = main_branch_id
+		end
+	end
 
-	while #queue > 0 do
-		local current = table.remove(queue, 1)
-		local info = seq_map[current.seq]
-
-		-- Process children left to right
-		for i, child_seq in ipairs(info.children_seq) do
-			local child_info = seq_map[child_seq]
-
-			if i == 1 then
-				-- First child continues parent branch
-				child_info.branch_id = current.branch_id
-			else
-				-- New branch for other children
-				next_column = next_column + 1
-				child_info.branch_id = next_column
-				branch_columns[next_column] = next_column
+	while head <= tail do
+		local cur = queue[head]
+		head = head + 1
+		if not visited[cur.seq] then
+			visited[cur.seq] = true
+			local info = seq_map[cur.seq]
+			for i, child_seq in ipairs(info.children_seq) do
+				local child = seq_map[child_seq]
+				if child then
+					if i == 1 then
+						child.branch_id = info.branch_id
+					else
+						next_column = next_column + 1
+						child.branch_id = next_column
+					end
+					tail = tail + 1
+					queue[tail] = { seq = child_seq, branch_id = child.branch_id }
+				end
 			end
-
-			table.insert(queue, { seq = child_seq, branch_id = child_info.branch_id })
 		end
 	end
 
@@ -401,6 +438,7 @@ local function build_tree_representation(undotree)
 	for seq in pairs(seq_map) do
 		table.insert(all_seqs, seq)
 	end
+
 	table.sort(all_seqs, function(a, b)
 		return a > b
 	end) -- Newest first
@@ -412,39 +450,37 @@ local function build_tree_representation(undotree)
 	for _, seq in ipairs(all_seqs) do
 		local info = seq_map[seq]
 		local entry = info.entry
-		local column = branch_columns[info.branch_id] or 0
+		local col = info.branch_id or 0
 
-		-- Initialize line with connection markers
 		local line = {}
 		for c = 0, max_column do
 			line[c + 1] = verticals[c] and "│ " or "  "
 		end
 
-		-- Draw node
-		line[column + 1] = entry.seq == undotree.seq_cur and "● "
-			or entry.save and entry.save > 0 and "◆ "
-			or "○ "
-
-		-- Draw horizontal connections
-		if info.parent_seq then
+		-- Draw connection from parent if necessary
+		if info.parent_seq and seq_map[info.parent_seq] then
 			local parent_info = seq_map[info.parent_seq]
-			local parent_col = branch_columns[parent_info.branch_id] or 0
+			local parent_col = parent_info.branch_id or 0
 
-			if parent_col ~= column then
-				local start = math.min(parent_col, column)
-				local finish = math.max(parent_col, column)
+			if parent_col ~= col then
+				local start_col = math.min(parent_col, col)
+				local end_col = math.max(parent_col, col)
 
-				for c = start + 1, finish do
-					line[c + 1] = c == column and "╰─"
-						or c == parent_col and "╭─"
-						or line[c + 1] == "│ " and "├─"
-						or "──"
+				for c = start_col + 1, end_col - 1 do
+					line[c + 1] = "──"
 				end
+
+				line[parent_col + 1] = "╭─"
+				line[col + 1] = "╰─"
 			end
 		end
 
-		-- Update vertical connections
-		verticals[column] = #info.children_seq > 0
+		-- Draw node symbol
+		line[col + 1] = (entry.seq == undotree.seq_cur and "● ")
+			or (entry.save and entry.save > 0 and "◆ ")
+			or "○ "
+
+		verticals[col] = #info.children_seq > 0
 
 		-- Add info text
 		local info_text = string.format(
@@ -458,8 +494,9 @@ local function build_tree_representation(undotree)
 		table.insert(tree_lines, {
 			content = table.concat(line) .. info_text,
 			seq = entry.seq,
-			column = column,
+			column = col,
 		})
+		id_map[#tree_lines] = seq
 	end
 
 	return tree_lines
@@ -472,11 +509,10 @@ end
 ---@param main_bufnr integer The main buffer number
 ---@return nil
 function M.show(snapshot, current, buf_path, main_bufnr)
-	Snacks.debug(snapshot)
-	local tree_lines = build_tree_representation(snapshot)
+	local id_map = {}
+	local tree_lines = build_tree_representation(snapshot, id_map)
 	-- local tree = require("time-machine.tree").build_tree(snapshot)
 	local lines = {}
-	local id_map = {}
 
 	local found_bufnr = utils.find_snapshot_list_buf()
 
