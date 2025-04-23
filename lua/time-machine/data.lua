@@ -84,7 +84,7 @@ end
 
 --- Get the current snapshot from undotree
 ---@param bufnr integer The buffer number
----@return TimeMachine.Snapshot|nil The current snapshot
+---@return vim.fn.undotree.ret|nil
 function M.get_snapshots(bufnr)
 	if vim.api.nvim_buf_is_valid(bufnr) == 0 then
 		return nil
@@ -92,7 +92,7 @@ function M.get_snapshots(bufnr)
 
 	local ut = vim.fn.undotree(bufnr)
 
-	return format_undotree_as_snapshots(ut)
+	return ut
 end
 
 function M.get_current_snapshot(bufnr)

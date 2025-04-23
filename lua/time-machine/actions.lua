@@ -17,19 +17,19 @@ function M.show_snapshots()
 
 	local snapshots = data.get_snapshots(bufnr)
 
-	Snacks.debug(snapshots)
-
-	local current = data.get_current_snapshot(bufnr)
+	-- local current = data.get_current_snapshot(bufnr)
 
 	if not snapshots then
 		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
 
-	if not current then
-		vim.notify("No current snapshot found", vim.log.levels.ERROR)
-		return
-	end
+	-- if not current then
+	-- 	vim.notify("No current snapshot found", vim.log.levels.ERROR)
+	-- 	return
+	-- end
+
+	local current = snapshots.seq_cur
 
 	ui.show(snapshots, current, buf_path, bufnr)
 end
