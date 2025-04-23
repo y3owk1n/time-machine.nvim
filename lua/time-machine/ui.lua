@@ -61,14 +61,14 @@ end
 --- Set highlights for the UI
 ---@param bufnr integer The buffer number
 ---@param id_map table<integer, string> The map of line numbers to snapshot IDs
----@param current TimeMachine.Snapshot The current snapshot
+---@param current integer The current snapshot id
 ---@param lines table<integer, string> The lines of the snapshot
 ---@return nil
 local function set_highlights(bufnr, id_map, current, lines)
 	api.nvim_buf_clear_namespace(bufnr, constants.ns, 0, -1)
 
 	for i, id in ipairs(id_map) do
-		if id == current.id then
+		if id == current then
 			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
 			local end_col = line and #line or 0
 
@@ -129,241 +129,10 @@ local function set_header(lines, id_map, buf_path)
 	end
 end
 
---- Refresh the UI
----@param bufnr integer The buffer number
----@param buf_path string The path to the buffer
----@param id_map table<integer, string> The map of line numbers to snapshot IDs
----@param main_bufnr integer The main buffer number
----@return nil
-function M.refresh(bufnr, buf_path, id_map, main_bufnr)
-	if not bufnr or not api.nvim_buf_is_valid(bufnr) then
-		return
-	end
-
-	local snapshots = data.get_snapshots(main_bufnr)
-
-	local current = data.get_current_snapshot(main_bufnr)
-
-	if not snapshots then
-		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
-		return
-	end
-
-	if not current then
-		vim.notify("No current snapshot found", vim.log.levels.ERROR)
-		return
-	end
-
-	local tree = require("time-machine.tree").build_tree(snapshots)
-
-	local lines = {}
-
-	id_map = {}
-
-	require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
-
-	set_header(lines, id_map, buf_path)
-	api.nvim_set_option_value("modifiable", true, { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("readonly", false, { scope = "local", buf = bufnr })
-
-	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
-
-	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
-	api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
-
-	vim.api.nvim_buf_set_var(bufnr, constants.id_map_buf_var, id_map)
-
-	set_highlights(bufnr, id_map, current, lines)
-end
-
-local function find_entry_by_seq(entries, seq)
-	for i, entry in ipairs(entries) do
-		if entry.seq == seq then
-			return entry, i
-		end
-	end
-	return nil, nil
-end
-
 -- Build a sequence map with direct parent references
+---@param entries vim.fn.undotree.entry[]
+---@return table<integer, TimeMachine.SeqMap>
 local function build_seq_map(entries)
-	if not entries or #entries == 0 then
-		return {}
-	end
-
-	local seq_map = {}
-
-	-- First pass: collect ALL sequences (including those in nested alts)
-	local function collect_sequences(entry, index)
-		if not entry.seq then
-			return
-		end
-
-		-- Create entry if it doesn't exist
-		if not seq_map[entry.seq] then
-			seq_map[entry.seq] = {
-				entry = entry,
-				index = index or #entries + 1, -- Use main index or a higher number for alts
-				parent_seq = nil,
-				children_seq = {},
-				branch_id = 0, -- Default to main branch
-			}
-		end
-
-		-- Recursively process alts
-		if entry.alt and type(entry.alt) == "table" then
-			for _, alt in ipairs(entry.alt) do
-				collect_sequences(alt)
-			end
-		end
-	end
-
-	-- Collect all sequences from main entries and their alts
-	for i, entry in ipairs(entries) do
-		collect_sequences(entry, i)
-	end
-
-	-- Sort all unique sequences
-	local all_seqs = {}
-	for seq in pairs(seq_map) do
-		table.insert(all_seqs, seq)
-	end
-	table.sort(all_seqs)
-
-	-- Connect linear sequences
-	for i = 2, #all_seqs do
-		local curr_seq = all_seqs[i]
-		local prev_seq = all_seqs[i - 1]
-
-		-- Connect if they're consecutive in the main branch
-		if curr_seq == prev_seq + 1 and seq_map[curr_seq].branch_id == 0 and seq_map[prev_seq].branch_id == 0 then
-			seq_map[curr_seq].parent_seq = prev_seq
-			table.insert(seq_map[prev_seq].children_seq, curr_seq)
-		end
-	end
-
-	-- Process all alt branches (including nested ones)
-	local function process_alts(entry, parent_seq, branch_id)
-		if not entry.alt or type(entry.alt) ~= "table" then
-			return
-		end
-
-		for alt_index, alt in ipairs(entry.alt) do
-			if alt.seq and seq_map[alt.seq] then
-				-- Assign branch_id (incrementing for each alternative)
-				local new_branch_id = branch_id or alt_index
-
-				-- Set parent-child relationship
-				seq_map[alt.seq].parent_seq = parent_seq
-				seq_map[alt.seq].branch_id = new_branch_id
-				table.insert(seq_map[parent_seq].children_seq, alt.seq)
-
-				-- Process any nested alts with the same branch_id
-				process_alts(alt, alt.seq, new_branch_id)
-			end
-		end
-	end
-
-	-- Process all entries for alt branches
-	for _, entry in ipairs(entries) do
-		process_alts(entry, entry.seq)
-	end
-
-	return seq_map
-end
-
--- Assign branch IDs
-local function assign_branch_ids(seq_map, entries)
-	if not entries or #entries == 0 then
-		return seq_map, {}
-	end
-
-	local next_branch_id = 0
-	local branch_columns = {}
-	local main_branch_id = 0
-
-	-- First, assign all entries to default main branch
-	for seq, info in pairs(seq_map) do
-		info.branch_id = main_branch_id
-	end
-
-	-- Assign branch IDs to entries
-	for i, entry in ipairs(entries) do
-		-- Skip if entry doesn't have a sequence number
-		if not entry.seq then
-			goto continue
-		end
-
-		local seq = entry.seq
-		local info = seq_map[seq]
-
-		-- Skip if info or parent_seq doesn't exist
-		if not info or not info.parent_seq then
-			goto continue
-		end
-
-		local parent_info = seq_map[info.parent_seq]
-		if not parent_info then
-			goto continue
-		end
-
-		-- If parent has multiple children, create new branch for this child
-		if #parent_info.children_seq > 1 and parent_info.children_seq[1] ~= seq then
-			-- Not the first child (first child stays on parent's branch)
-			next_branch_id = next_branch_id + 1
-			info.branch_id = next_branch_id
-		else
-			-- First child or only child - inherit parent's branch ID
-			info.branch_id = parent_info.branch_id
-		end
-
-		::continue::
-	end
-
-	-- Now ensure entries in alt branches have correct branch IDs
-	for _, entry in ipairs(entries) do
-		if not entry.seq then
-			goto continue
-		end
-
-		if entry.alt and type(entry.alt) == "table" then
-			for _, alt in ipairs(entry.alt) do
-				-- Skip if alt entry doesn't have a sequence number
-				if not alt.seq then
-					goto continue_alt
-				end
-
-				-- Ensure the alt entry exists in seq_map
-				if seq_map[alt.seq] then
-					next_branch_id = next_branch_id + 1
-					seq_map[alt.seq].branch_id = next_branch_id
-				end
-
-				::continue_alt::
-			end
-		end
-
-		::continue::
-	end
-
-	-- Assign columns to branches
-	for seq, info in pairs(seq_map) do
-		if not branch_columns[info.branch_id] then
-			branch_columns[info.branch_id] = info.branch_id
-		end
-	end
-
-	return seq_map, branch_columns
-end
-
--- Create the visual tree representation
----@param undotree vim.fn.undotree.ret
-local function build_tree_representation(undotree, id_map)
-	if not undotree or not undotree.entries or #undotree.entries == 0 then
-		return {}
-	end
-
-	-- 1) Build seq_map with parent/children links using recursion
 	local seq_map = {}
 	local function walk(entry, parent_seq)
 		seq_map[entry.seq] = seq_map[entry.seq]
@@ -383,21 +152,28 @@ local function build_tree_representation(undotree, id_map)
 		end
 	end
 
-	for _, entry in ipairs(undotree.entries) do
+	for _, entry in ipairs(entries) do
 		walk(entry, nil)
 	end
 
-	-- Sort children
-	-- for _, info in pairs(seq_map) do
-	-- 	table.sort(info.children_seq)
-	-- end
+	return seq_map
+end
 
-	-- table.sort(seq_map, function(a, b)
-	-- 	return a.entry.seq < b.entry.seq
-	-- end)
+-- Create the visual tree representation
+---@param undotree vim.fn.undotree.ret
+local function build_tree_representation(undotree, id_map)
+	if not undotree or not undotree.entries or #undotree.entries == 0 then
+		return {}
+	end
+
+	local seq_map = build_seq_map(undotree.entries)
 
 	-- 2) BFS for branch assignment (O(N) queue + cycle guard)
-	local queue, head, tail = {}, 1, 0
+	---@type {seq: integer, branch_id: integer}[]
+	local queue = {}
+	local head = 1
+	local tail = 0
+	---@type table<integer, boolean>
 	local visited = {}
 	local next_column = 0
 	local main_branch_id = 0
@@ -434,6 +210,7 @@ local function build_tree_representation(undotree, id_map)
 	end
 
 	-- 3. Render tree with proper connections
+	---@type integer[]
 	local all_seqs = {}
 	for seq in pairs(seq_map) do
 		table.insert(all_seqs, seq)
@@ -502,6 +279,48 @@ local function build_tree_representation(undotree, id_map)
 	return tree_lines
 end
 
+--- Refresh the UI
+---@param bufnr integer The buffer number
+---@param buf_path string The path to the buffer
+---@param id_map table<integer, string> The map of line numbers to snapshot IDs
+---@param main_bufnr integer The main buffer number
+---@return nil
+function M.refresh(bufnr, buf_path, id_map, main_bufnr)
+	if not bufnr or not api.nvim_buf_is_valid(bufnr) then
+		return
+	end
+
+	local snapshots = data.get_snapshots(main_bufnr)
+
+	if not snapshots then
+		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+		return
+	end
+
+	local lines = {}
+
+	id_map = {}
+
+	local tree_lines = build_tree_representation(snapshots, id_map)
+
+	for _, line in ipairs(tree_lines) do
+		table.insert(lines, line.content)
+	end
+
+	set_header(lines, id_map, buf_path)
+	api.nvim_set_option_value("modifiable", true, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("readonly", false, { scope = "local", buf = bufnr })
+
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+
+	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
+
+	vim.api.nvim_buf_set_var(bufnr, constants.id_map_buf_var, id_map)
+
+	set_highlights(bufnr, id_map, snapshots.seq_cur, lines)
+end
+
 --- Show the Snapshot for a buffer
 ---@param snapshot vim.fn.undotree.ret
 ---@param current integer The current snapshot
@@ -536,7 +355,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 
 	set_standard_buf_options(bufnr)
 
-	-- set_highlights(bufnr, id_map, current, lines)
+	set_highlights(bufnr, id_map, current, lines)
 
 	api.nvim_buf_set_keymap(bufnr, "n", "<CR>", "", {
 		nowait = true,
@@ -553,15 +372,6 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		silent = true,
 		callback = function()
 			M.handle_restore(api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
-		end,
-	})
-
-	api.nvim_buf_set_keymap(bufnr, "n", "<leader>t", "", {
-		nowait = true,
-		noremap = true,
-		silent = true,
-		callback = function()
-			M.handle_tag(api.nvim_win_get_cursor(0)[1], bufnr, buf_path)
 		end,
 	})
 
@@ -633,7 +443,6 @@ function M.show_help()
 		"`<CR>` **Preview** - Show the diff of the selected snapshot",
 		"`<leader>r` **Restore** - Restore the selected snapshot",
 		"`<leader>R` **Refresh** - Refresh the data",
-		"`<leader>t` **Tag** - Tag the selected snapshot",
 		"`q` **Close** - Close the window",
 		"",
 	}
@@ -751,27 +560,6 @@ function M.handle_restore(line, bufnr, buf_path, main_bufnr)
 	end
 
 	require("time-machine.actions").restore_snapshot(seq, buf_path, main_bufnr)
-end
-
---- Handle the restore action
----@param line integer The line number
----@param bufnr integer The buffer number
----@param buf_path string The path to the buffer
----@return nil
-function M.handle_tag(line, bufnr, buf_path)
-	local full_id = utils.get_id_from_line(bufnr, line)
-	if not full_id or full_id == "" then
-		return
-	end
-
-	local snapshot = storage.get_snapshot_by_id(full_id, buf_path)
-
-	if not snapshot then
-		vim.notify("No snapshot found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
-		return
-	end
-
-	require("time-machine.actions").tag_snapshot(nil, snapshot, buf_path)
 end
 
 return M
