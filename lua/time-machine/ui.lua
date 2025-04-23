@@ -362,37 +362,41 @@ local function build_tree_representation(undotree)
 		return {}
 	end
 
-	local entries = undotree.entries
-	local tree_lines = {}
+	-- Build sequence map and assign branches
+	local seq_map = build_seq_map(undotree.entries)
+	local seq_map, branch_columns = assign_branch_ids(seq_map, undotree.entries)
 
-	-- Build sequence map with parent-child relationships
-	local seq_map = build_seq_map(entries)
-	local seq_map, branch_columns = assign_branch_ids(seq_map, entries)
-
-	-- Get all sequences sorted
+	-- Get all sequences sorted newest first
 	local all_seqs = {}
 	for seq in pairs(seq_map) do
 		table.insert(all_seqs, seq)
 	end
-	table.sort(all_seqs)
+	table.sort(all_seqs, function(a, b)
+		return a > b
+	end)
 
-	-- Determine maximum depth and width of the tree
-	local max_depth = 0
+	-- Determine maximum column width
 	local max_column = 0
 	for _, col in pairs(branch_columns) do
 		max_column = math.max(max_column, col)
 	end
 
-	-- Track active branches and their paths
-	local active_branches = {}
-	local branch_paths = {}
+	local tree_lines = {}
+	local active_columns = {} -- Tracks columns needing vertical lines
+	local node_positions = {} -- Records x position of each node
 
-	-- Process entries in sequence order (oldest to newest)
+	-- First pass: establish node positions
+	for _, seq in ipairs(all_seqs) do
+		local info = seq_map[seq]
+		node_positions[seq] = branch_columns[info.branch_id] or 0
+	end
+
+	-- Second pass: build lines
 	for _, seq in ipairs(all_seqs) do
 		local info = seq_map[seq]
 		local entry = info.entry
-		local branch_id = info.branch_id
-		local column = branch_columns[branch_id] or 0
+		local column = node_positions[seq]
+		local children = info.children_seq or {}
 
 		-- Initialize line with spaces
 		local line = {}
@@ -400,95 +404,82 @@ local function build_tree_representation(undotree)
 			line[c + 1] = "   "
 		end
 
-		-- Draw active branch vertical lines
-		for br_id, path in pairs(branch_paths) do
-			local br_col = branch_columns[br_id] or 0
-			if path.active then
-				line[br_col + 1] = " │ "
-			end
+		-- Draw vertical connections
+		for col, _ in pairs(active_columns) do
+			line[col + 1] = " │ "
 		end
 
-		-- Draw the node
-		local node_char
+		-- Draw node
+		local node_char = "○"
 		if entry.seq == undotree.seq_cur then
-			node_char = "●" -- Current position
-		elseif entry.save and entry.save > 0 then
-			node_char = "◆" -- Save point
-		else
-			node_char = "○" -- Regular node
+			node_char = "●"
+		end
+		if entry.save and entry.save > 0 then
+			node_char = "◆"
 		end
 		line[column + 1] = " " .. node_char .. " "
 
-		-- Draw connections to parent
-		if info.parent_seq then
-			local parent_info = seq_map[info.parent_seq]
-			if parent_info then
-				local parent_col = branch_columns[parent_info.branch_id] or 0
+		-- Calculate connection parameters
+		local has_children = #children > 0
+		local connection_start = column
+		local connection_end = column
 
-				if column ~= parent_col then
-					-- Determine connection direction
-					local min_col = math.min(column, parent_col)
-					local max_col = math.max(column, parent_col)
+		-- Process children connections
+		if has_children then
+			-- Find leftmost and rightmost child columns
+			local min_child_col = math.huge
+			local max_child_col = -math.huge
+			for _, child_seq in ipairs(children) do
+				local child_col = node_positions[child_seq] or column
+				min_child_col = math.min(min_child_col, child_col)
+				max_child_col = math.max(max_child_col, child_col)
+			end
 
-					-- Draw horizontal connection
-					for c = min_col + 1, max_col - 1 do
-						if line[c + 1] == "   " then
-							line[c + 1] = "───"
-						elseif line[c + 1]:match("│") then
-							line[c + 1] = "─┼─"
-						end
-					end
+			connection_start = math.min(column, min_child_col)
+			connection_end = math.max(column, max_child_col)
 
-					-- Draw corners
-					if parent_col < column then
-						-- Parent is to the left
-						line[parent_col + 1] = line[parent_col + 1]:gsub(" ", "╰")
-						line[column + 1] = line[column + 1]:gsub(" ", "╮")
-					else
-						-- Parent is to the right
-						line[parent_col + 1] = line[parent_col + 1]:gsub(" ", "╯")
-						line[column + 1] = line[column + 1]:gsub(" ", "╭")
-					end
-				else
-					-- Same column, just connect vertically
-					line[column + 1] = line[column + 1]:gsub(" ", "│")
-				end
+			-- Draw horizontal connections
+			for c = connection_start + 1, connection_end - 1 do
+				line[c + 1] = (line[c + 1] == " │ " and " ┼ ") or " ─ "
+			end
+
+			-- Draw left connection
+			if min_child_col < column then
+				line[min_child_col + 1] = " ╰─"
+			end
+
+			-- Draw right connection
+			if max_child_col > column then
+				line[max_child_col + 1] = " ╭─"
+			end
+
+			-- Maintain vertical line in parent column
+			active_columns[column] = true
+		end
+
+		-- Update active columns
+		local new_active = {}
+		for col, _ in pairs(active_columns) do
+			if col ~= column or has_children then
+				new_active[col] = true
 			end
 		end
+		active_columns = new_active
 
-		-- Update branch paths
-		if not branch_paths[branch_id] then
-			branch_paths[branch_id] = { active = true }
-		end
-
-		-- Check if this is a branch point (has multiple children)
-		if #info.children_seq > 1 then
-			for _, child_seq in ipairs(info.children_seq) do
-				local child_info = seq_map[child_seq]
-				if child_info then
-					branch_paths[child_info.branch_id] = { active = true }
-				end
-			end
-		end
-
-		-- Deactivate branches that end here
-		if #info.children_seq == 0 then
-			branch_paths[branch_id].active = false
+		-- Add children columns to active connections
+		for _, child_seq in ipairs(children) do
+			local child_col = node_positions[child_seq]
+			active_columns[child_col] = true
 		end
 
 		-- Add entry information
-		local info_text = string.format(" %d", entry.seq)
-		if entry.time then
-			local time_str = os.date("%H:%M:%S", entry.time)
-			info_text = info_text .. string.format(" [%s]", time_str)
-		end
-
-		if entry.seq == undotree.seq_cur then
-			info_text = info_text .. " (current)"
-		end
-		if entry.save and entry.save > 0 then
-			info_text = info_text .. " (saved)"
-		end
+		local info_text = string.format(
+			"%d %s%s%s",
+			entry.seq,
+			entry.time and os.date("%H:%M:%S", entry.time) or "",
+			entry.seq == undotree.seq_cur and " (current)" or "",
+			entry.save and entry.save > 0 and " (saved)" or ""
+		)
 
 		table.insert(tree_lines, {
 			content = table.concat(line) .. info_text,
@@ -499,13 +490,7 @@ local function build_tree_representation(undotree)
 		})
 	end
 
-	-- Reverse the lines so newest is at the top
-	local reversed = {}
-	for i = #tree_lines, 1, -1 do
-		table.insert(reversed, tree_lines[i])
-	end
-
-	return reversed
+	return tree_lines
 end
 
 --- Show the Snapshot for a buffer
