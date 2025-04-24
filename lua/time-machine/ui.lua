@@ -113,12 +113,12 @@ end
 local function set_header(lines, id_map, buf_path)
 	--- NOTE: lines are in reversed order
 
-	local db_path = require("time-machine.config").config.db_dir .. "/" .. utils.slugify_buf_path(buf_path)
+	-- local db_path = require("time-machine.config").config.db_dir .. "/" .. utils.slugify_buf_path(buf_path)
 
 	local header_lines = {
 		"[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [<leader>R] Refresh [<leader>t] Tag [q] Close",
 		"",
-		"DB Path: " .. db_path,
+		"DB Path: " .. "",
 		"File: " .. buf_path,
 		"",
 	}

@@ -86,29 +86,4 @@ function M.purge_current(force)
 	data.remove_undofile(0)
 end
 
---- Purge orphaned snapshots
----@return nil
-function M.clean_orphans()
-	local count = storage.clean_orphans()
-	vim.notify(string.format("Removed %d orphaned snapshots", count), vim.log.levels.INFO)
-end
-
---- Reset the database
----@param force? boolean Whether to force the reset
----@return nil
-function M.reset_database(force)
-	if not force then
-		local confirm = vim.fn.input("Delete all the databases" .. "? [y/N] ")
-		if confirm:lower() ~= "y" then
-			return
-		end
-	end
-	local ok, err = storage.delete_db()
-	if not ok then
-		vim.notify("Failed to delete TimeMachine database: " .. tostring(err), vim.log.levels.ERROR)
-		return
-	end
-	vim.notify("TimeMachine database has been reset", vim.log.levels.INFO)
-end
-
 return M
