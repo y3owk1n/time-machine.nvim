@@ -439,28 +439,37 @@ function M.preview_diff(line, bufnr, main_bufnr, orig_win)
 
 	local old = diff.read_buffer_at_seq(main_bufnr, orig_win, full_id)
 	local new = vim.api.nvim_buf_get_lines(main_bufnr, 0, -1, false)
-	local computed_diff = diff.compute_diff_lines(new, old)
 
-	local preview_buf = api.nvim_create_buf(false, true)
+	local config = require("time-machine.config").config
 
-	api.nvim_buf_set_lines(preview_buf, 0, -1, false, computed_diff)
+	if config.diff_tool == "native" then
+		local computed_diff = diff.compute_diff_lines(new, old)
 
-	set_standard_buf_options(preview_buf)
+		local preview_buf = api.nvim_create_buf(false, true)
 
-	api.nvim_set_option_value("syntax", "diff", { scope = "local", buf = preview_buf })
+		api.nvim_buf_set_lines(preview_buf, 0, -1, false, computed_diff)
 
-	api.nvim_buf_set_keymap(preview_buf, "n", "q", "", {
-		nowait = true,
-		noremap = true,
-		silent = true,
-		callback = function()
-			if api.nvim_buf_is_valid(preview_buf) then
-				vim.api.nvim_buf_delete(preview_buf, { force = true })
-			end
-		end,
-	})
+		set_standard_buf_options(preview_buf)
 
-	create_native_float(preview_buf, "Preview")
+		api.nvim_set_option_value("syntax", "diff", { scope = "local", buf = preview_buf })
+
+		api.nvim_buf_set_keymap(preview_buf, "n", "q", "", {
+			nowait = true,
+			noremap = true,
+			silent = true,
+			callback = function()
+				if api.nvim_buf_is_valid(preview_buf) then
+					vim.api.nvim_buf_delete(preview_buf, { force = true })
+				end
+			end,
+		})
+
+		create_native_float(preview_buf, "Preview")
+	end
+
+	if config.diff_tool == "difft" then
+		diff.diff_with_difftastic(old, new)
+	end
 end
 
 --- Handle the restore action
