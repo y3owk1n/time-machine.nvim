@@ -160,13 +160,13 @@ local function build_seq_map(entries)
 end
 
 -- Create the visual tree representation
----@param undotree vim.fn.undotree.ret
-local function build_tree_representation(undotree, id_map)
-	if not undotree or not undotree.entries or #undotree.entries == 0 then
+---@param ut vim.fn.undotree.ret
+local function build_tree_representation(ut, id_map)
+	if not ut or not ut.entries or #ut.entries == 0 then
 		return {}
 	end
 
-	local seq_map = build_seq_map(undotree.entries)
+	local seq_map = build_seq_map(ut.entries)
 
 	-- 3. Render tree with proper connections
 	---@type integer[]
@@ -205,9 +205,7 @@ local function build_tree_representation(undotree, id_map)
 		end
 
 		-- Draw node symbol
-		line[col + 1] = (entry.seq == undotree.seq_cur and "● ")
-			or (entry.save and entry.save > 0 and "◆ ")
-			or "○ "
+		line[col + 1] = (entry.seq == ut.seq_cur and "● ") or (entry.save and entry.save > 0 and "◆ ") or "○ "
 
 		verticals[col] = true
 
@@ -216,7 +214,7 @@ local function build_tree_representation(undotree, id_map)
 			"%s %s%s%s",
 			(entry.seq == 0 and "(root)") or tostring(entry.seq),
 			entry.time and os.date("%H:%M:%S", entry.time) or "",
-			entry.seq == undotree.seq_cur and " (current)" or "",
+			entry.seq == ut.seq_cur and " (current)" or "",
 			entry.save and entry.save > 0 and " (saved)" or ""
 		)
 
