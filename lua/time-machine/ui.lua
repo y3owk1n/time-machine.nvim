@@ -2,6 +2,7 @@ local api = vim.api
 local utils = require("time-machine.utils")
 local constants = require("time-machine.constants").constants
 local undotree = require("time-machine.undotree")
+local diff = require("time-machine.diff")
 
 local M = {}
 
@@ -276,9 +277,10 @@ end
 ---@param main_bufnr integer The main buffer number
 ---@return nil
 function M.show(snapshot, current, buf_path, main_bufnr)
+	local orig_win = vim.api.nvim_get_current_win()
+
 	local id_map = {}
 	local tree_lines = build_tree_representation(snapshot, id_map)
-	-- local tree = require("time-machine.tree").build_tree(snapshot)
 	local lines = {}
 
 	local found_bufnr = utils.find_snapshot_list_buf()
@@ -288,8 +290,6 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 			vim.api.nvim_buf_delete(found_bufnr, { force = true })
 		end
 	end
-
-	-- require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
 
 	for _, line in ipairs(tree_lines) do
 		table.insert(lines, line.content)
@@ -310,7 +310,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.preview_snapshot(api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
+			M.preview_snapshot(api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr, orig_win)
 		end,
 	})
 
@@ -420,74 +420,39 @@ end
 ---@param bufnr integer The buffer number
 ---@param buf_path string The path to the buffer
 ---@param main_bufnr integer The main buffer number
+---@param orig_win integer The original window
 ---@return nil
--- function M.preview_snapshot(line, bufnr, buf_path, main_bufnr)
--- 	local full_id = utils.get_id_from_line(bufnr, line)
--- 	if not full_id then
--- 		return
--- 	end
---
--- 	local snapshots = storage.get_snapshots(buf_path)
--- 	if not snapshots then
--- 		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
--- 		return
--- 	end
---
--- 	local content = {}
---
--- 	local root_branch_id = require("time-machine.utils").root_branch_id(buf_path)
---
--- 	if full_id == root_branch_id then
--- 		local root = storage.get_root_snapshot(buf_path)
---
--- 		if not root then
--- 			vim.notify("No root snapshot found", vim.log.levels.ERROR)
--- 			return
--- 		end
---
--- 		content = vim.split(root.content, "\n")
--- 	else
--- 		local current_snapshot = storage.get_snapshot_by_id(full_id, buf_path)
---
--- 		if not current_snapshot then
--- 			vim.notify("No current snapshot found", vim.log.levels.ERROR)
--- 			return
--- 		end
---
--- 		if current_snapshot.diff then
--- 			local diff_lines = vim.split(current_snapshot.diff, "\n")
--- 			for j = #diff_lines, 1, -1 do
--- 				table.insert(content, 1, diff_lines[j])
--- 			end
--- 		end
--- 	end
---
--- 	local preview_buf = api.nvim_create_buf(false, true)
---
--- 	api.nvim_buf_set_lines(preview_buf, 0, -1, false, content)
---
--- 	set_standard_buf_options(preview_buf)
---
--- 	if full_id == root_branch_id then
--- 		local filetype = api.nvim_get_option_value("filetype", { scope = "local", buf = main_bufnr }) or "nofile"
--- 		api.nvim_set_option_value("syntax", filetype, { scope = "local", buf = preview_buf })
--- 	else
--- 		api.nvim_set_option_value("syntax", "diff", { scope = "local", buf = preview_buf })
--- 	end
---
--- 	api.nvim_buf_set_keymap(preview_buf, "n", "q", "", {
--- 		nowait = true,
--- 		noremap = true,
--- 		silent = true,
--- 		callback = function()
--- 			if api.nvim_buf_is_valid(preview_buf) then
--- 				vim.api.nvim_buf_delete(preview_buf, { force = true })
--- 			end
--- 		end,
--- 	})
---
--- 	create_native_float(preview_buf, "Preview")
--- end
+function M.preview_snapshot(line, bufnr, buf_path, main_bufnr, orig_win)
+	local full_id = utils.get_id_from_line(bufnr, line)
+	if not full_id then
+		return
+	end
+
+	local old = diff.read_buffer_at_seq(main_bufnr, orig_win, full_id)
+	local new = vim.api.nvim_buf_get_lines(main_bufnr, 0, -1, false)
+	local computed_diff = diff.compute_diff_lines(old, new)
+
+	local preview_buf = api.nvim_create_buf(false, true)
+
+	api.nvim_buf_set_lines(preview_buf, 0, -1, false, computed_diff)
+
+	set_standard_buf_options(preview_buf)
+
+	api.nvim_set_option_value("syntax", "diff", { scope = "local", buf = preview_buf })
+
+	api.nvim_buf_set_keymap(preview_buf, "n", "q", "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
+		callback = function()
+			if api.nvim_buf_is_valid(preview_buf) then
+				vim.api.nvim_buf_delete(preview_buf, { force = true })
+			end
+		end,
+	})
+
+	create_native_float(preview_buf, "Preview")
+end
 
 --- Handle the restore action
 ---@param line integer The line number
