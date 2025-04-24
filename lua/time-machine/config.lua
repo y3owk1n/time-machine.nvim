@@ -7,7 +7,7 @@ M.config = {}
 
 ---@type TimeMachine.Config
 local defaults = {
-	diff_tool = "difft",
+	diff_tool = "native",
 	diff_opts = {
 		result_type = "unified",
 		ctxlen = 3,

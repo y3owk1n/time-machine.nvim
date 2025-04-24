@@ -24,8 +24,8 @@ local shared_win_opts = {
 --- Create a floating window for native
 ---@param buf integer The buffer to open
 ---@param title? string The title appended after `Time Machine`
----@return nil
-local function create_native_float(buf, title)
+---@return integer|nil The window handle
+function M.create_native_float(buf, title)
 	if native_float then
 		if vim.api.nvim_win_is_valid(native_float) then
 			vim.api.nvim_win_set_buf(native_float, buf)
@@ -42,13 +42,15 @@ local function create_native_float(buf, title)
 	win_opts.row = math.floor((vim.o.lines - win_opts.height) / 2)
 	win_opts.col = math.floor((vim.o.columns - win_opts.width) / 2)
 
-	vim.api.nvim_open_win(buf, true, win_opts)
+	local win = vim.api.nvim_open_win(buf, true, win_opts)
+
+	return win
 end
 
 --- Set standard buffer options
 ---@param bufnr integer The buffer number
 ---@return nil
-local function set_standard_buf_options(bufnr)
+function M.set_standard_buf_options(bufnr)
 	api.nvim_set_option_value("filetype", constants.time_machine_ft, { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("bufhidden", "wipe", { scope = "local", buf = bufnr })
@@ -311,7 +313,7 @@ function M.show(ut, main_bufnr)
 
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 
-	set_standard_buf_options(bufnr)
+	M.set_standard_buf_options(bufnr)
 
 	set_highlights(bufnr, seq_map, ut.seq_cur, lines)
 
@@ -408,7 +410,7 @@ function M.show_help()
 	local bufnr = api.nvim_create_buf(false, true)
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, help_lines)
 
-	set_standard_buf_options(bufnr)
+	M.set_standard_buf_options(bufnr)
 	api.nvim_set_option_value("syntax", "markdown", { scope = "local", buf = bufnr })
 
 	api.nvim_buf_set_keymap(bufnr, "n", "q", "", {
@@ -422,7 +424,7 @@ function M.show_help()
 		end,
 	})
 
-	create_native_float(bufnr, "Help")
+	M.create_native_float(bufnr, "Help")
 end
 
 --- Preview the diff of a sequence
@@ -443,28 +445,7 @@ function M.preview_diff(line, bufnr, main_bufnr, orig_win)
 	local config = require("time-machine.config").config
 
 	if config.diff_tool == "native" then
-		local computed_diff = diff.compute_diff_lines(new, old)
-
-		local preview_buf = api.nvim_create_buf(false, true)
-
-		api.nvim_buf_set_lines(preview_buf, 0, -1, false, computed_diff)
-
-		set_standard_buf_options(preview_buf)
-
-		api.nvim_set_option_value("syntax", "diff", { scope = "local", buf = preview_buf })
-
-		api.nvim_buf_set_keymap(preview_buf, "n", "q", "", {
-			nowait = true,
-			noremap = true,
-			silent = true,
-			callback = function()
-				if api.nvim_buf_is_valid(preview_buf) then
-					vim.api.nvim_buf_delete(preview_buf, { force = true })
-				end
-			end,
-		})
-
-		create_native_float(preview_buf, "Preview")
+		diff.diff_with_native(old, new)
 	end
 
 	if config.diff_tool == "difft" then
