@@ -168,6 +168,9 @@ local function build_tree_representation(undotree, id_map)
 
 	local seq_map = build_seq_map(undotree.entries)
 
+	Snacks.debug(undotree.entries)
+	Snacks.debug(seq_map)
+
 	-- 2) BFS for branch assignment (O(N) queue + cycle guard)
 	---@type {seq: integer, branch_id: integer}[]
 	local queue = {}

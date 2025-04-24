@@ -148,14 +148,16 @@ function M.setup(user_config)
 	vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 		group = utils.augroup("auto_save_buf_write_post"),
 		callback = function(args)
-			if vim.bo[args.buf].buftype ~= "" then
-				return
-			end
-			if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
-				return
-			end
+			vim.schedule(function()
+				if vim.bo[args.buf].buftype ~= "" then
+					return
+				end
+				if vim.tbl_contains(M.config.ignored_filetypes, vim.bo[args.buf].filetype) then
+					return
+				end
 
-			vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
+				vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
+			end)
 		end,
 	})
 
