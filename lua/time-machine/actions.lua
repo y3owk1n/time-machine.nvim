@@ -1,7 +1,7 @@
 local utils = require("time-machine.utils")
 local ui = require("time-machine.ui")
 local constants = require("time-machine.constants").constants
-local data = require("time-machine.data")
+local undotree = require("time-machine.undotree")
 
 local M = {}
 
@@ -14,7 +14,7 @@ function M.show_snapshots()
 		return
 	end
 
-	local snapshots = data.get_snapshots(bufnr)
+	local snapshots = undotree.get_snapshots(bufnr)
 
 	if not snapshots then
 		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
@@ -61,7 +61,7 @@ function M.purge_all(force)
 		end
 	end
 	local ok, err = pcall(function()
-		data.remove_undofiles()
+		undotree.remove_undofiles()
 	end)
 	if not ok then
 		vim.notify("Failed to purge all snapshots: " .. tostring(err), vim.log.levels.ERROR)
@@ -82,7 +82,7 @@ function M.purge_current(force)
 			return
 		end
 	end
-	data.remove_undofile(0)
+	undotree.remove_undofile(0)
 end
 
 return M

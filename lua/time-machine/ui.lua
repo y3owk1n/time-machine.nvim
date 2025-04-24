@@ -1,7 +1,7 @@
 local api = vim.api
 local utils = require("time-machine.utils")
 local constants = require("time-machine.constants").constants
-local data = require("time-machine.data")
+local undotree = require("time-machine.undotree")
 
 local M = {}
 
@@ -242,7 +242,7 @@ function M.refresh(bufnr, buf_path, id_map, main_bufnr)
 		return
 	end
 
-	local snapshots = data.get_snapshots(main_bufnr)
+	local snapshots = undotree.get_snapshots(main_bufnr)
 
 	if not snapshots then
 		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
