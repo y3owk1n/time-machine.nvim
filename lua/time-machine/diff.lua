@@ -30,11 +30,7 @@ function M.compute_diff_lines(old_lines, new_lines)
 	local old_text = table.concat(old_lines, "\n")
 	local new_text = table.concat(new_lines, "\n")
 
-	local diff_text = vim.diff(old_text, new_text, {
-		result_type = "unified",
-		ctxlen = 3,
-		algorithm = "patience", -- you can try "myers" or "histogram" too
-	})
+	local diff_text = vim.diff(old_text, new_text, require("time-machine.config").config.diff_opts)
 
 	if not diff_text or diff_text == "" then
 		return { "[No differences]" }

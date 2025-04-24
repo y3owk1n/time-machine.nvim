@@ -7,6 +7,11 @@ M.config = {}
 
 ---@type TimeMachine.Config
 local defaults = {
+	diff_opts = {
+		result_type = "unified",
+		ctxlen = 3,
+		algorithm = "histogram",
+	},
 	ignore_filesize = nil,
 	ignored_filetypes = {
 		"terminal",
