@@ -84,6 +84,7 @@ end
 ---@return boolean ok `true` if we removed a file, `false` otherwise
 function M.remove_undofile(bufnr)
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
+	local buf_name = vim.api.nvim_buf_get_name(bufnr)
 
 	local ufile = M.get_undofile(bufnr)
 	if ufile ~= "" and vim.fn.filereadable(ufile) == 1 then
@@ -116,7 +117,7 @@ function M.remove_undofile(bufnr)
 
 	vim.api.nvim_buf_delete(bufnr, { force = true })
 
-	vim.api.nvim_buf_set_name(newbuf, name)
+	vim.api.nvim_buf_set_name(newbuf, buf_name)
 
 	for _, w in ipairs(wins) do
 		vim.api.nvim_win_set_buf(w, newbuf)
