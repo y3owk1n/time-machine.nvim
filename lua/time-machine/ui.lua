@@ -424,7 +424,7 @@ end
 ---@return nil
 function M.preview_snapshot(line, bufnr, buf_path, main_bufnr, orig_win)
 	local full_id = utils.get_id_from_line(bufnr, line)
-	if not full_id then
+	if not full_id or full_id == "" then
 		return
 	end
 
