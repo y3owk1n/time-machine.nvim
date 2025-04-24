@@ -61,6 +61,15 @@ function M.setup(user_config)
 		end,
 	})
 
+	vim.api.nvim_create_autocmd("BufReadPre", {
+		callback = function(ev)
+			local path = vim.fn.expand(ev.match)
+			if vim.fn.getfsize(path) > 1024 * 1024 then
+				vim.opt_local.undofile = false
+			end
+		end,
+	})
+
 	M.setup_highlights()
 end
 
