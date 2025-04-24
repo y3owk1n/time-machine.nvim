@@ -88,7 +88,7 @@ local function set_highlights(bufnr, id_map, current, lines)
 			})
 		end
 
-		local info_matches = { "DB Path:", "File:" }
+		local info_matches = { "Buffer:", "Undo File:" }
 
 		for _, info_match in ipairs(info_matches) do
 			if line:find(info_match) then
@@ -107,18 +107,16 @@ end
 --- Set header for the UI
 ---@param lines table<integer, string> The lines of the snapshot
 ---@param id_map table<integer, string> The map of line numbers to snapshot IDs
----@param buf_path string The path to the buffer
+---@param bufnr integer The buffer number
 ---@return nil
-local function set_header(lines, id_map, buf_path)
-	--- NOTE: lines are in reversed order
-
-	-- local db_path = require("time-machine.config").config.db_dir .. "/" .. utils.slugify_buf_path(buf_path)
+local function set_header(lines, id_map, bufnr)
+	local undofile = undotree.get_undofile(bufnr)
 
 	local header_lines = {
 		"[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [<leader>R] Refresh [<leader>t] Tag [q] Close",
 		"",
-		"DB Path: " .. "",
-		"File: " .. buf_path,
+		"Buffer: " .. bufnr,
+		"Undo File: " .. undofile,
 		"",
 	}
 
@@ -257,7 +255,7 @@ function M.refresh(bufnr, buf_path, id_map, main_bufnr)
 		table.insert(lines, line.content)
 	end
 
-	set_header(lines, id_map, buf_path)
+	set_header(lines, id_map, main_bufnr)
 	api.nvim_set_option_value("modifiable", true, { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("readonly", false, { scope = "local", buf = bufnr })
 
@@ -297,7 +295,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		table.insert(lines, line.content)
 	end
 
-	set_header(lines, id_map, buf_path)
+	set_header(lines, id_map, main_bufnr)
 
 	local bufnr = api.nvim_create_buf(false, true)
 
