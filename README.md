@@ -1,6 +1,17 @@
 # time-machine.nvim (WIP)
 
-Time Machine is a lightweight Neovim plugin that provides persistent, per‑buffer version history with diff‑based snapshots, branch awareness, and an intuitive UI. Unlike the native undo system or popular undo‑tree plugins, Time Machine stores every change in an on‑disk SQLite database, enabling you to browse and restore snapshots even after restarting Neovim.
+Time Machine is a lightweight Neovim plugin that enhances the undo functionality.
 
-- [ ] Problem now is with how we create the snapshot that has '\n' in the source code
-- [ ] Another problem is that when applying the diff during restore, we need to make sure it get applies from the root to the end of the chain
+## todos
+
+- [ ] Add support for external diff tools
+- [ ] Add support for tagging an undo
+- [ ] Properly handle post undofile deletion
+- [ ] Refactor spaghetti code
+- [ ] Add test
+- [ ] Add health check
+- [ ] Add proper readme
+
+### Maybe?
+
+- [ ] Add support for git branch aware undo
