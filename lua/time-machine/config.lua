@@ -11,7 +11,7 @@ local defaults = {
 	ignored_filetypes = {
 		"terminal",
 		"nofile",
-		constants.snapshot_ft,
+		constants.time_machine_ft,
 		"mason",
 		"snacks_picker_list",
 		"snacks_picker_input",
@@ -56,9 +56,9 @@ function M.setup(user_config)
 	})
 
 	vim.api.nvim_create_autocmd({ "BufWritePost", "TextChanged", "InsertLeave" }, {
-		group = utils.augroup("snapshot_created"),
+		group = utils.augroup("undopoint_created"),
 		callback = function()
-			vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
+			vim.api.nvim_exec_autocmds("User", { pattern = constants.events.undo_created })
 		end,
 	})
 

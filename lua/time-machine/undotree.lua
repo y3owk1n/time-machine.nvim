@@ -21,10 +21,10 @@ function M.get_undofile(bufnr)
 	return ufile
 end
 
---- Get the current snapshot from undotree
+--- Get the undotree for a given buffer
 ---@param bufnr integer The buffer number
 ---@return vim.fn.undotree.ret|nil
-function M.get_snapshots(bufnr)
+function M.get_undotree(bufnr)
 	if vim.api.nvim_buf_is_valid(bufnr) == 0 then
 		return nil
 	end
@@ -32,22 +32,6 @@ function M.get_snapshots(bufnr)
 	local ut = vim.fn.undotree(bufnr)
 
 	return ut
-end
-
-function M.get_current_snapshot(bufnr)
-	local snaps = M.get_snapshots(bufnr)
-
-	if not snaps then
-		return nil
-	end
-
-	for _, snap in ipairs(snaps) do
-		if snap.is_current then
-			return snap
-		end
-	end
-
-	return nil
 end
 
 --- Remove all undofiles
@@ -123,7 +107,7 @@ function M.remove_undofile(bufnr)
 		vim.api.nvim_win_set_buf(w, newbuf)
 	end
 
-	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_deleted })
+	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.undofile_deleted })
 
 	return true
 end

@@ -1,20 +1,19 @@
 local M = {}
 
 M.constants = {
-	snapshot_ft = "time-machine-list",
-	id_map_buf_var = "time_machine_id_map",
+	time_machine_ft = "time-machine-list",
+	seq_map_buf_var = "time_machine_seq_map",
 	ns = vim.api.nvim_create_namespace("time-machine"),
 	events = {
-		snapshot_created = "TimeMachineSnapshotCreated",
-		snapshot_set_current = "TimeMachineSnapshotSetCurrent",
-		snapshot_deleted = "TimeMachineSnapshotDeleted",
+		undo_created = "TimeMachineUndoCreated",
+		undo_restored = "TimeMachineUndoRestored",
+		undofile_deleted = "TimeMachineUndofileDeleted",
 	},
 	hl = {
 		current = "TimeMachineCurrent",
 		keymap = "TimeMachineKeymap",
 		info = "TimeMachineInfo",
 	},
-	separator = string.char(31),
 }
 
 return M

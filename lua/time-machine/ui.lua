@@ -49,7 +49,7 @@ end
 ---@param bufnr integer The buffer number
 ---@return nil
 local function set_standard_buf_options(bufnr)
-	api.nvim_set_option_value("filetype", constants.snapshot_ft, { scope = "local", buf = bufnr })
+	api.nvim_set_option_value("filetype", constants.time_machine_ft, { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("bufhidden", "wipe", { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("swapfile", false, { scope = "local", buf = bufnr })
@@ -60,15 +60,15 @@ end
 
 --- Set highlights for the UI
 ---@param bufnr integer The buffer number
----@param id_map table<integer, string> The map of line numbers to snapshot IDs
----@param current integer The current snapshot id
----@param lines table<integer, string> The lines of the snapshot
+---@param seq_map table<integer, integer> The map of line numbers to seqs
+---@param current_seq integer The current seq
+---@param lines table<integer, string> The lines of the content
 ---@return nil
-local function set_highlights(bufnr, id_map, current, lines)
+local function set_highlights(bufnr, seq_map, current_seq, lines)
 	api.nvim_buf_clear_namespace(bufnr, constants.ns, 0, -1)
 
-	for i, id in ipairs(id_map) do
-		if id == current then
+	for i, id in ipairs(seq_map) do
+		if id == current_seq then
 			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
 			local end_col = line and #line or 0
 
@@ -106,11 +106,11 @@ local function set_highlights(bufnr, id_map, current, lines)
 end
 
 --- Set header for the UI
----@param lines table<integer, string> The lines of the snapshot
----@param id_map table<integer, string> The map of line numbers to snapshot IDs
+---@param lines table<integer, string> The lines of the content
+---@param seq_map table<integer, integer> The map of line numbers to seqs
 ---@param bufnr integer The buffer number
 ---@return nil
-local function set_header(lines, id_map, bufnr)
+local function set_header(lines, seq_map, bufnr)
 	local undofile = undotree.get_undofile(bufnr)
 
 	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = bufnr })
@@ -129,25 +129,20 @@ local function set_header(lines, id_map, bufnr)
 
 	for i = #header_lines, 1, -1 do
 		table.insert(lines, 1, header_lines[i])
-		table.insert(id_map, 1, "")
+		table.insert(seq_map, 1, "")
 	end
 end
 
 -- Build a sequence map with direct parent references
 ---@param entries vim.fn.undotree.entry[]
----@return table<integer, TimeMachine.SeqMap>
-local function build_seq_map(entries)
-	local seq_map = {}
+---@return table<integer, TimeMachine.SeqMapRaw>
+local function build_seq_map_raw(entries)
+	local seq_map_raw = {}
 	local function walk(entry, branch_idx)
-		seq_map[entry.seq] = seq_map[entry.seq]
-			or {
-				entry = entry,
-				-- children_seq = {},
-				branch_id = branch_idx,
-			}
-		-- if parent_seq then
-		-- 	table.insert(seq_map[parent_seq].children_seq, entry.seq)
-		-- end
+		seq_map_raw[entry.seq] = seq_map_raw[entry.seq] or {
+			entry = entry,
+			branch_id = branch_idx,
+		}
 		if entry.alt then
 			for _, child in ipairs(entry.alt) do
 				walk(child, (branch_idx or 0) + 1)
@@ -159,24 +154,26 @@ local function build_seq_map(entries)
 		walk(entry, 0)
 	end
 
-	table.insert(seq_map, 1, { branch_id = 0, entry = { seq = 0 } })
+	table.insert(seq_map_raw, 1, { branch_id = 0, entry = { seq = 0 } })
 
-	return seq_map
+	return seq_map_raw
 end
 
 -- Create the visual tree representation
 ---@param ut vim.fn.undotree.ret
-local function build_tree_representation(ut, id_map)
+---@param seq_map table<integer, integer> The map of line numbers to seqs
+---@return TimeMachine.TreeLine[] tree_lines The tree lines
+local function build_tree_representation(ut, seq_map)
 	if not ut or not ut.entries or #ut.entries == 0 then
 		return {}
 	end
 
-	local seq_map = build_seq_map(ut.entries)
+	local seq_map_raw = build_seq_map_raw(ut.entries)
 
 	-- 3. Render tree with proper connections
 	---@type integer[]
 	local all_seqs = {}
-	for seq in pairs(seq_map) do
+	for seq in pairs(seq_map_raw) do
 		table.insert(all_seqs, seq)
 	end
 
@@ -186,7 +183,7 @@ local function build_tree_representation(ut, id_map)
 
 	local function get_max_column()
 		local max_branch_id = 0
-		for _, seq in ipairs(seq_map) do
+		for _, seq in ipairs(seq_map_raw) do
 			if seq.branch_id and seq.branch_id > max_branch_id then
 				max_branch_id = seq.branch_id
 			end
@@ -200,7 +197,7 @@ local function build_tree_representation(ut, id_map)
 	local verticals = {} -- Track active vertical lines per column
 
 	for _, seq in ipairs(all_seqs) do
-		local info = seq_map[seq]
+		local info = seq_map_raw[seq]
 		local entry = info.entry
 		local col = info.branch_id or 0
 
@@ -228,7 +225,7 @@ local function build_tree_representation(ut, id_map)
 			seq = entry.seq,
 			column = col,
 		})
-		id_map[#tree_lines] = seq - 1
+		seq_map[#tree_lines] = seq - 1
 	end
 
 	return tree_lines
@@ -237,32 +234,32 @@ end
 --- Refresh the UI
 ---@param bufnr integer The buffer number
 ---@param buf_path string The path to the buffer
----@param id_map table<integer, string> The map of line numbers to snapshot IDs
+---@param seq_map table<integer, integer> The map of line numbers to seqs
 ---@param main_bufnr integer The main buffer number
 ---@return nil
-function M.refresh(bufnr, buf_path, id_map, main_bufnr)
+function M.refresh(bufnr, buf_path, seq_map, main_bufnr)
 	if not bufnr or not api.nvim_buf_is_valid(bufnr) then
 		return
 	end
 
-	local snapshots = undotree.get_snapshots(main_bufnr)
+	local ut = undotree.get_undotree(main_bufnr)
 
-	if not snapshots then
-		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+	if not ut then
+		vim.notify("No undotree found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
 
 	local lines = {}
 
-	id_map = {}
+	seq_map = {}
 
-	local tree_lines = build_tree_representation(snapshots, id_map)
+	local tree_lines = build_tree_representation(ut, seq_map)
 
 	for _, line in ipairs(tree_lines) do
 		table.insert(lines, line.content)
 	end
 
-	set_header(lines, id_map, main_bufnr)
+	set_header(lines, seq_map, main_bufnr)
 	api.nvim_set_option_value("modifiable", true, { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("readonly", false, { scope = "local", buf = bufnr })
 
@@ -271,25 +268,25 @@ function M.refresh(bufnr, buf_path, id_map, main_bufnr)
 	api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
 	api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
 
-	vim.api.nvim_buf_set_var(bufnr, constants.id_map_buf_var, id_map)
+	vim.api.nvim_buf_set_var(bufnr, constants.seq_map_buf_var, seq_map)
 
-	set_highlights(bufnr, id_map, snapshots.seq_cur, lines)
+	set_highlights(bufnr, seq_map, ut.seq_cur, lines)
 end
 
---- Show the Snapshot for a buffer
----@param snapshot vim.fn.undotree.ret
----@param current integer The current snapshot
+--- Show the undo history for a buffer
+---@param ut vim.fn.undotree.ret
+---@param current_seq integer The current sequence
 ---@param buf_path string The path to the buffer
 ---@param main_bufnr integer The main buffer number
 ---@return nil
-function M.show(snapshot, current, buf_path, main_bufnr)
+function M.show(ut, current_seq, buf_path, main_bufnr)
 	local orig_win = vim.api.nvim_get_current_win()
 
-	local id_map = {}
-	local tree_lines = build_tree_representation(snapshot, id_map)
+	local seq_map = {}
+	local tree_lines = build_tree_representation(ut, seq_map)
 	local lines = {}
 
-	local found_bufnr = utils.find_snapshot_list_buf()
+	local found_bufnr = utils.find_time_machine_list_buf()
 
 	if found_bufnr then
 		if api.nvim_buf_is_valid(found_bufnr) then
@@ -301,7 +298,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		table.insert(lines, line.content)
 	end
 
-	set_header(lines, id_map, main_bufnr)
+	set_header(lines, seq_map, main_bufnr)
 
 	local bufnr = api.nvim_create_buf(false, true)
 
@@ -309,14 +306,14 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 
 	set_standard_buf_options(bufnr)
 
-	set_highlights(bufnr, id_map, current, lines)
+	set_highlights(bufnr, seq_map, current_seq, lines)
 
 	api.nvim_buf_set_keymap(bufnr, "n", "p", "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.preview_snapshot(api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr, orig_win)
+			M.preview_diff(api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr, orig_win)
 		end,
 	})
 
@@ -334,7 +331,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.refresh(bufnr, buf_path, id_map, main_bufnr)
+			M.refresh(bufnr, buf_path, seq_map, main_bufnr)
 			vim.notify("Refreshed", vim.log.levels.INFO)
 		end,
 	})
@@ -363,22 +360,22 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		split = "right",
 	})
 
-	vim.api.nvim_buf_set_var(bufnr, constants.id_map_buf_var, id_map)
+	vim.api.nvim_buf_set_var(bufnr, constants.seq_map_buf_var, seq_map)
 
 	vim.api.nvim_create_autocmd("User", {
 		group = utils.augroup("ui_refresh"),
-		pattern = { constants.events.snapshot_created, constants.events.snapshot_set_current },
+		pattern = { constants.events.undo_created, constants.events.undo_restored },
 		callback = function()
 			-- only refresh if that buffer is still open
 			if api.nvim_buf_is_valid(bufnr) then
-				M.refresh(bufnr, buf_path, id_map, main_bufnr)
+				M.refresh(bufnr, buf_path, seq_map, main_bufnr)
 			end
 		end,
 	})
 
 	vim.api.nvim_create_autocmd("User", {
 		group = utils.augroup("ui_close"),
-		pattern = constants.events.snapshot_deleted,
+		pattern = constants.events.undofile_deleted,
 		callback = function()
 			-- only close if that buffer is still open
 			if api.nvim_buf_is_valid(bufnr) then
@@ -394,8 +391,8 @@ function M.show_help()
 	local help_lines = {
 		"## Actions/Help",
 		"",
-		"`p` **Preview** - Show the diff of the selected snapshot",
-		"`<CR>` **Restore** - Restore the selected snapshot",
+		"`p` **Preview** - Show the diff of the selected sequence",
+		"`<CR>` **Restore** - Restore to the selected sequence",
 		"`r` **Refresh** - Refresh the data",
 		"`q` **Close** - Close the window",
 		"",
@@ -421,14 +418,14 @@ function M.show_help()
 	create_native_float(bufnr, "Help")
 end
 
---- Preview a snapshot
+--- Preview the diff of a sequence
 ---@param line integer The line number
 ---@param bufnr integer The buffer number
 ---@param buf_path string The path to the buffer
 ---@param main_bufnr integer The main buffer number
 ---@param orig_win integer The original window
 ---@return nil
-function M.preview_snapshot(line, bufnr, buf_path, main_bufnr, orig_win)
+function M.preview_diff(line, bufnr, buf_path, main_bufnr, orig_win)
 	local full_id = utils.get_id_from_line(bufnr, line)
 	if not full_id or full_id == "" then
 		return
@@ -474,11 +471,11 @@ function M.handle_restore(line, bufnr, buf_path, main_bufnr)
 
 	local seq = tonumber(full_id)
 	if not seq then
-		vim.notify(("Invalid snapshot id: %q"):format(full_id), vim.log.levels.ERROR)
+		vim.notify(("Invalid sequence id: %q"):format(full_id), vim.log.levels.ERROR)
 		return
 	end
 
-	require("time-machine.actions").restore_snapshot(seq, buf_path, main_bufnr)
+	require("time-machine.actions").restore_undopoint(seq, buf_path, main_bufnr)
 end
 
 return M
