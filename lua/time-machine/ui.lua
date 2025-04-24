@@ -243,11 +243,10 @@ end
 
 --- Refresh the UI
 ---@param bufnr integer The buffer number
----@param buf_path string The path to the buffer
 ---@param seq_map table<integer, integer> The map of line numbers to seqs
 ---@param main_bufnr integer The main buffer number
 ---@return nil
-function M.refresh(bufnr, buf_path, seq_map, main_bufnr)
+function M.refresh(bufnr, seq_map, main_bufnr)
 	if not bufnr or not api.nvim_buf_is_valid(bufnr) then
 		return
 	end
@@ -255,7 +254,7 @@ function M.refresh(bufnr, buf_path, seq_map, main_bufnr)
 	local ut = undotree.get_undotree(main_bufnr)
 
 	if not ut then
-		vim.notify("No undotree found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+		vim.notify("No undotree found", vim.log.levels.WARN)
 		return
 	end
 
@@ -285,11 +284,9 @@ end
 
 --- Show the undo history for a buffer
 ---@param ut vim.fn.undotree.ret
----@param current_seq integer The current sequence
----@param buf_path string The path to the buffer
 ---@param main_bufnr integer The main buffer number
 ---@return nil
-function M.show(ut, current_seq, buf_path, main_bufnr)
+function M.show(ut, main_bufnr)
 	local orig_win = vim.api.nvim_get_current_win()
 
 	local seq_map = {}
@@ -316,14 +313,14 @@ function M.show(ut, current_seq, buf_path, main_bufnr)
 
 	set_standard_buf_options(bufnr)
 
-	set_highlights(bufnr, seq_map, current_seq, lines)
+	set_highlights(bufnr, seq_map, ut.seq_cur, lines)
 
 	api.nvim_buf_set_keymap(bufnr, "n", "p", "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.preview_diff(api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr, orig_win)
+			M.preview_diff(api.nvim_win_get_cursor(0)[1], bufnr, main_bufnr, orig_win)
 		end,
 	})
 
@@ -332,7 +329,7 @@ function M.show(ut, current_seq, buf_path, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.handle_restore(api.nvim_win_get_cursor(0)[1], bufnr, buf_path, main_bufnr)
+			M.handle_restore(api.nvim_win_get_cursor(0)[1], bufnr, main_bufnr)
 		end,
 	})
 
@@ -341,7 +338,7 @@ function M.show(ut, current_seq, buf_path, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.refresh(bufnr, buf_path, seq_map, main_bufnr)
+			M.refresh(bufnr, seq_map, main_bufnr)
 			vim.notify("Refreshed", vim.log.levels.INFO)
 		end,
 	})
@@ -378,7 +375,7 @@ function M.show(ut, current_seq, buf_path, main_bufnr)
 		callback = function()
 			-- only refresh if that buffer is still open
 			if api.nvim_buf_is_valid(bufnr) then
-				M.refresh(bufnr, buf_path, seq_map, main_bufnr)
+				M.refresh(bufnr, seq_map, main_bufnr)
 			end
 		end,
 	})
@@ -431,11 +428,10 @@ end
 --- Preview the diff of a sequence
 ---@param line integer The line number
 ---@param bufnr integer The buffer number
----@param buf_path string The path to the buffer
 ---@param main_bufnr integer The main buffer number
 ---@param orig_win integer The original window
 ---@return nil
-function M.preview_diff(line, bufnr, buf_path, main_bufnr, orig_win)
+function M.preview_diff(line, bufnr, main_bufnr, orig_win)
 	local full_id = utils.get_seq_from_line(bufnr, line)
 	if not full_id or full_id == "" then
 		return
@@ -470,10 +466,9 @@ end
 --- Handle the restore action
 ---@param line integer The line number
 ---@param bufnr integer The buffer number
----@param buf_path string The path to the buffer
 ---@param main_bufnr integer The main buffer number
 ---@return nil
-function M.handle_restore(line, bufnr, buf_path, main_bufnr)
+function M.handle_restore(line, bufnr, main_bufnr)
 	local full_id = utils.get_seq_from_line(bufnr, line)
 	if not full_id or full_id == "" then
 		return
@@ -485,7 +480,7 @@ function M.handle_restore(line, bufnr, buf_path, main_bufnr)
 		return
 	end
 
-	require("time-machine.actions").restore_undopoint(seq, buf_path, main_bufnr)
+	require("time-machine.actions").restore_undopoint(seq, main_bufnr)
 end
 
 return M

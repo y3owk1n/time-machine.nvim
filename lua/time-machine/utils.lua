@@ -7,14 +7,6 @@ function M.augroup(name)
 	return vim.api.nvim_create_augroup("TimeMachine" .. name, { clear = true })
 end
 
---- Get the path to a buffer
----@param buf integer The buffer number
----@return string|nil buf_path The path to the buffer
-function M.get_buf_path(buf)
-	local path = vim.api.nvim_buf_get_name(buf)
-	return path ~= "" and path or nil
-end
-
 --- Convert a timestamp into a human-readable relative time
 ---@param timestamp integer The timestamp to convert
 ---@return string relative_time The relative time
