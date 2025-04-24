@@ -114,7 +114,7 @@ local function set_header(lines, id_map, bufnr)
 	local undofile = undotree.get_undofile(bufnr)
 
 	local header_lines = {
-		"[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [<leader>R] Refresh [<leader>t] Tag [q] Close",
+		"[g?] Actions/Help [<CR>] Restore [r] Refresh [p] Preview [t] Tag [q] Close",
 		"",
 		"Buffer: " .. bufnr,
 		"Undo File: " .. undofile,
@@ -305,7 +305,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 
 	set_highlights(bufnr, id_map, current, lines)
 
-	api.nvim_buf_set_keymap(bufnr, "n", "<CR>", "", {
+	api.nvim_buf_set_keymap(bufnr, "n", "p", "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
@@ -314,7 +314,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		end,
 	})
 
-	api.nvim_buf_set_keymap(bufnr, "n", "<leader>r", "", {
+	api.nvim_buf_set_keymap(bufnr, "n", "<CR>", "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
@@ -323,7 +323,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		end,
 	})
 
-	api.nvim_buf_set_keymap(bufnr, "n", "<leader>R", "", {
+	api.nvim_buf_set_keymap(bufnr, "n", "r", "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
@@ -388,9 +388,9 @@ function M.show_help()
 	local help_lines = {
 		"## Actions/Help",
 		"",
-		"`<CR>` **Preview** - Show the diff of the selected snapshot",
-		"`<leader>r` **Restore** - Restore the selected snapshot",
-		"`<leader>R` **Refresh** - Refresh the data",
+		"`p` **Preview** - Show the diff of the selected snapshot",
+		"`<CR>` **Restore** - Restore the selected snapshot",
+		"`r` **Refresh** - Refresh the data",
 		"`q` **Close** - Close the window",
 		"",
 	}
@@ -430,7 +430,7 @@ function M.preview_snapshot(line, bufnr, buf_path, main_bufnr, orig_win)
 
 	local old = diff.read_buffer_at_seq(main_bufnr, orig_win, full_id)
 	local new = vim.api.nvim_buf_get_lines(main_bufnr, 0, -1, false)
-	local computed_diff = diff.compute_diff_lines(old, new)
+	local computed_diff = diff.compute_diff_lines(new, old)
 
 	local preview_buf = api.nvim_create_buf(false, true)
 
