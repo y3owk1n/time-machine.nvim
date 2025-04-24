@@ -134,27 +134,28 @@ end
 ---@return table<integer, TimeMachine.SeqMap>
 local function build_seq_map(entries)
 	local seq_map = {}
-	local function walk(entry, parent_seq)
+	local function walk(entry, branch_idx)
 		seq_map[entry.seq] = seq_map[entry.seq]
 			or {
 				entry = entry,
-				parent_seq = parent_seq,
-				children_seq = {},
-				branch_id = nil,
+				-- children_seq = {},
+				branch_id = branch_idx,
 			}
-		if parent_seq then
-			table.insert(seq_map[parent_seq].children_seq, entry.seq)
-		end
+		-- if parent_seq then
+		-- 	table.insert(seq_map[parent_seq].children_seq, entry.seq)
+		-- end
 		if entry.alt then
 			for _, child in ipairs(entry.alt) do
-				walk(child, entry.seq)
+				walk(child, (branch_idx or 0) + 1)
 			end
 		end
 	end
 
 	for _, entry in ipairs(entries) do
-		walk(entry, nil)
+		walk(entry, 0)
 	end
+
+	table.insert(seq_map, 1, { branch_id = 0, entry = { seq = 0 } })
 
 	return seq_map
 end
@@ -168,50 +169,6 @@ local function build_tree_representation(undotree, id_map)
 
 	local seq_map = build_seq_map(undotree.entries)
 
-	Snacks.debug(undotree.entries)
-	Snacks.debug(seq_map)
-
-	-- 2) BFS for branch assignment (O(N) queue + cycle guard)
-	---@type {seq: integer, branch_id: integer}[]
-	local queue = {}
-	local head = 1
-	local tail = 0
-	---@type table<integer, boolean>
-	local visited = {}
-	local next_column = 0
-	local main_branch_id = 0
-
-	-- Enqueue roots (pre_seq == 0)
-	for seq, info in pairs(seq_map) do
-		if not info.parent_seq then
-			tail = tail + 1
-			queue[tail] = { seq = seq, branch_id = main_branch_id }
-			info.branch_id = main_branch_id
-		end
-	end
-
-	while head <= tail do
-		local cur = queue[head]
-		head = head + 1
-		if not visited[cur.seq] then
-			visited[cur.seq] = true
-			local info = seq_map[cur.seq]
-			for i, child_seq in ipairs(info.children_seq) do
-				local child = seq_map[child_seq]
-				if child then
-					if i == 1 then
-						child.branch_id = info.branch_id
-					else
-						next_column = next_column + 1
-						child.branch_id = next_column
-					end
-					tail = tail + 1
-					queue[tail] = { seq = child_seq, branch_id = child.branch_id }
-				end
-			end
-		end
-	end
-
 	-- 3. Render tree with proper connections
 	---@type integer[]
 	local all_seqs = {}
@@ -223,7 +180,18 @@ local function build_tree_representation(undotree, id_map)
 		return a > b
 	end) -- Newest first
 
-	local max_column = next_column
+	local function get_max_column()
+		local max_branch_id = 0
+		for _, seq in ipairs(seq_map) do
+			if seq.branch_id and seq.branch_id > max_branch_id then
+				max_branch_id = seq.branch_id
+			end
+		end
+
+		return max_branch_id
+	end
+
+	local max_column = get_max_column()
 	local tree_lines = {}
 	local verticals = {} -- Track active vertical lines per column
 
@@ -237,35 +205,17 @@ local function build_tree_representation(undotree, id_map)
 			line[c + 1] = verticals[c] and "│ " or "  "
 		end
 
-		-- Draw connection from parent if necessary
-		if info.parent_seq and seq_map[info.parent_seq] then
-			local parent_info = seq_map[info.parent_seq]
-			local parent_col = parent_info.branch_id or 0
-
-			if parent_col ~= col then
-				local start_col = math.min(parent_col, col)
-				local end_col = math.max(parent_col, col)
-
-				for c = start_col + 1, end_col - 1 do
-					line[c + 1] = "──"
-				end
-
-				line[parent_col + 1] = "╭─"
-				line[col + 1] = "╰─"
-			end
-		end
-
 		-- Draw node symbol
 		line[col + 1] = (entry.seq == undotree.seq_cur and "● ")
 			or (entry.save and entry.save > 0 and "◆ ")
 			or "○ "
 
-		verticals[col] = #info.children_seq > 0
+		verticals[col] = true
 
 		-- Add info text
 		local info_text = string.format(
-			"%d %s%s%s",
-			entry.seq,
+			"%s %s%s%s",
+			(entry.seq == 0 and "(root)") or tostring(entry.seq),
 			entry.time and os.date("%H:%M:%S", entry.time) or "",
 			entry.seq == undotree.seq_cur and " (current)" or "",
 			entry.save and entry.save > 0 and " (saved)" or ""
@@ -276,7 +226,7 @@ local function build_tree_representation(undotree, id_map)
 			seq = entry.seq,
 			column = col,
 		})
-		id_map[#tree_lines] = seq
+		id_map[#tree_lines] = seq - 1
 	end
 
 	return tree_lines
