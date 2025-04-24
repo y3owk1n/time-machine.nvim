@@ -17,17 +17,10 @@ function M.show_snapshots()
 
 	local snapshots = data.get_snapshots(bufnr)
 
-	-- local current = data.get_current_snapshot(bufnr)
-
 	if not snapshots then
 		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
-
-	-- if not current then
-	-- 	vim.notify("No current snapshot found", vim.log.levels.ERROR)
-	-- 	return
-	-- end
 
 	local current = snapshots.seq_cur
 
@@ -51,9 +44,7 @@ function M.restore_snapshot(id, buf_path, main_bufnr)
 		return
 	end
 
-	-- 3) in the target buffer, do undo {seq}
 	vim.api.nvim_buf_call(main_bufnr, function()
-		-- this jumps the undo‐tree to exactly that sequence
 		vim.cmd(("undo %d"):format(id))
 	end)
 	vim.notify(("Restored to snapshot %d"):format(id), vim.log.levels.INFO)

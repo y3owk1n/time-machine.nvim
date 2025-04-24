@@ -111,64 +111,87 @@ function M.get_current_snapshot(bufnr)
 	return nil
 end
 
+--- Remove all undofiles
+---@return boolean ok `true` if we removed it successfully, `false` otherwise
+function M.remove_undofiles()
+	-- 1) Delete every undofile under your 'undodir'
+	local dirs = vim.split(vim.o.undodir, ",", { trimempty = true })
+	for _, dir in ipairs(dirs) do
+		for _, f in ipairs(vim.fn.glob(dir .. "/*", false, true)) do
+			pcall(os.remove, f)
+		end
+	end
+	vim.notify("Removed all undofiles from disk", vim.log.levels.INFO)
+
+	local names = {}
+	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+		local n = vim.api.nvim_buf_get_name(bufnr)
+		if n ~= "" then
+			names[#names + 1] = n
+		end
+	end
+
+	for _, n in ipairs(names) do
+		local bufnr = vim.fn.bufnr(n)
+		M.remove_undofile(bufnr)
+	end
+
+	vim.notify("Purged undo history for all buffers", vim.log.levels.INFO)
+	return true
+end
+
 --- Remove the persistent-undo file for a given buffer
 ---@param bufnr number|nil  Buffer number (defaults to current buffer)
----@return boolean ok       `true` if we removed a file, `false` otherwise
+---@return boolean ok `true` if we removed a file, `false` otherwise
 function M.remove_undofile(bufnr)
-	bufnr = bufnr or 0
-	-- 1) Get the absolute path of the buffer’s file
-	local bufname = vim.api.nvim_buf_get_name(bufnr)
-	if bufname == "" then
+	bufnr = bufnr or vim.api.nvim_get_current_buf()
+	local name = vim.api.nvim_buf_get_name(bufnr)
+	if name == "" then
 		vim.notify("Buffer has no name, cannot find undofile", vim.log.levels.WARN)
 		return false
 	end
 
-	-- If you want to be certain it’s absolute, you can do:
-	bufname = vim.fn.fnamemodify(bufname, ":p")
-
-	-- 2) Ask Vim what its undo-file path would be
-	local ufile = vim.fn.undofile(bufname)
-
-	if ufile == "" then
-		vim.notify("‘undofile’ not enabled or no undodir set", vim.log.levels.WARN)
-		return false
-	end
-
-	-- 3) Check it exists, then delete it
-	if vim.fn.filereadable(ufile) == 1 then
-		local ok, err = pcall(os.remove, ufile)
-		if ok then
-			vim.notify("Removed undofile: " .. ufile, vim.log.levels.INFO)
-
-			local opts = vim.api.nvim_buf_get_option
-			local set_opts = vim.api.nvim_buf_set_option
-
-			-- save original undolevels & modified‐flag
-			local old_ul = opts(bufnr, "undolevels")
-			local old_mod = opts(bufnr, "modified")
-
-			-- tell Vim to throw away all undo info for the next change
-			set_opts(bufnr, "undolevels", -1)
-
-			-- fetch the current lines (no visual diff) and immediately reset them
-			local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-			vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
-
-			-- restore undolevels *before* restoring the modified flag
-			set_opts(bufnr, "undolevels", old_ul)
-			set_opts(bufnr, "modified", old_mod)
-
-			vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_deleted })
-
-			return true
-		else
-			vim.notify("Failed to remove undofile: " .. err, vim.log.levels.ERROR)
-			return false
-		end
+	local abs = vim.fn.fnamemodify(name, ":p")
+	local ufile = vim.fn.undofile(abs)
+	if ufile ~= "" and vim.fn.filereadable(ufile) == 1 then
+		os.remove(ufile)
+		vim.notify("Removed undofile: " .. ufile, vim.log.levels.INFO)
 	else
-		vim.notify("No undofile found at: " .. ufile, vim.log.levels.WARN)
-		return false
+		vim.notify("No undofile found: " .. ufile, vim.log.levels.WARN)
 	end
+
+	local wins = {}
+	for _, w in ipairs(vim.api.nvim_list_wins()) do
+		if vim.api.nvim_win_get_buf(w) == bufnr then
+			table.insert(wins, w)
+		end
+	end
+
+	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+	local mod_flag = vim.api.nvim_get_option_value("modified", { buf = bufnr })
+	local ft_flag = vim.api.nvim_get_option_value("filetype", { buf = bufnr })
+	local old_ul = vim.api.nvim_get_option_value("undolevels", { buf = bufnr })
+
+	local newbuf = vim.api.nvim_create_buf(true, false)
+
+	vim.api.nvim_set_option_value("undolevels", -1, { buf = newbuf })
+	vim.api.nvim_buf_set_lines(newbuf, 0, -1, false, lines)
+	vim.api.nvim_set_option_value("undolevels", old_ul, { buf = newbuf })
+
+	vim.api.nvim_set_option_value("modified", mod_flag, { buf = newbuf })
+	vim.api.nvim_set_option_value("filetype", ft_flag, { buf = newbuf })
+
+	vim.api.nvim_buf_delete(bufnr, { force = true })
+
+	vim.api.nvim_buf_set_name(newbuf, name)
+
+	for _, w in ipairs(wins) do
+		vim.api.nvim_win_set_buf(w, newbuf)
+	end
+
+	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_deleted })
+
+	return true
 end
 
 return M
