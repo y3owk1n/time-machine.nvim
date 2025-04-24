@@ -7,6 +7,7 @@ M.config = {}
 
 ---@type TimeMachine.Config
 local defaults = {
+	ignore_filesize = nil,
 	ignored_filetypes = {
 		"terminal",
 		"nofile",
@@ -55,16 +56,21 @@ function M.setup(user_config)
 	})
 
 	vim.api.nvim_create_autocmd({ "BufWritePost", "TextChanged", "InsertLeave" }, {
-		group = utils.augroup("auto_save_buf_write_post"),
+		group = utils.augroup("snapshot_created"),
 		callback = function()
 			vim.api.nvim_exec_autocmds("User", { pattern = constants.events.snapshot_created })
 		end,
 	})
 
 	vim.api.nvim_create_autocmd("BufReadPre", {
+		group = utils.augroup("ignore_large_files"),
 		callback = function(ev)
+			if not M.config.ignore_filesize then
+				return
+			end
+
 			local path = vim.fn.expand(ev.match)
-			if vim.fn.getfsize(path) > 1024 * 1024 then
+			if vim.fn.getfsize(path) > M.config.ignore_filesize then
 				vim.opt_local.undofile = false
 			end
 		end,

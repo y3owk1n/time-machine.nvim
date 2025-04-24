@@ -1,5 +1,4 @@
 local utils = require("time-machine.utils")
-local storage = require("time-machine.storage")
 local ui = require("time-machine.ui")
 local constants = require("time-machine.constants").constants
 local data = require("time-machine.data")

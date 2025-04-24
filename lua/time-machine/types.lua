@@ -1,6 +1,5 @@
 ---@class TimeMachine.Config
----@field db_dir? string The directory to the database files
----@field auto_save? TimeMachine.Config.AutoSave The auto-save configuration
+---@field ignore_filesize? integer|nil The file size to ignore undo
 ---@field ignored_filetypes? string[] The file types to ignore
 
 ---@class TimeMachine.Config.AutoSave
