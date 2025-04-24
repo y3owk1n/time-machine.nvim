@@ -62,7 +62,7 @@ function M.purge_all(force)
 		end
 	end
 	local ok, err = pcall(function()
-		storage.purge_all()
+		data.remove_undofiles()
 	end)
 	if not ok then
 		vim.notify("Failed to purge all snapshots: " .. tostring(err), vim.log.levels.ERROR)
