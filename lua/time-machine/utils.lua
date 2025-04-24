@@ -32,10 +32,10 @@ function M.relative_time(timestamp)
 	end
 end
 
---- Get the snapshot ID from a line number
+--- Get the sequence from a line number
 ---@param bufnr integer The buffer number
 ---@param line_num integer The line number
----@return string|nil id The snapshot ID
+---@return string|nil seq The sequence
 function M.get_seq_from_line(bufnr, line_num)
 	local ok, seq_map =
 		pcall(vim.api.nvim_buf_get_var, bufnr, require("time-machine.constants").constants.seq_map_buf_var)
