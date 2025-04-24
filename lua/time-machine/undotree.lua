@@ -2,6 +2,25 @@ local constants = require("time-machine.constants").constants
 
 local M = {}
 
+--- Get the undofile for a given buffer
+---@param bufnr number|nil  Buffer number (defaults to current buffer)
+---@return string|nil ufile The undofile path
+function M.get_undofile(bufnr)
+	bufnr = bufnr or vim.api.nvim_get_current_buf()
+
+	local name = vim.api.nvim_buf_get_name(bufnr)
+
+	if name == "" then
+		vim.notify("Buffer has no name, cannot find undofile", vim.log.levels.WARN)
+		return nil
+	end
+
+	local abs = vim.fn.fnamemodify(name, ":p")
+	local ufile = vim.fn.undofile(abs)
+
+	return ufile
+end
+
 --- Get the current snapshot from undotree
 ---@param bufnr integer The buffer number
 ---@return vim.fn.undotree.ret|nil
@@ -65,14 +84,8 @@ end
 ---@return boolean ok `true` if we removed a file, `false` otherwise
 function M.remove_undofile(bufnr)
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
-	local name = vim.api.nvim_buf_get_name(bufnr)
-	if name == "" then
-		vim.notify("Buffer has no name, cannot find undofile", vim.log.levels.WARN)
-		return false
-	end
 
-	local abs = vim.fn.fnamemodify(name, ":p")
-	local ufile = vim.fn.undofile(abs)
+	local ufile = M.get_undofile(bufnr)
 	if ufile ~= "" and vim.fn.filereadable(ufile) == 1 then
 		os.remove(ufile)
 		vim.notify("Removed undofile: " .. ufile, vim.log.levels.INFO)
