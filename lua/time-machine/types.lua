@@ -19,6 +19,12 @@
 ---@field tags string[] The tags associated with the snapshot
 ---@field is_current boolean Whether the snapshot is the current snapshot
 
+---@class TimeMachine.SeqMap
+---@field entry vim.fn.undotree.entry The undotree entry
+---@field parent_seq integer|nil The parent sequence number
+---@field children_seq integer[] The child sequence numbers
+---@field branch_id integer|nil The branch ID
+
 ---@class TimeMachine.Hunk : TimeMachine.HunkHeader
 ---@field lines string[] The lines in the hunk
 ---@field raw_header string The raw header line

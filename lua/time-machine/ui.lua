@@ -2,6 +2,7 @@ local api = vim.api
 local utils = require("time-machine.utils")
 local constants = require("time-machine.constants").constants
 local storage = require("time-machine.storage")
+local data = require("time-machine.data")
 
 local M = {}
 
@@ -60,14 +61,14 @@ end
 --- Set highlights for the UI
 ---@param bufnr integer The buffer number
 ---@param id_map table<integer, string> The map of line numbers to snapshot IDs
----@param current TimeMachine.Snapshot The current snapshot
+---@param current integer The current snapshot id
 ---@param lines table<integer, string> The lines of the snapshot
 ---@return nil
 local function set_highlights(bufnr, id_map, current, lines)
 	api.nvim_buf_clear_namespace(bufnr, constants.ns, 0, -1)
 
 	for i, id in ipairs(id_map) do
-		if id == current.id then
+		if id == current then
 			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
 			local end_col = line and #line or 0
 
@@ -112,12 +113,12 @@ end
 local function set_header(lines, id_map, buf_path)
 	--- NOTE: lines are in reversed order
 
-	local db_path = require("time-machine.config").config.db_dir .. "/" .. utils.slugify_buf_path(buf_path)
+	-- local db_path = require("time-machine.config").config.db_dir .. "/" .. utils.slugify_buf_path(buf_path)
 
 	local header_lines = {
 		"[g?] Actions/Help [<CR>] Preview [<leader>r] Restore [<leader>R] Refresh [<leader>t] Tag [q] Close",
 		"",
-		"DB Path: " .. db_path,
+		"DB Path: " .. "",
 		"File: " .. buf_path,
 		"",
 	}
@@ -128,37 +129,136 @@ local function set_header(lines, id_map, buf_path)
 	end
 end
 
+-- Build a sequence map with direct parent references
+---@param entries vim.fn.undotree.entry[]
+---@return table<integer, TimeMachine.SeqMap>
+local function build_seq_map(entries)
+	local seq_map = {}
+	local function walk(entry, branch_idx)
+		seq_map[entry.seq] = seq_map[entry.seq]
+			or {
+				entry = entry,
+				-- children_seq = {},
+				branch_id = branch_idx,
+			}
+		-- if parent_seq then
+		-- 	table.insert(seq_map[parent_seq].children_seq, entry.seq)
+		-- end
+		if entry.alt then
+			for _, child in ipairs(entry.alt) do
+				walk(child, (branch_idx or 0) + 1)
+			end
+		end
+	end
+
+	for _, entry in ipairs(entries) do
+		walk(entry, 0)
+	end
+
+	table.insert(seq_map, 1, { branch_id = 0, entry = { seq = 0 } })
+
+	return seq_map
+end
+
+-- Create the visual tree representation
+---@param undotree vim.fn.undotree.ret
+local function build_tree_representation(undotree, id_map)
+	if not undotree or not undotree.entries or #undotree.entries == 0 then
+		return {}
+	end
+
+	local seq_map = build_seq_map(undotree.entries)
+
+	-- 3. Render tree with proper connections
+	---@type integer[]
+	local all_seqs = {}
+	for seq in pairs(seq_map) do
+		table.insert(all_seqs, seq)
+	end
+
+	table.sort(all_seqs, function(a, b)
+		return a > b
+	end) -- Newest first
+
+	local function get_max_column()
+		local max_branch_id = 0
+		for _, seq in ipairs(seq_map) do
+			if seq.branch_id and seq.branch_id > max_branch_id then
+				max_branch_id = seq.branch_id
+			end
+		end
+
+		return max_branch_id
+	end
+
+	local max_column = get_max_column()
+	local tree_lines = {}
+	local verticals = {} -- Track active vertical lines per column
+
+	for _, seq in ipairs(all_seqs) do
+		local info = seq_map[seq]
+		local entry = info.entry
+		local col = info.branch_id or 0
+
+		local line = {}
+		for c = 0, max_column do
+			line[c + 1] = verticals[c] and "│ " or "  "
+		end
+
+		-- Draw node symbol
+		line[col + 1] = (entry.seq == undotree.seq_cur and "● ")
+			or (entry.save and entry.save > 0 and "◆ ")
+			or "○ "
+
+		verticals[col] = true
+
+		-- Add info text
+		local info_text = string.format(
+			"%s %s%s%s",
+			(entry.seq == 0 and "(root)") or tostring(entry.seq),
+			entry.time and os.date("%H:%M:%S", entry.time) or "",
+			entry.seq == undotree.seq_cur and " (current)" or "",
+			entry.save and entry.save > 0 and " (saved)" or ""
+		)
+
+		table.insert(tree_lines, {
+			content = table.concat(line) .. info_text,
+			seq = entry.seq,
+			column = col,
+		})
+		id_map[#tree_lines] = seq - 1
+	end
+
+	return tree_lines
+end
+
 --- Refresh the UI
 ---@param bufnr integer The buffer number
 ---@param buf_path string The path to the buffer
 ---@param id_map table<integer, string> The map of line numbers to snapshot IDs
+---@param main_bufnr integer The main buffer number
 ---@return nil
-function M.refresh(bufnr, buf_path, id_map)
+function M.refresh(bufnr, buf_path, id_map, main_bufnr)
 	if not bufnr or not api.nvim_buf_is_valid(bufnr) then
 		return
 	end
 
-	local snapshots = storage.get_snapshots(buf_path)
-
-	local current = storage.get_current_snapshot(buf_path)
+	local snapshots = data.get_snapshots(main_bufnr)
 
 	if not snapshots then
 		vim.notify("No snapshots found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
 		return
 	end
 
-	if not current then
-		vim.notify("No current snapshot found", vim.log.levels.ERROR)
-		return
-	end
-
-	local tree = require("time-machine.tree").build_tree(snapshots)
-
 	local lines = {}
 
 	id_map = {}
 
-	require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
+	local tree_lines = build_tree_representation(snapshots, id_map)
+
+	for _, line in ipairs(tree_lines) do
+		table.insert(lines, line.content)
+	end
 
 	set_header(lines, id_map, buf_path)
 	api.nvim_set_option_value("modifiable", true, { scope = "local", buf = bufnr })
@@ -171,19 +271,20 @@ function M.refresh(bufnr, buf_path, id_map)
 
 	vim.api.nvim_buf_set_var(bufnr, constants.id_map_buf_var, id_map)
 
-	set_highlights(bufnr, id_map, current, lines)
+	set_highlights(bufnr, id_map, snapshots.seq_cur, lines)
 end
 
 --- Show the Snapshot for a buffer
----@param snapshot TimeMachine.Snapshot The snapshot history
----@param current TimeMachine.Snapshot The current snapshot
+---@param snapshot vim.fn.undotree.ret
+---@param current integer The current snapshot
 ---@param buf_path string The path to the buffer
 ---@param main_bufnr integer The main buffer number
 ---@return nil
 function M.show(snapshot, current, buf_path, main_bufnr)
-	local tree = require("time-machine.tree").build_tree(snapshot)
-	local lines = {}
 	local id_map = {}
+	local tree_lines = build_tree_representation(snapshot, id_map)
+	-- local tree = require("time-machine.tree").build_tree(snapshot)
+	local lines = {}
 
 	local found_bufnr = utils.find_snapshot_list_buf()
 
@@ -193,7 +294,11 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		end
 	end
 
-	require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
+	-- require("time-machine.tree").format_graph(tree, lines, id_map, current.id)
+
+	for _, line in ipairs(tree_lines) do
+		table.insert(lines, line.content)
+	end
 
 	set_header(lines, id_map, buf_path)
 
@@ -223,21 +328,12 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		end,
 	})
 
-	api.nvim_buf_set_keymap(bufnr, "n", "<leader>t", "", {
-		nowait = true,
-		noremap = true,
-		silent = true,
-		callback = function()
-			M.handle_tag(api.nvim_win_get_cursor(0)[1], bufnr, buf_path)
-		end,
-	})
-
 	api.nvim_buf_set_keymap(bufnr, "n", "<leader>R", "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.refresh(bufnr, buf_path, id_map)
+			M.refresh(bufnr, buf_path, id_map, main_bufnr)
 			vim.notify("Refreshed", vim.log.levels.INFO)
 		end,
 	})
@@ -274,7 +370,7 @@ function M.show(snapshot, current, buf_path, main_bufnr)
 		callback = function()
 			-- only refresh if that buffer is still open
 			if api.nvim_buf_is_valid(bufnr) then
-				M.refresh(bufnr, buf_path, id_map)
+				M.refresh(bufnr, buf_path, id_map, main_bufnr)
 			end
 		end,
 	})
@@ -300,7 +396,6 @@ function M.show_help()
 		"`<CR>` **Preview** - Show the diff of the selected snapshot",
 		"`<leader>r` **Restore** - Restore the selected snapshot",
 		"`<leader>R` **Refresh** - Refresh the data",
-		"`<leader>t` **Tag** - Tag the selected snapshot",
 		"`q` **Close** - Close the window",
 		"",
 	}
@@ -411,35 +506,13 @@ function M.handle_restore(line, bufnr, buf_path, main_bufnr)
 		return
 	end
 
-	local snapshot = storage.get_snapshot_by_id(full_id, buf_path)
-
-	if not snapshot then
-		vim.notify("No snapshot found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
+	local seq = tonumber(full_id)
+	if not seq then
+		vim.notify(("Invalid snapshot id: %q"):format(full_id), vim.log.levels.ERROR)
 		return
 	end
 
-	require("time-machine.actions").restore_snapshot(snapshot, buf_path, main_bufnr)
-end
-
---- Handle the restore action
----@param line integer The line number
----@param bufnr integer The buffer number
----@param buf_path string The path to the buffer
----@return nil
-function M.handle_tag(line, bufnr, buf_path)
-	local full_id = utils.get_id_from_line(bufnr, line)
-	if not full_id or full_id == "" then
-		return
-	end
-
-	local snapshot = storage.get_snapshot_by_id(full_id, buf_path)
-
-	if not snapshot then
-		vim.notify("No snapshot found for " .. vim.fn.fnamemodify(buf_path, ":~:."), vim.log.levels.ERROR)
-		return
-	end
-
-	require("time-machine.actions").tag_snapshot(nil, snapshot, buf_path)
+	require("time-machine.actions").restore_snapshot(seq, buf_path, main_bufnr)
 end
 
 return M
