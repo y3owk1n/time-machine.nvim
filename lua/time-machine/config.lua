@@ -145,7 +145,7 @@ function M.setup(user_config)
 
 	-- setup_autocmds()
 
-	vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+	vim.api.nvim_create_autocmd({ "BufWritePost", "TextChanged", "InsertLeave" }, {
 		group = utils.augroup("auto_save_buf_write_post"),
 		callback = function(args)
 			vim.schedule(function()
