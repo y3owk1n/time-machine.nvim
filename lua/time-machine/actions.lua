@@ -72,6 +72,13 @@ end
 ---@param force? boolean Whether to force the purge
 ---@return nil
 function M.purge_current(force)
+	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = bufnr })
+
+	if not persistent then
+		vim.notify("No undofile found for current buffer", vim.log.levels.WARN)
+		return
+	end
+
 	local buf_path = utils.get_buf_path(0)
 	if not buf_path then
 		return

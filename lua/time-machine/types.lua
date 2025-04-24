@@ -1,6 +1,6 @@
 ---@class TimeMachine.Config
----@field ignore_filesize? integer|nil The file size to ignore undo
----@field ignored_filetypes? string[] The file types to ignore
+---@field ignore_filesize? integer|nil The file size to ignore undo saved to disk
+---@field ignored_filetypes? string[] The file types to ignore undo saved to disk
 
 ---@class TimeMachine.Config.AutoSave
 ---@field enabled? boolean Whether to automatically save snapshots
