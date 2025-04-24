@@ -14,6 +14,11 @@ M.constants = {
 		keymap = "TimeMachineKeymap",
 		info = "TimeMachineInfo",
 	},
+	icons = {
+		current = "● ",
+		saved = "◆ ",
+		point = "○ ",
+	},
 }
 
 return M

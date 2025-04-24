@@ -115,11 +115,19 @@ local function set_header(lines, seq_map, bufnr)
 
 	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = bufnr })
 
+	local current_text = constants.icons.current .. "= Current"
+	local saved_text = constants.icons.saved .. "= Saved"
+	local point_text = constants.icons.point .. "= Point"
+
+	local annotation = current_text .. " " .. saved_text .. " " .. point_text
+
 	local header_lines = {
 		"[g?] Actions/Help [<CR>] Restore [r] Refresh [p] Preview [t] Tag [q] Close",
 		"",
 		"Persistent: " .. tostring(persistent),
 		"Buffer: " .. bufnr,
+		"",
+		annotation,
 		"",
 	}
 
@@ -207,17 +215,19 @@ local function build_tree_representation(ut, seq_map)
 		end
 
 		-- Draw node symbol
-		line[col + 1] = (entry.seq == ut.seq_cur and "● ") or (entry.save and entry.save > 0 and "◆ ") or "○ "
+		line[col + 1] = (entry.seq == ut.seq_cur and constants.icons.current)
+			or (entry.save and entry.save > 0 and constants.icons.saved)
+			or constants.icons.point
 
 		verticals[col] = true
 
 		-- Add info text
 		local info_text = string.format(
-			"%s %s%s%s",
-			(entry.seq == 0 and "(root)") or tostring(entry.seq),
-			entry.time and os.date("%H:%M:%S", entry.time) or "",
-			entry.seq == ut.seq_cur and " (current)" or "",
-			entry.save and entry.save > 0 and " (saved)" or ""
+			"%s %s",
+			(entry.seq == 0 and "[root]") or ("[" .. tostring(entry.seq) .. "]"),
+			entry.time and utils.relative_time(entry.time) or ""
+			-- entry.seq == ut.seq_cur and " (current)" or "",
+			-- entry.save and entry.save > 0 and " (saved)" or ""
 		)
 
 		table.insert(tree_lines, {
