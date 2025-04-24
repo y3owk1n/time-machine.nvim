@@ -426,7 +426,7 @@ end
 ---@param orig_win integer The original window
 ---@return nil
 function M.preview_diff(line, bufnr, buf_path, main_bufnr, orig_win)
-	local full_id = utils.get_id_from_line(bufnr, line)
+	local full_id = utils.get_seq_from_line(bufnr, line)
 	if not full_id or full_id == "" then
 		return
 	end
@@ -464,7 +464,7 @@ end
 ---@param main_bufnr integer The main buffer number
 ---@return nil
 function M.handle_restore(line, bufnr, buf_path, main_bufnr)
-	local full_id = utils.get_id_from_line(bufnr, line)
+	local full_id = utils.get_seq_from_line(bufnr, line)
 	if not full_id or full_id == "" then
 		return
 	end

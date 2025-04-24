@@ -36,9 +36,10 @@ end
 ---@param bufnr integer The buffer number
 ---@param line_num integer The line number
 ---@return string|nil id The snapshot ID
-function M.get_id_from_line(bufnr, line_num)
-	local ok, id_map = pcall(vim.api.nvim_buf_get_var, bufnr, "time_machine_id_map")
-	return ok and id_map[line_num] or nil
+function M.get_seq_from_line(bufnr, line_num)
+	local ok, seq_map =
+		pcall(vim.api.nvim_buf_get_var, bufnr, require("time-machine.constants").constants.seq_map_buf_var)
+	return ok and seq_map[line_num] or nil
 end
 
 --- Get all files in a directory
