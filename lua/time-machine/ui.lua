@@ -89,7 +89,7 @@ local function set_highlights(bufnr, id_map, current, lines)
 			})
 		end
 
-		local info_matches = { "Buffer:", "Undo File:" }
+		local info_matches = { "Persistent:", "Buffer:", "Undo File:" }
 
 		for _, info_match in ipairs(info_matches) do
 			if line:find(info_match) then
@@ -113,13 +113,19 @@ end
 local function set_header(lines, id_map, bufnr)
 	local undofile = undotree.get_undofile(bufnr)
 
+	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = bufnr })
+
 	local header_lines = {
 		"[g?] Actions/Help [<CR>] Restore [r] Refresh [p] Preview [t] Tag [q] Close",
 		"",
+		"Persistent: " .. tostring(persistent),
 		"Buffer: " .. bufnr,
-		"Undo File: " .. undofile,
 		"",
 	}
+
+	if persistent then
+		table.insert(header_lines, 5, "Undo File: " .. undofile)
+	end
 
 	for i = #header_lines, 1, -1 do
 		table.insert(lines, 1, header_lines[i])
