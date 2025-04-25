@@ -85,56 +85,53 @@ function M.create_tag(
 	local tags = M.load_tags(content_bufnr)
 	local current_tags = tags[tostring(seq)] or {}
 
-	vim.ui.input(
-		{
-			prompt = string.format("Tags for seq %d (comma-sep): ", seq),
-			default = table.concat(current_tags, ", "),
-		},
-		function(input)
-			if input == nil then
-				vim.notify("Tagging aborted", vim.log.levels.INFO)
-				return
-			end
+	vim.ui.input({
+		prompt = string.format("Tags for seq %d (comma-sep): ", seq),
+		default = table.concat(current_tags, ", "),
+	}, function(input)
+		if input == nil then
+			vim.notify("Tagging aborted", vim.log.levels.INFO)
+			return
+		end
 
-			if input:match("^%s*$") then
-				tags[tostring(seq)] = nil
-				save_tags(tags, content_bufnr)
-				vim.notify(
-					string.format("Removed tags for seq %d", seq),
-					vim.log.levels.INFO
-				)
-				if success_cb then
-					success_cb()
-				end
-				return
-			end
-
-			-- split & trim
-			local list = {}
-			for tag in input:gmatch("[^,]+") do
-				tag = tag:match("^%s*(.-)%s*$")
-				if #tag > 0 then
-					table.insert(list, tag)
-				end
-			end
-
-			tags[tostring(seq)] = list
+		if input:match("^%s*$") then
+			tags[tostring(seq)] = nil
 			save_tags(tags, content_bufnr)
-
 			vim.notify(
-				string.format(
-					"Saved tags [%s] for seq %d",
-					table.concat(list, ", "),
-					seq
-				),
+				string.format("Removed tags for seq %d", seq),
 				vim.log.levels.INFO
 			)
-
 			if success_cb then
 				success_cb()
 			end
+			return
 		end
-	)
+
+		-- split & trim
+		local list = {}
+		for tag in input:gmatch("[^,]+") do
+			tag = tag:match("^%s*(.-)%s*$")
+			if #tag > 0 then
+				table.insert(list, tag)
+			end
+		end
+
+		tags[tostring(seq)] = list
+		save_tags(tags, content_bufnr)
+
+		vim.notify(
+			string.format(
+				"Saved tags [%s] for seq %d",
+				table.concat(list, ", "),
+				seq
+			),
+			vim.log.levels.INFO
+		)
+
+		if success_cb then
+			success_cb()
+		end
+	end)
 end
 
 --- Remove all tagfiles
