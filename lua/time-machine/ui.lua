@@ -429,9 +429,10 @@ function M.show_help()
 	local help_lines = {
 		"## Actions/Help",
 		"",
-		"`p` **Preview** - Show the diff of the selected sequence",
 		"`<CR>` **Restore** - Restore to the selected sequence",
 		"`r` **Refresh** - Refresh the data",
+		"`p` **Preview** - Show the diff of the selected sequence",
+		"`t` **Tag** - Tag the selected sequence",
 		"`q` **Close** - Close the window",
 		"",
 	}
