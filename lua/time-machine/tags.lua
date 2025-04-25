@@ -1,24 +1,13 @@
 local M = {}
 
 local constants = require("time-machine.constants").constants
-
--- Returns the on-disk path of the undo-file Neovim would use for `bufnr`.
----@param bufnr number The buffer whose undofile we want to find
----@return string|nil The path to the undofile, or nil if none
-local function get_undofile_path(bufnr)
-	local name = vim.api.nvim_buf_get_name(bufnr)
-	if name == "" then
-		return nil
-	end
-	local uf = vim.fn.undofile(name)
-	return (uf ~= "" and uf) or nil
-end
+local undotree = require("time-machine.undotree")
 
 -- Returns the tag-file path for this buffer’s undo history.
 ---@param bufnr number The buffer whose undofile we want to find
 ---@return string|nil The path to the tagfile, or nil if none
 function M.get_tags_path(bufnr)
-	local uf = get_undofile_path(bufnr)
+	local uf = undotree.get_undofile(bufnr)
 	if not uf then
 		return nil
 	end
