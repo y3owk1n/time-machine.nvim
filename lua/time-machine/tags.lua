@@ -52,6 +52,13 @@ end
 ---@param main_bufnr number The real buffer whose undo history we're tagging
 ---@param success_cb function|nil  Optional callback to call after tags are saved
 function M.tag_sequence(line_no, ui_bufnr, main_bufnr, success_cb)
+	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = main_bufnr })
+
+	if not persistent then
+		vim.notify("Persistent undofile is not enabled", vim.log.levels.WARN)
+		return
+	end
+
 	---@type table<string, string[]>
 	local seq_map = vim.api.nvim_buf_get_var(ui_bufnr, constants.seq_map_buf_var)
 	local seq = seq_map[line_no]
