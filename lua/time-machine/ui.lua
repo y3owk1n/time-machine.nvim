@@ -74,9 +74,16 @@ local function set_highlights(bufnr, seq_map, current_seq, lines)
 			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
 			local end_col = line and #line or 0
 
+			local text_width = vim.fn.strdisplaywidth(line)
+			local win_width = vim.api.nvim_win_get_width(0)
+
+			local pad = win_width - text_width
+
 			api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, 0, {
 				end_col = end_col,
 				hl_group = constants.hl.current,
+				virt_text = { { string.rep(" ", pad), constants.hl.current } },
+				virt_text_win_col = text_width,
 			})
 			break
 		end

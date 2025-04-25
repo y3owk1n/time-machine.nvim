@@ -6,8 +6,8 @@ Time Machine is a lightweight Neovim plugin that enhances the undo functionality
 
 - [x] Add support for external diff tools
 - [x] Add support for tagging an undo
-- [ ] Better tags handling and cleanup
-- [ ] Properly handle post undofile deletion with tags cleanup
+- [x] Better tags handling and cleanup
+- [x] Properly handle post undofile deletion with tags cleanup
 - [ ] Refactor spaghetti code
 - [ ] Add test
 - [ ] Add health check
