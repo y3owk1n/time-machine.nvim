@@ -44,26 +44,8 @@ function M.get_seq_from_line(bufnr, line_num)
 	return ok and seq_map[line_num] or nil
 end
 
---- Get all files in a directory
----@param dir string The directory to search
----@return string[] files The list of files
-function M.get_files(dir)
-	local handle = vim.uv.fs_scandir(dir)
-	if not handle then
-		return {}
-	end
-
-	local files = {}
-	while true do
-		local name, t = vim.uv.fs_scandir_next(handle)
-		if not name then
-			break
-		end
-		files[#files + 1] = dir .. "/" .. name
-	end
-	return files
-end
-
+--- Get the time machine window
+---@return integer|nil winid The window ID
 function M.get_time_machine_win()
 	local bufnr = M.get_time_machine_bufnr()
 
@@ -78,6 +60,8 @@ function M.get_time_machine_win()
 	end
 end
 
+--- Get the time machine buffer number
+---@return integer|nil bufnr The buffer number
 function M.get_time_machine_bufnr()
 	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
 		if
