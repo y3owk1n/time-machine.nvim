@@ -7,6 +7,11 @@ M.config = {}
 
 ---@type TimeMachine.Config
 local defaults = {
+	split_opts = {
+		split = "left",
+		width = 0.3,
+		height = 0.3,
+	},
 	diff_tool = "native",
 	native_diff_opts = {
 		result_type = "unified",

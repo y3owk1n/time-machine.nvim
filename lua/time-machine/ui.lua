@@ -391,9 +391,14 @@ function M.show(ut, main_bufnr)
 		end,
 	})
 
-	vim.api.nvim_open_win(bufnr, true, {
-		split = "right",
+	local config_split_opts = require("time-machine.config").config.split_opts or {}
+
+	local split_opts = vim.tbl_deep_extend("force", config_split_opts, {
+		width = math.floor(vim.o.columns * config_split_opts.width),
+		height = math.floor(vim.o.lines * config_split_opts.height),
 	})
+
+	vim.api.nvim_open_win(bufnr, true, split_opts)
 
 	vim.api.nvim_buf_set_var(bufnr, constants.seq_map_buf_var, seq_map)
 	vim.api.nvim_buf_set_var(bufnr, constants.main_buf_var, main_bufnr)
