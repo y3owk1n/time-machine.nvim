@@ -11,7 +11,10 @@ function M.get_undofile_path(bufnr)
 	local name = vim.api.nvim_buf_get_name(bufnr)
 
 	if name == "" then
-		vim.notify("Buffer has no name, cannot find undofile", vim.log.levels.WARN)
+		vim.notify(
+			"Buffer has no name, cannot find undofile",
+			vim.log.levels.WARN
+		)
 		return nil
 	end
 
@@ -58,7 +61,10 @@ function M.remove_undofiles()
 		local bufnr = vim.fn.bufnr(n)
 		M.refresh_buffer_window(bufnr)
 
-		vim.api.nvim_exec_autocmds("User", { pattern = constants.events.undofile_deleted })
+		vim.api.nvim_exec_autocmds(
+			"User",
+			{ pattern = constants.events.undofile_deleted }
+		)
 	end
 
 	vim.notify("Purged undo history for all buffers", vim.log.levels.INFO)
@@ -81,7 +87,10 @@ function M.remove_undofile(bufnr)
 
 	M.refresh_buffer_window(bufnr)
 
-	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.undofile_deleted })
+	vim.api.nvim_exec_autocmds(
+		"User",
+		{ pattern = constants.events.undofile_deleted }
+	)
 
 	return true
 end

@@ -22,8 +22,12 @@ function M.toggle()
 	--- if time machine buffer is found, check if it's refering the same buffer as current buffer, if not then close it and later open the latest version
 	if time_machine_win then
 		if vim.api.nvim_win_is_valid(time_machine_win) then
-			local time_machine_bufnr = vim.api.nvim_win_get_buf(time_machine_win)
-			local content_bufnr = vim.api.nvim_buf_get_var(time_machine_bufnr, constants.content_buf_var)
+			local time_machine_bufnr =
+				vim.api.nvim_win_get_buf(time_machine_win)
+			local content_bufnr = vim.api.nvim_buf_get_var(
+				time_machine_bufnr,
+				constants.content_buf_var
+			)
 
 			if content_bufnr ~= cur_bufnr then
 				utils.close_win(time_machine_win)
@@ -59,7 +63,10 @@ function M.restore(seq, content_bufnr)
 
 	vim.notify(("Restored to undopoint %d"):format(seq), vim.log.levels.INFO)
 
-	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.undo_restored })
+	vim.api.nvim_exec_autocmds(
+		"User",
+		{ pattern = constants.events.undo_restored }
+	)
 end
 
 --- Purge all undofiles
@@ -80,7 +87,10 @@ function M.purge_all(force)
 	end)
 
 	if not ok then
-		vim.notify("Failed to purge all undofiles: " .. tostring(err), vim.log.levels.ERROR)
+		vim.notify(
+			"Failed to purge all undofiles: " .. tostring(err),
+			vim.log.levels.ERROR
+		)
 	end
 end
 
@@ -90,7 +100,10 @@ end
 function M.purge_buffer(force)
 	local cur_bufnr = vim.api.nvim_get_current_buf()
 
-	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = cur_bufnr })
+	local persistent = vim.api.nvim_get_option_value(
+		"undofile",
+		{ scope = "local", buf = cur_bufnr }
+	)
 
 	--- no need to purge if there's no persistent undofile
 	if not persistent then
@@ -99,7 +112,8 @@ function M.purge_buffer(force)
 	end
 
 	if not force then
-		local confirm = vim.fn.input("Delete the current undofile" .. "? [y/N] ")
+		local confirm =
+			vim.fn.input("Delete the current undofile" .. "? [y/N] ")
 		if confirm:lower() ~= "y" then
 			return
 		end

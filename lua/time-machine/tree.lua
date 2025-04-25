@@ -86,7 +86,11 @@ function M.build_tree_lines(ut, seq_map, tags)
 		end
 
 		-- draw symbol
-		line[col + 1] = (entry.save and entry.save > 0 and constants.icons.saved) or constants.icons.point
+		line[col + 1] = (
+			entry.save
+			and entry.save > 0
+			and constants.icons.saved
+		) or constants.icons.point
 
 		verticals[col] = true
 
@@ -95,7 +99,10 @@ function M.build_tree_lines(ut, seq_map, tags)
 			"%s %s %s",
 			(entry.seq == 0 and "[root]") or ("[" .. tostring(entry.seq) .. "]"),
 			entry.time and utils.relative_time(entry.time) or "",
-			info.tags and #info.tags > 0 and (constants.icons.tag .. table.concat(info.tags, ", ") .. " ") or ""
+			info.tags
+					and #info.tags > 0
+					and (constants.icons.tag .. table.concat(info.tags, ", ") .. " ")
+				or ""
 		)
 
 		table.insert(tree_lines, {

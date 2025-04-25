@@ -2,7 +2,10 @@ local M = {}
 
 local native_float = nil
 
-local winborder = vim.api.nvim_get_option_value("winborder", { scope = "local" }) or "none"
+local winborder = vim.api.nvim_get_option_value(
+	"winborder",
+	{ scope = "local" }
+) or "none"
 
 ---@type vim.api.keyset.win_config
 local shared_win_opts = {
@@ -45,7 +48,8 @@ end
 ---@param bufnr integer The buffer to open
 ---@return integer|nil win_id The window handle
 function M.create_native_split_win(bufnr)
-	local config_split_opts = require("time-machine.config").config.split_opts or {}
+	local config_split_opts = require("time-machine.config").config.split_opts
+		or {}
 
 	local width = config_split_opts.width or 50
 
@@ -61,11 +65,31 @@ function M.create_native_split_win(bufnr)
 
 	vim.api.nvim_win_set_width(win, width)
 
-	vim.api.nvim_set_option_value("winfixwidth", true, { scope = "local", win = win })
-	vim.api.nvim_set_option_value("statusline", "", { scope = "local", win = win })
-	vim.api.nvim_set_option_value("signcolumn", "no", { scope = "local", win = win })
-	vim.api.nvim_set_option_value("number", false, { scope = "local", win = win })
-	vim.api.nvim_set_option_value("relativenumber", false, { scope = "local", win = win })
+	vim.api.nvim_set_option_value(
+		"winfixwidth",
+		true,
+		{ scope = "local", win = win }
+	)
+	vim.api.nvim_set_option_value(
+		"statusline",
+		"",
+		{ scope = "local", win = win }
+	)
+	vim.api.nvim_set_option_value(
+		"signcolumn",
+		"no",
+		{ scope = "local", win = win }
+	)
+	vim.api.nvim_set_option_value(
+		"number",
+		false,
+		{ scope = "local", win = win }
+	)
+	vim.api.nvim_set_option_value(
+		"relativenumber",
+		false,
+		{ scope = "local", win = win }
+	)
 
 	return win
 end

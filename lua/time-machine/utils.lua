@@ -6,7 +6,10 @@ local M = {}
 function M.is_time_machine_active(bufnr)
 	return vim.api.nvim_buf_is_valid(bufnr)
 		and vim.api.nvim_buf_is_loaded(bufnr)
-		and vim.api.nvim_get_option_value("filetype", { scope = "local", buf = bufnr })
+		and vim.api.nvim_get_option_value(
+				"filetype",
+				{ scope = "local", buf = bufnr }
+			)
 			== require("time-machine.constants").constants.time_machine_ft
 end
 
@@ -39,8 +42,11 @@ end
 ---@param line_num integer The line number
 ---@return string|nil seq The sequence
 function M.get_seq_from_line(bufnr, line_num)
-	local ok, seq_map =
-		pcall(vim.api.nvim_buf_get_var, bufnr, require("time-machine.constants").constants.seq_map_buf_var)
+	local ok, seq_map = pcall(
+		vim.api.nvim_buf_get_var,
+		bufnr,
+		require("time-machine.constants").constants.seq_map_buf_var
+	)
 	return ok and seq_map[line_num] or nil
 end
 
@@ -54,7 +60,10 @@ function M.get_time_machine_win()
 	end
 
 	for _, winid in ipairs(vim.api.nvim_list_wins()) do
-		if vim.api.nvim_win_is_valid(winid) and vim.api.nvim_win_get_buf(winid) == bufnr then
+		if
+			vim.api.nvim_win_is_valid(winid)
+			and vim.api.nvim_win_get_buf(winid) == bufnr
+		then
 			return winid
 		end
 	end
@@ -67,7 +76,10 @@ function M.get_time_machine_bufnr()
 		if
 			vim.api.nvim_buf_is_valid(bufnr)
 			and vim.api.nvim_buf_is_loaded(bufnr)
-			and vim.api.nvim_get_option_value("filetype", { scope = "local", buf = bufnr })
+			and vim.api.nvim_get_option_value(
+					"filetype",
+					{ scope = "local", buf = bufnr }
+				)
 				== require("time-machine.constants").constants.time_machine_ft
 		then
 			return bufnr

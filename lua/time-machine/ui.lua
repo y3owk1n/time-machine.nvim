@@ -11,13 +11,41 @@ local M = {}
 ---@param bufnr integer The buffer number
 ---@return nil
 function M.set_standard_buf_options(bufnr)
-	vim.api.nvim_set_option_value("filetype", constants.time_machine_ft, { scope = "local", buf = bufnr })
-	vim.api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = bufnr })
-	vim.api.nvim_set_option_value("bufhidden", "wipe", { scope = "local", buf = bufnr })
-	vim.api.nvim_set_option_value("swapfile", false, { scope = "local", buf = bufnr })
-	vim.api.nvim_set_option_value("modifiable", false, { scope = "local", buf = bufnr })
-	vim.api.nvim_set_option_value("readonly", true, { scope = "local", buf = bufnr })
-	vim.api.nvim_set_option_value("buflisted", false, { scope = "local", buf = bufnr })
+	vim.api.nvim_set_option_value(
+		"filetype",
+		constants.time_machine_ft,
+		{ scope = "local", buf = bufnr }
+	)
+	vim.api.nvim_set_option_value(
+		"buftype",
+		"nofile",
+		{ scope = "local", buf = bufnr }
+	)
+	vim.api.nvim_set_option_value(
+		"bufhidden",
+		"wipe",
+		{ scope = "local", buf = bufnr }
+	)
+	vim.api.nvim_set_option_value(
+		"swapfile",
+		false,
+		{ scope = "local", buf = bufnr }
+	)
+	vim.api.nvim_set_option_value(
+		"modifiable",
+		false,
+		{ scope = "local", buf = bufnr }
+	)
+	vim.api.nvim_set_option_value(
+		"readonly",
+		true,
+		{ scope = "local", buf = bufnr }
+	)
+	vim.api.nvim_set_option_value(
+		"buflisted",
+		false,
+		{ scope = "local", buf = bufnr }
+	)
 end
 
 --- Set highlights for the UI
@@ -35,10 +63,16 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
 			for keymap in line:gmatch("%b[]") do
 				local start_col = line:find(keymap, 1, true) - 1
-				vim.api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
-					end_col = start_col + #keymap,
-					hl_group = constants.hl.keymap,
-				})
+				vim.api.nvim_buf_set_extmark(
+					bufnr,
+					constants.ns,
+					i - 1,
+					start_col,
+					{
+						end_col = start_col + #keymap,
+						hl_group = constants.hl.keymap,
+					}
+				)
 			end
 		end
 
@@ -47,28 +81,46 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
 			for seq in line:gmatch("%b[]") do
 				local start_col = line:find(seq, 1, true) - 1
-				vim.api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
-					end_col = start_col + #seq,
-					hl_group = constants.hl.seq,
-				})
+				vim.api.nvim_buf_set_extmark(
+					bufnr,
+					constants.ns,
+					i - 1,
+					start_col,
+					{
+						end_col = start_col + #seq,
+						hl_group = constants.hl.seq,
+					}
+				)
 			end
 
 			--- match time and the rest behind time (which is tags)
 			local time, rest = line:match("(%d+%a+ ago)%s*(.*)$")
 			if time then
 				local start_col = line:find(time, 1, true) - 1
-				vim.api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
-					end_col = start_col + #time,
-					hl_group = constants.hl.info,
-				})
+				vim.api.nvim_buf_set_extmark(
+					bufnr,
+					constants.ns,
+					i - 1,
+					start_col,
+					{
+						end_col = start_col + #time,
+						hl_group = constants.hl.info,
+					}
+				)
 			end
 
 			if rest and rest ~= "" then
 				local start_col = line:find(rest, 1, true) - 1
-				vim.api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
-					end_col = start_col + #rest,
-					hl_group = constants.hl.tag,
-				})
+				vim.api.nvim_buf_set_extmark(
+					bufnr,
+					constants.ns,
+					i - 1,
+					start_col,
+					{
+						end_col = start_col + #rest,
+						hl_group = constants.hl.tag,
+					}
+				)
 			end
 		end
 
@@ -92,12 +144,14 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 	end
 
 	for i, line in ipairs(lines) do
-		local info_matches = { "Persistent:", "Buffer:", "Undo File:", "Tag File:" }
+		local info_matches =
+			{ "Persistent:", "Buffer:", "Undo File:", "Tag File:" }
 
 		--- get the info area
 		for _, info_match in ipairs(info_matches) do
 			if line:find(info_match) then
-				local current_line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
+				local current_line =
+					vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
 				local end_col = current_line and #current_line or 0
 
 				vim.api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, 0, {
@@ -117,7 +171,10 @@ end
 local function set_header(lines, seq_map, content_bufnr)
 	local undofile_path = undotree.get_undofile_path(content_bufnr)
 
-	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = content_bufnr })
+	local persistent = vim.api.nvim_get_option_value(
+		"undofile",
+		{ scope = "local", buf = content_bufnr }
+	)
 
 	local saved_text = constants.icons.saved .. "= Saved"
 	local point_text = constants.icons.point .. "= Point"
@@ -136,7 +193,11 @@ local function set_header(lines, seq_map, content_bufnr)
 	}
 
 	if persistent then
-		table.insert(header_lines, #header_lines - 2, "Undo File: " .. undofile_path)
+		table.insert(
+			header_lines,
+			#header_lines - 2,
+			"Undo File: " .. undofile_path
+		)
 	end
 
 	local tags_path = require("time-machine.tags").get_tags_path(content_bufnr)
@@ -157,7 +218,10 @@ end
 ---@param content_bufnr integer The main buffer number
 ---@return nil
 function M.refresh(time_machine_bufnr, seq_map, content_bufnr)
-	if not time_machine_bufnr or not vim.api.nvim_buf_is_valid(time_machine_bufnr) then
+	if
+		not time_machine_bufnr
+		or not vim.api.nvim_buf_is_valid(time_machine_bufnr)
+	then
 		return
 	end
 
@@ -182,15 +246,35 @@ function M.refresh(time_machine_bufnr, seq_map, content_bufnr)
 
 	set_header(lines, seq_map, content_bufnr)
 
-	vim.api.nvim_set_option_value("modifiable", true, { scope = "local", buf = time_machine_bufnr })
-	vim.api.nvim_set_option_value("readonly", false, { scope = "local", buf = time_machine_bufnr })
+	vim.api.nvim_set_option_value(
+		"modifiable",
+		true,
+		{ scope = "local", buf = time_machine_bufnr }
+	)
+	vim.api.nvim_set_option_value(
+		"readonly",
+		false,
+		{ scope = "local", buf = time_machine_bufnr }
+	)
 
 	vim.api.nvim_buf_set_lines(time_machine_bufnr, 0, -1, false, lines)
 
-	vim.api.nvim_set_option_value("modifiable", false, { scope = "local", buf = time_machine_bufnr })
-	vim.api.nvim_set_option_value("readonly", true, { scope = "local", buf = time_machine_bufnr })
+	vim.api.nvim_set_option_value(
+		"modifiable",
+		false,
+		{ scope = "local", buf = time_machine_bufnr }
+	)
+	vim.api.nvim_set_option_value(
+		"readonly",
+		true,
+		{ scope = "local", buf = time_machine_bufnr }
+	)
 
-	vim.api.nvim_buf_set_var(time_machine_bufnr, constants.seq_map_buf_var, seq_map)
+	vim.api.nvim_buf_set_var(
+		time_machine_bufnr,
+		constants.seq_map_buf_var,
+		seq_map
+	)
 
 	set_highlights(time_machine_bufnr, seq_map, ut.seq_cur, lines)
 end
@@ -228,7 +312,12 @@ function M.show_tree(ut, content_bufnr)
 		silent = true,
 		callback = function()
 			local cursor_pos = vim.api.nvim_win_get_cursor(0)[1]
-			M.preview_diff(cursor_pos, time_machine_bufnr, content_bufnr, orig_win_id)
+			M.preview_diff(
+				cursor_pos,
+				time_machine_bufnr,
+				content_bufnr,
+				orig_win_id
+			)
 		end,
 	})
 
@@ -259,9 +348,14 @@ function M.show_tree(ut, content_bufnr)
 		callback = function()
 			local cursor_pos = vim.api.nvim_win_get_cursor(0)[1]
 
-			require("time-machine.tags").create_tag(cursor_pos, time_machine_bufnr, content_bufnr, function()
-				M.refresh(time_machine_bufnr, seq_map, content_bufnr)
-			end)
+			require("time-machine.tags").create_tag(
+				cursor_pos,
+				time_machine_bufnr,
+				content_bufnr,
+				function()
+					M.refresh(time_machine_bufnr, seq_map, content_bufnr)
+				end
+			)
 		end,
 	})
 
@@ -283,7 +377,8 @@ function M.show_tree(ut, content_bufnr)
 		end,
 	})
 
-	local time_machine_win_id = window.create_native_split_win(time_machine_bufnr)
+	local time_machine_win_id =
+		window.create_native_split_win(time_machine_bufnr)
 
 	if time_machine_win_id then
 		--- Set the cursor to the current sequence
@@ -295,12 +390,23 @@ function M.show_tree(ut, content_bufnr)
 		end
 	end
 
-	vim.api.nvim_buf_set_var(time_machine_bufnr, constants.seq_map_buf_var, seq_map)
-	vim.api.nvim_buf_set_var(time_machine_bufnr, constants.content_buf_var, content_bufnr)
+	vim.api.nvim_buf_set_var(
+		time_machine_bufnr,
+		constants.seq_map_buf_var,
+		seq_map
+	)
+	vim.api.nvim_buf_set_var(
+		time_machine_bufnr,
+		constants.content_buf_var,
+		content_bufnr
+	)
 
 	vim.api.nvim_create_autocmd("User", {
 		group = utils.augroup("ui_refresh"),
-		pattern = { constants.events.undo_created, constants.events.undo_restored },
+		pattern = {
+			constants.events.undo_created,
+			constants.events.undo_restored,
+		},
 		callback = function()
 			-- only refresh if that buffer is still open
 			if vim.api.nvim_buf_is_valid(time_machine_bufnr) then
@@ -336,7 +442,11 @@ function M.show_help()
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, help_lines)
 
 	M.set_standard_buf_options(bufnr)
-	vim.api.nvim_set_option_value("syntax", "markdown", { scope = "local", buf = bufnr })
+	vim.api.nvim_set_option_value(
+		"syntax",
+		"markdown",
+		{ scope = "local", buf = bufnr }
+	)
 
 	vim.api.nvim_buf_set_keymap(bufnr, "n", "q", "", {
 		nowait = true,
@@ -347,7 +457,7 @@ function M.show_help()
 		end,
 	})
 
-	window.create_native_float(bufnr, "Help")
+	window.create_native_float_win(bufnr, "Help")
 end
 
 --- Preview the diff of a sequence
@@ -356,13 +466,19 @@ end
 ---@param content_bufnr integer The main buffer number
 ---@param orig_win_id integer The original window
 ---@return nil
-function M.preview_diff(line_num, time_machine_bufnr, content_bufnr, orig_win_id)
+function M.preview_diff(
+	line_num,
+	time_machine_bufnr,
+	content_bufnr,
+	orig_win_id
+)
 	local full_id = utils.get_seq_from_line(time_machine_bufnr, line_num)
 	if not full_id or full_id == "" then
 		return
 	end
 
-	local old_lines = diff.read_buffer_at_seq(content_bufnr, orig_win_id, full_id)
+	local old_lines =
+		diff.read_buffer_at_seq(content_bufnr, orig_win_id, full_id)
 	local new_lines = vim.api.nvim_buf_get_lines(content_bufnr, 0, -1, false)
 
 	local config = require("time-machine.config").config
@@ -387,7 +503,10 @@ function M.handle_restore(line_num, time_machine_bufnr, content_bufnr)
 
 	local seq = tonumber(full_id)
 	if not seq then
-		vim.notify(("Invalid sequence id: %q"):format(full_id), vim.log.levels.ERROR)
+		vim.notify(
+			("Invalid sequence id: %q"):format(full_id),
+			vim.log.levels.ERROR
+		)
 		return
 	end
 
