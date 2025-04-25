@@ -301,6 +301,12 @@ function M.refresh(bufnr, seq_map, main_bufnr)
 	set_highlights(bufnr, seq_map, ut.seq_cur, lines)
 end
 
+function M.close(bufnr)
+	if api.nvim_buf_is_valid(bufnr) then
+		vim.api.nvim_buf_delete(bufnr, { force = true })
+	end
+end
+
 --- Show the undo history for a buffer
 ---@param ut vim.fn.undotree.ret
 ---@param main_bufnr integer The main buffer number
@@ -313,14 +319,6 @@ function M.show(ut, main_bufnr)
 	local seq_map = {}
 	local tree_lines = build_tree_representation(ut, seq_map, tags)
 	local lines = {}
-
-	local found_bufnr = utils.find_time_machine_list_buf()
-
-	if found_bufnr then
-		if api.nvim_buf_is_valid(found_bufnr) then
-			vim.api.nvim_buf_delete(found_bufnr, { force = true })
-		end
-	end
 
 	for _, line in ipairs(tree_lines) do
 		table.insert(lines, line.content)
@@ -380,9 +378,7 @@ function M.show(ut, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			if api.nvim_buf_is_valid(bufnr) then
-				vim.api.nvim_buf_delete(bufnr, { force = true })
-			end
+			M.close(bufnr)
 		end,
 	})
 
@@ -416,10 +412,7 @@ function M.show(ut, main_bufnr)
 		group = utils.augroup("ui_close"),
 		pattern = constants.events.undofile_deleted,
 		callback = function()
-			-- only close if that buffer is still open
-			if api.nvim_buf_is_valid(bufnr) then
-				vim.api.nvim_buf_delete(bufnr, { force = true })
-			end
+			M.close(bufnr)
 		end,
 	})
 end
@@ -448,9 +441,7 @@ function M.show_help()
 		noremap = true,
 		silent = true,
 		callback = function()
-			if api.nvim_buf_is_valid(bufnr) then
-				vim.api.nvim_buf_delete(bufnr, { force = true })
-			end
+			M.close(bufnr)
 		end,
 	})
 

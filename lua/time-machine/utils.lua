@@ -1,5 +1,12 @@
 local M = {}
 
+function M.is_time_machine_buf(bufnr)
+	return vim.api.nvim_buf_is_valid(bufnr)
+		and vim.api.nvim_buf_is_loaded(bufnr)
+		and vim.api.nvim_get_option_value("filetype", { scope = "local", buf = bufnr })
+			== require("time-machine.constants").constants.time_machine_ft
+end
+
 --- Create an augroup
 ---@param name string The name of the augroup
 ---@return integer The augroup ID

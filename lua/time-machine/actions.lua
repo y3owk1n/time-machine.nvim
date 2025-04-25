@@ -2,6 +2,7 @@ local ui = require("time-machine.ui")
 local constants = require("time-machine.constants").constants
 local undotree = require("time-machine.undotree")
 local tags = require("time-machine.tags")
+local utils = require("time-machine.utils")
 
 local M = {}
 
@@ -9,6 +10,22 @@ local M = {}
 ---@return nil
 function M.show_tree()
 	local bufnr = vim.api.nvim_get_current_buf()
+
+	local is_time_machine = utils.is_time_machine_buf(bufnr)
+
+	local found_bufnr = utils.find_time_machine_list_buf()
+
+	if is_time_machine then
+		ui.close(bufnr)
+		return
+	end
+
+	if found_bufnr then
+		if vim.api.nvim_buf_is_valid(found_bufnr) then
+			ui.close(found_bufnr)
+			return
+		end
+	end
 
 	local ut = undotree.get_undotree(bufnr)
 
