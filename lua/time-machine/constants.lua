@@ -18,6 +18,7 @@ M.constants = {
 		current = "● ",
 		saved = "◆ ",
 		point = "○ ",
+		tag = "◼ ",
 	},
 }
 

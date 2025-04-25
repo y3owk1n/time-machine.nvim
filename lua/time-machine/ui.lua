@@ -91,7 +91,7 @@ local function set_highlights(bufnr, seq_map, current_seq, lines)
 			})
 		end
 
-		local info_matches = { "Persistent:", "Buffer:", "Undo File:" }
+		local info_matches = { "Persistent:", "Buffer:", "Undo File:", "Tag File:" }
 
 		for _, info_match in ipairs(info_matches) do
 			if line:find(info_match) then
@@ -134,7 +134,13 @@ local function set_header(lines, seq_map, bufnr)
 	}
 
 	if persistent then
-		table.insert(header_lines, 5, "Undo File: " .. undofile)
+		table.insert(header_lines, #header_lines - 2, "Undo File: " .. undofile)
+	end
+
+	local tags_path = require("time-machine.tags").get_tags_path(bufnr)
+
+	if tags_path then
+		table.insert(header_lines, #header_lines - 2, "Tag File: " .. tags_path)
 	end
 
 	for i = #header_lines, 1, -1 do
@@ -145,14 +151,17 @@ end
 
 -- Build a sequence map with direct parent references
 ---@param entries vim.fn.undotree.entry[]
+---@param tags table<string, string[]> The tags for this buffer’s undo history
 ---@return table<integer, TimeMachine.SeqMapRaw>
-local function build_seq_map_raw(entries)
+local function build_seq_map_raw(entries, tags)
 	local seq_map_raw = {}
 	local function walk(entry, branch_idx)
-		seq_map_raw[entry.seq] = seq_map_raw[entry.seq] or {
-			entry = entry,
-			branch_id = branch_idx,
-		}
+		seq_map_raw[entry.seq] = seq_map_raw[entry.seq]
+			or {
+				entry = entry,
+				branch_id = branch_idx,
+				tags = tags[tostring(entry.seq)] or {},
+			}
 		if entry.alt then
 			for _, child in ipairs(entry.alt) do
 				walk(child, (branch_idx or 0) + 1)
@@ -172,13 +181,14 @@ end
 -- Create the visual tree representation
 ---@param ut vim.fn.undotree.ret
 ---@param seq_map table<integer, integer> The map of line numbers to seqs
+---@param tags table<string, string[]> The tags for this buffer’s undo history
 ---@return TimeMachine.TreeLine[] tree_lines The tree lines
-local function build_tree_representation(ut, seq_map)
+local function build_tree_representation(ut, seq_map, tags)
 	if not ut or not ut.entries or #ut.entries == 0 then
 		return {}
 	end
 
-	local seq_map_raw = build_seq_map_raw(ut.entries)
+	local seq_map_raw = build_seq_map_raw(ut.entries, tags)
 
 	-- 3. Render tree with proper connections
 	---@type integer[]
@@ -225,9 +235,10 @@ local function build_tree_representation(ut, seq_map)
 
 		-- Add info text
 		local info_text = string.format(
-			"%s %s",
+			"%s %s %s",
 			(entry.seq == 0 and "[root]") or ("[" .. tostring(entry.seq) .. "]"),
-			entry.time and utils.relative_time(entry.time) or ""
+			entry.time and utils.relative_time(entry.time) or "",
+			info.tags and #info.tags > 0 and (constants.icons.tag .. table.concat(info.tags, ", ") .. " ") or ""
 			-- entry.seq == ut.seq_cur and " (current)" or "",
 			-- entry.save and entry.save > 0 and " (saved)" or ""
 		)
@@ -260,11 +271,13 @@ function M.refresh(bufnr, seq_map, main_bufnr)
 		return
 	end
 
+	local tags = require("time-machine.tags").load_tags(main_bufnr)
+
 	local lines = {}
 
 	seq_map = {}
 
-	local tree_lines = build_tree_representation(ut, seq_map)
+	local tree_lines = build_tree_representation(ut, seq_map, tags)
 
 	for _, line in ipairs(tree_lines) do
 		table.insert(lines, line.content)
@@ -291,8 +304,10 @@ end
 function M.show(ut, main_bufnr)
 	local orig_win = vim.api.nvim_get_current_win()
 
+	local tags = require("time-machine.tags").load_tags(main_bufnr)
+
 	local seq_map = {}
-	local tree_lines = build_tree_representation(ut, seq_map)
+	local tree_lines = build_tree_representation(ut, seq_map, tags)
 	local lines = {}
 
 	local found_bufnr = utils.find_time_machine_list_buf()
@@ -342,6 +357,17 @@ function M.show(ut, main_bufnr)
 		callback = function()
 			M.refresh(bufnr, seq_map, main_bufnr)
 			vim.notify("Refreshed", vim.log.levels.INFO)
+		end,
+	})
+
+	api.nvim_buf_set_keymap(bufnr, "n", "t", "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
+		callback = function()
+			require("time-machine.tags").tag_sequence(api.nvim_win_get_cursor(0)[1], bufnr, main_bufnr, function()
+				M.refresh(bufnr, seq_map, main_bufnr)
+			end)
 		end,
 	})
 
