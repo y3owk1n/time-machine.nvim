@@ -13,7 +13,7 @@ function M.toggle_tree()
 
 	local is_time_machine = utils.is_time_machine_buf(bufnr)
 
-	local found_bufnr = utils.find_time_machine_list_buf()
+	local found_win = utils.find_time_machine_list_win()
 
 	--- if the current buffer is a time machine buffer, close it
 	if is_time_machine then
@@ -22,12 +22,16 @@ function M.toggle_tree()
 	end
 
 	--- if time machine buffer is found, check if it's refering the same buffer as current buffer, if not then close it and later open the latest versio
-	if found_bufnr then
-		if vim.api.nvim_buf_is_valid(found_bufnr) then
+	if found_win then
+		if vim.api.nvim_win_is_valid(found_win) then
+			local found_bufnr = vim.api.nvim_win_get_buf(found_win)
 			local main_bufnr = vim.api.nvim_buf_get_var(found_bufnr, constants.main_buf_var)
 
 			if main_bufnr ~= bufnr then
+				vim.api.nvim_win_close(found_win, true)
+			else
 				ui.close(found_bufnr)
+				return
 			end
 		end
 	end

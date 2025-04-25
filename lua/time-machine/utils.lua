@@ -61,6 +61,20 @@ function M.get_files(dir)
 	return files
 end
 
+function M.find_time_machine_list_win()
+	local bufnr = M.find_time_machine_list_buf()
+
+	if not bufnr then
+		return nil
+	end
+
+	for _, winid in ipairs(vim.api.nvim_list_wins()) do
+		if vim.api.nvim_win_is_valid(winid) and vim.api.nvim_win_get_buf(winid) == bufnr then
+			return winid
+		end
+	end
+end
+
 function M.find_time_machine_list_buf()
 	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
 		if
