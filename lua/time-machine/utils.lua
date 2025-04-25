@@ -1,6 +1,9 @@
 local M = {}
 
-function M.is_time_machine_buf(bufnr)
+--- Check if a buffer is a time machine buffer
+---@param bufnr integer The buffer number
+---@return boolean is_time_machine `true` if the buffer is a time machine buffer, `false` otherwise
+function M.is_time_machine_active(bufnr)
 	return vim.api.nvim_buf_is_valid(bufnr)
 		and vim.api.nvim_buf_is_loaded(bufnr)
 		and vim.api.nvim_get_option_value("filetype", { scope = "local", buf = bufnr })
@@ -61,8 +64,8 @@ function M.get_files(dir)
 	return files
 end
 
-function M.find_time_machine_list_win()
-	local bufnr = M.find_time_machine_list_buf()
+function M.get_time_machine_win()
+	local bufnr = M.get_time_machine_bufnr()
 
 	if not bufnr then
 		return nil
@@ -75,7 +78,7 @@ function M.find_time_machine_list_win()
 	end
 end
 
-function M.find_time_machine_list_buf()
+function M.get_time_machine_bufnr()
 	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
 		if
 			vim.api.nvim_buf_is_valid(bufnr)

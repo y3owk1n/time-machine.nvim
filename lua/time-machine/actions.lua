@@ -8,59 +8,57 @@ local M = {}
 
 --- Show the undotree for a buffer
 ---@return nil
-function M.toggle_tree()
-	local bufnr = vim.api.nvim_get_current_buf()
-
-	local is_time_machine = utils.is_time_machine_buf(bufnr)
-
-	local found_win = utils.find_time_machine_list_win()
+function M.toggle()
+	local cur_bufnr = vim.api.nvim_get_current_buf()
 
 	--- if the current buffer is a time machine buffer, close it
-	if is_time_machine then
-		ui.close(bufnr)
+	if utils.is_time_machine_active(cur_bufnr) then
+		ui.close(cur_bufnr)
 		return
 	end
 
-	--- if time machine buffer is found, check if it's refering the same buffer as current buffer, if not then close it and later open the latest versio
-	if found_win then
-		if vim.api.nvim_win_is_valid(found_win) then
-			local found_bufnr = vim.api.nvim_win_get_buf(found_win)
-			local main_bufnr = vim.api.nvim_buf_get_var(found_bufnr, constants.main_buf_var)
+	local time_machine_win = utils.get_time_machine_win()
 
-			if main_bufnr ~= bufnr then
-				vim.api.nvim_win_close(found_win, true)
+	--- if time machine buffer is found, check if it's refering the same buffer as current buffer, if not then close it and later open the latest version
+	if time_machine_win then
+		if vim.api.nvim_win_is_valid(time_machine_win) then
+			local time_machine_bufnr = vim.api.nvim_win_get_buf(time_machine_win)
+			local content_bufnr = vim.api.nvim_buf_get_var(time_machine_bufnr, constants.content_buf_var)
+
+			if content_bufnr ~= cur_bufnr then
+				vim.api.nvim_win_close(time_machine_win, true)
 			else
-				ui.close(found_bufnr)
+				ui.close(time_machine_bufnr)
 				return
 			end
 		end
 	end
 
-	local ut = undotree.get_undotree(bufnr)
+	local ut = undotree.get_undotree(cur_bufnr)
 
 	if not ut then
 		vim.notify("No undotree found", vim.log.levels.WARN)
 		return
 	end
 
-	ui.show(ut, bufnr)
+	ui.show(ut, cur_bufnr)
 end
 
 --- Restore to an undopoint
----@param seq integer The seq to restore to
----@param main_bufnr integer The main buffer number
+---@param seq integer The sequence to restore to
+---@param content_bufnr integer The main buffer number
 ---@return nil
-function M.restore_undopoint(seq, main_bufnr)
-	local bufnr = main_bufnr
-
-	if not bufnr then
-		vim.notify("No main buffer found", vim.log.levels.ERROR)
+function M.restore(seq, content_bufnr)
+	if not content_bufnr then
+		vim.notify("No content buffer found", vim.log.levels.ERROR)
 	end
 
-	vim.api.nvim_buf_call(main_bufnr, function()
+	vim.api.nvim_buf_call(content_bufnr, function()
 		vim.cmd(("undo %d"):format(seq))
 	end)
+
 	vim.notify(("Restored to undopoint %d"):format(seq), vim.log.levels.INFO)
+
 	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.undo_restored })
 end
 
@@ -74,10 +72,13 @@ function M.purge_all(force)
 			return
 		end
 	end
+
 	local ok, err = pcall(function()
+		--- remove tag files first, as it needs the undotree info
 		tags.remove_tagfiles()
 		undotree.remove_undofiles()
 	end)
+
 	if not ok then
 		vim.notify("Failed to purge all undofiles: " .. tostring(err), vim.log.levels.ERROR)
 	end
@@ -86,10 +87,12 @@ end
 --- Purge the current buffer undofile
 ---@param force? boolean Whether to force the purge
 ---@return nil
-function M.purge_current(force)
-	local bufnr = vim.api.nvim_get_current_buf()
-	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = bufnr })
+function M.purge_buffer(force)
+	local cur_bufnr = vim.api.nvim_get_current_buf()
 
+	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = cur_bufnr })
+
+	--- no need to purge if there's no persistent undofile
 	if not persistent then
 		vim.notify("No undofile found for current buffer", vim.log.levels.WARN)
 		return

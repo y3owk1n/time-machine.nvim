@@ -453,7 +453,7 @@ function M.show(ut, main_bufnr)
 	vim.api.nvim_set_option_value("relativenumber", false, { scope = "local", win = win })
 
 	vim.api.nvim_buf_set_var(bufnr, constants.seq_map_buf_var, seq_map)
-	vim.api.nvim_buf_set_var(bufnr, constants.main_buf_var, main_bufnr)
+	vim.api.nvim_buf_set_var(bufnr, constants.content_buf_var, main_bufnr)
 
 	vim.api.nvim_create_autocmd("User", {
 		group = utils.augroup("ui_refresh"),
@@ -548,7 +548,7 @@ function M.handle_restore(line, bufnr, main_bufnr)
 		return
 	end
 
-	require("time-machine.actions").restore_undopoint(seq, main_bufnr)
+	require("time-machine.actions").restore(seq, main_bufnr)
 end
 
 return M
