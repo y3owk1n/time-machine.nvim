@@ -404,6 +404,15 @@ function M.show(ut, main_bufnr)
 	local win = vim.api.nvim_get_current_win()
 	vim.api.nvim_win_set_buf(win, bufnr)
 	vim.api.nvim_win_set_width(win, width)
+
+	--- Set the cursor to the current sequence
+	for i, id in ipairs(seq_map) do
+		if id == ut.seq_cur then
+			vim.api.nvim_win_set_cursor(win, { i, 0 })
+			break
+		end
+	end
+
 	vim.api.nvim_set_option_value("winfixwidth", true, { scope = "local", win = win })
 	vim.api.nvim_set_option_value("statusline", "", { scope = "local", win = win })
 	vim.api.nvim_set_option_value("signcolumn", "no", { scope = "local", win = win })
