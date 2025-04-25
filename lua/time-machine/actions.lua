@@ -13,7 +13,7 @@ function M.toggle()
 
 	--- if the current buffer is a time machine buffer, close it
 	if utils.is_time_machine_active(cur_bufnr) then
-		ui.close(cur_bufnr)
+		ui.close_buf(cur_bufnr)
 		return
 	end
 
@@ -28,7 +28,7 @@ function M.toggle()
 			if content_bufnr ~= cur_bufnr then
 				vim.api.nvim_win_close(time_machine_win, true)
 			else
-				ui.close(time_machine_bufnr)
+				ui.close_buf(time_machine_bufnr)
 				return
 			end
 		end

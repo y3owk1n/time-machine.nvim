@@ -1,6 +1,8 @@
 local M = {}
 
 -- Write an array of lines to a temp file, return its path
+---@param lines string[] The lines to write
+---@return string path The path to the temp file
 local function write_temp(lines)
 	-- create a unique temp filename
 	local template = vim.fn.tempname() .. ".txt"
@@ -9,8 +11,12 @@ local function write_temp(lines)
 	return template
 end
 
-function M.diff_with_native(old, new)
-	local computed_diff = M.compute_diff_lines(new, old)
+--- Diff with the native diff (vim.diff)
+---@param old_lines string[] The old lines
+---@param new_lines string[] The new lines
+---@return nil
+function M.preview_diff_native(old_lines, new_lines)
+	local computed_diff = M.compute_diff_lines(new_lines, old_lines)
 
 	local preview_buf = vim.api.nvim_create_buf(false, true)
 
@@ -35,11 +41,12 @@ function M.diff_with_native(old, new)
 end
 
 --- Diff with an external tool
----@param type TimeMachine.DiffTool The diff tool to use
----@param old string[] The old lines
----@param new string[] The new lines
-function M.diff_with_external(type, old, new)
-	if type == "native" then
+---@param diff_type TimeMachine.DiffTool The diff tool to use
+---@param old_lines string[] The old lines
+---@param new_lines string[] The new lines
+---@return nil
+function M.preview_diff_external(diff_type, old_lines, new_lines)
+	if diff_type == "native" then
 		return
 	end
 
@@ -48,93 +55,59 @@ function M.diff_with_external(type, old, new)
 		["diff"] = { "diff", "--color=always" },
 	}
 
-	local cmd = cmds[type]
+	local cmd = cmds[diff_type]
 
 	if not cmd then
-		vim.notify("Invalid diff tool: " .. type, vim.log.levels.ERROR)
+		vim.notify("Invalid diff tool: " .. diff_type, vim.log.levels.ERROR)
 		return
 	end
 
-	local f1 = write_temp(old)
-	local f2 = write_temp(new)
+	local old_lines_file = write_temp(old_lines)
+	local new_lines_file = write_temp(new_lines)
 
 	local preview_buf = vim.api.nvim_create_buf(false, true)
 
-	local win = require("time-machine.ui").create_native_float(preview_buf, "Preview (" .. type .. ")")
+	local win = require("time-machine.ui").create_native_float(preview_buf, "Preview (" .. diff_type .. ")")
 
 	if not win then
 		return
 	end
 
-	vim.fn.jobstart({ cmd[1], unpack(cmd, 2, cmd.n), f1, f2 }, {
+	--- run the diff tool inside the terminal
+	vim.fn.jobstart({ cmd[1], unpack(cmd, 2, cmd.n), old_lines_file, new_lines_file }, {
 		term = true,
 		on_exit = function()
-			-- clean up temp files
-			os.remove(f1)
-			os.remove(f2)
+			os.remove(old_lines_file)
+			os.remove(new_lines_file)
 		end,
 	})
 
-	-- map 'q' to close the floating window
 	vim.keymap.set("n", "q", function()
-		if vim.api.nvim_win_is_valid(win) then
-			vim.api.nvim_win_close(win, true)
-		end
-	end, { buffer = preview_buf, nowait = true, noremap = true, silent = true })
-end
-
--- Run difftastic on two temp files, show results in a popup
-function M.diff_with_difftastic(old_lines, new_lines)
-	-- dump snapshots to disk
-	local f1 = write_temp(old_lines)
-	local f2 = write_temp(new_lines)
-
-	-- create a scratch buffer for the terminal
-	local preview_buf = vim.api.nvim_create_buf(false, true)
-
-	local win = require("time-machine.ui").create_native_float(preview_buf, "Preview (Difftastic)")
-
-	if not win then
-		return
-	end
-
-	-- run difftastic inside the terminal
-	vim.fn.jobstart({ "difft", "--width=80", "--color=always", f1, f2 }, {
-		term = true,
-		on_exit = function()
-			-- clean up temp files
-			os.remove(f1)
-			os.remove(f2)
-		end,
-	})
-
-	-- map 'q' to close the floating window
-	vim.keymap.set("n", "q", function()
-		if vim.api.nvim_win_is_valid(win) then
-			vim.api.nvim_win_close(win, true)
-		end
+		require("time-machine.ui").close_win(win)
 	end, { buffer = preview_buf, nowait = true, noremap = true, silent = true })
 end
 
 --- Get the diff of a sequence of undos
----@param bufnr number The buffer number
----@param win number The window number
+---@param content_bufnr number The buffer number
+---@param content_win number The window number
 ---@param seq string The sequence of undos
 ---@return string[] lines The diff of the sequence of undos
-function M.read_buffer_at_seq(bufnr, win, seq)
-	local prev_win = vim.api.nvim_get_current_win()
+function M.read_buffer_at_seq(content_bufnr, content_win, seq)
+	local cur_win = vim.api.nvim_get_current_win()
 
-	vim.api.nvim_set_current_win(win)
+	--- Set the current window to the main content window
+	vim.api.nvim_set_current_win(content_win)
 
 	-- grab current seq, jump back
 	local cur_seq = vim.fn.undotree().seq_cur
 	vim.cmd("undo " .. seq)
-	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+	local lines = vim.api.nvim_buf_get_lines(content_bufnr, 0, -1, false)
 	-- restore
 	vim.cmd("undo " .. cur_seq)
 
-	-- return to wherever we were (UI or diff)
-	vim.api.nvim_set_current_win(prev_win)
+	-- return to wherever we were
+	vim.api.nvim_set_current_win(cur_win)
+
 	return lines
 end
 
@@ -146,14 +119,41 @@ function M.compute_diff_lines(old_lines, new_lines)
 	local old_text = table.concat(old_lines, "\n")
 	local new_text = table.concat(new_lines, "\n")
 
-	local diff_text = vim.diff(old_text, new_text, require("time-machine.config").config.native_diff_opts)
+	local diff_result = vim.diff(old_text, new_text, require("time-machine.config").config.native_diff_opts)
 
-	if not diff_text or diff_text == "" then
+	if not diff_result then
 		return { "[No differences]" }
 	end
 
-	local result = vim.split(diff_text, "\n", { plain = true })
-	return result
+	--- Handle unified diff
+	if type(diff_result) == "string" then
+		if diff_result == "" then
+			return { "[No differences]" }
+		end
+		return vim.split(diff_result, "\n", { plain = true })
+	end
+
+	--- indices diff
+	if type(diff_result) == "table" then
+		local lines = {}
+		for _, hunk in ipairs(diff_result) do
+			local a_start, a_count, b_start, b_count = unpack(hunk)
+			table.insert(lines, string.format("@@ -%d,%d +%d,%d @@", a_start, a_count, b_start, b_count))
+
+			for i = 0, a_count - 1 do
+				table.insert(lines, "-" .. (old_lines[a_start + i] or ""))
+			end
+			for i = 0, b_count - 1 do
+				table.insert(lines, "+" .. (new_lines[b_start + i] or ""))
+			end
+		end
+		if #lines == 0 then
+			return { "[No differences]" }
+		end
+		return lines
+	end
+
+	return { "[Invalid diff format]" }
 end
 
 return M

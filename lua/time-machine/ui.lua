@@ -334,9 +334,15 @@ function M.refresh(bufnr, seq_map, main_bufnr)
 	set_highlights(bufnr, seq_map, ut.seq_cur, lines)
 end
 
-function M.close(bufnr)
+function M.close_buf(bufnr)
 	if api.nvim_buf_is_valid(bufnr) then
 		vim.api.nvim_buf_delete(bufnr, { force = true })
+	end
+end
+
+function M.close_win(win)
+	if api.nvim_win_is_valid(win) then
+		api.nvim_win_close(win, true)
 	end
 end
 
@@ -411,7 +417,7 @@ function M.show(ut, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.close(bufnr)
+			M.close_buf(bufnr)
 		end,
 	})
 
@@ -470,7 +476,7 @@ function M.show(ut, main_bufnr)
 		group = utils.augroup("ui_close"),
 		pattern = constants.events.undofile_deleted,
 		callback = function()
-			M.close(bufnr)
+			M.close_buf(bufnr)
 		end,
 	})
 end
@@ -500,7 +506,7 @@ function M.show_help()
 		noremap = true,
 		silent = true,
 		callback = function()
-			M.close(bufnr)
+			M.close_buf(bufnr)
 		end,
 	})
 
@@ -525,9 +531,9 @@ function M.preview_diff(line, bufnr, main_bufnr, orig_win)
 	local config = require("time-machine.config").config
 
 	if config.diff_tool == "native" then
-		diff.diff_with_native(old, new)
+		diff.preview_diff_native(old, new)
 	else
-		diff.diff_with_external(config.diff_tool, old, new)
+		diff.preview_diff_external(config.diff_tool, old, new)
 	end
 end
 
