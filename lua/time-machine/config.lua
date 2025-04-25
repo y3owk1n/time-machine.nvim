@@ -8,7 +8,7 @@ M.config = {}
 ---@type TimeMachine.Config
 local defaults = {
 	diff_tool = "native",
-	diff_opts = {
+	native_diff_opts = {
 		result_type = "unified",
 		ctxlen = 3,
 		algorithm = "histogram",

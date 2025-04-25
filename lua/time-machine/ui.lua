@@ -476,10 +476,8 @@ function M.preview_diff(line, bufnr, main_bufnr, orig_win)
 
 	if config.diff_tool == "native" then
 		diff.diff_with_native(old, new)
-	end
-
-	if config.diff_tool == "difft" then
-		diff.diff_with_difftastic(old, new)
+	else
+		diff.diff_with_external(config.diff_tool, old, new)
 	end
 end
 

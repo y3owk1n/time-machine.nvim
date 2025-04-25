@@ -34,6 +34,55 @@ function M.diff_with_native(old, new)
 	require("time-machine.ui").create_native_float(preview_buf, "Preview (Native)")
 end
 
+--- Diff with an external tool
+---@param type TimeMachine.DiffTool The diff tool to use
+---@param old string[] The old lines
+---@param new string[] The new lines
+function M.diff_with_external(type, old, new)
+	if type == "native" then
+		return
+	end
+
+	local cmds = {
+		["difft"] = { "difft", "--width=80", "--color=always" },
+		["diff"] = { "diff", "--color=always" },
+	}
+
+	local cmd = cmds[type]
+
+	if not cmd then
+		vim.notify("Invalid diff tool: " .. type, vim.log.levels.ERROR)
+		return
+	end
+
+	local f1 = write_temp(old)
+	local f2 = write_temp(new)
+
+	local preview_buf = vim.api.nvim_create_buf(false, true)
+
+	local win = require("time-machine.ui").create_native_float(preview_buf, "Preview (" .. type .. ")")
+
+	if not win then
+		return
+	end
+
+	vim.fn.jobstart({ cmd[1], unpack(cmd, 2, cmd.n), f1, f2 }, {
+		term = true,
+		on_exit = function()
+			-- clean up temp files
+			os.remove(f1)
+			os.remove(f2)
+		end,
+	})
+
+	-- map 'q' to close the floating window
+	vim.keymap.set("n", "q", function()
+		if vim.api.nvim_win_is_valid(win) then
+			vim.api.nvim_win_close(win, true)
+		end
+	end, { buffer = preview_buf, nowait = true, noremap = true, silent = true })
+end
+
 -- Run difftastic on two temp files, show results in a popup
 function M.diff_with_difftastic(old_lines, new_lines)
 	-- dump snapshots to disk
@@ -97,7 +146,7 @@ function M.compute_diff_lines(old_lines, new_lines)
 	local old_text = table.concat(old_lines, "\n")
 	local new_text = table.concat(new_lines, "\n")
 
-	local diff_text = vim.diff(old_text, new_text, require("time-machine.config").config.diff_opts)
+	local diff_text = vim.diff(old_text, new_text, require("time-machine.config").config.native_diff_opts)
 
 	if not diff_text or diff_text == "" then
 		return { "[No differences]" }
