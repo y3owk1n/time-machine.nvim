@@ -52,10 +52,10 @@ end
 ---@param main_bufnr number The real buffer whose undo history we're tagging
 ---@param success_cb function|nil  Optional callback to call after tags are saved
 function M.tag_sequence(line_no, ui_bufnr, main_bufnr, success_cb)
+	---@type table<string, string[]>
 	local seq_map = vim.api.nvim_buf_get_var(ui_bufnr, constants.seq_map_buf_var)
 	local seq = seq_map[line_no]
-	if not seq then
-		vim.notify("No undo-seq on this line!", vim.log.levels.WARN)
+	if not seq or seq == "" or seq == 0 then
 		return
 	end
 
