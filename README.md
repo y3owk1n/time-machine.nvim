@@ -3,6 +3,12 @@
 Undo. Redo. Time travel.
 Take control of your edit history with an interactive timeline, diff previews, taggings and live reloading trees.
 
+<!-- panvimdoc-ignore-start -->
+
+![time-travel-demo](https://github.com/user-attachments/assets/2dc6c6e4-338e-4322-9698-f7d8b8d65cb7)
+
+<!-- panvimdoc-ignore-end -->
+
 ## 🚀 Features
 
 - 🔄 **Interactive History Tree**: Navigate your entire undo history in a collapsible tree view, grouping related edits for an intuitive overview.
