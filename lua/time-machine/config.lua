@@ -41,6 +41,7 @@ function M.setup_highlights()
 		keymap = { fg = "#8bd5ca", italic = true },
 		info = { fg = "#939AB7", italic = true },
 		seq = { fg = "#ed8796", bold = true },
+		tag = { fg = "#f0c6c6", bold = true },
 	}
 
 	for key, group in pairs(groups) do

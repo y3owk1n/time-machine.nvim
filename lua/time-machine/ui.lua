@@ -70,17 +70,19 @@ local function set_highlights(bufnr, seq_map, current_seq, lines)
 	api.nvim_buf_clear_namespace(bufnr, constants.ns, 0, -1)
 
 	for i, id in ipairs(seq_map) do
+		--- is not sequence
 		if id == "" then
 			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
-			for tag in line:gmatch("%b[]") do
-				local start_col = line:find(tag, 1, true) - 1
+			for keymap in line:gmatch("%b[]") do
+				local start_col = line:find(keymap, 1, true) - 1
 				api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
-					end_col = start_col + #tag,
+					end_col = start_col + #keymap,
 					hl_group = constants.hl.keymap,
 				})
 			end
 		end
 
+		--- is within sequence
 		if type(id) == "number" then
 			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
 			for seq in line:gmatch("%b[]") do
@@ -88,6 +90,24 @@ local function set_highlights(bufnr, seq_map, current_seq, lines)
 				api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
 					end_col = start_col + #seq,
 					hl_group = constants.hl.seq,
+				})
+			end
+
+			--- match time and the rest behind time (which is tags)
+			local time, rest = line:match("(%d+%a+ ago)%s*(.*)$")
+			if time then
+				local start_col = line:find(time, 1, true) - 1
+				api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
+					end_col = start_col + #time,
+					hl_group = constants.hl.info,
+				})
+			end
+
+			if rest and rest ~= "" then
+				local start_col = line:find(rest, 1, true) - 1
+				api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
+					end_col = start_col + #rest,
+					hl_group = constants.hl.tag,
 				})
 			end
 		end
