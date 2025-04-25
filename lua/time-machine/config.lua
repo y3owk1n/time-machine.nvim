@@ -59,6 +59,8 @@ function M.setup(user_config)
 		M.config.ignored_filetypes = utils.merge_lists(user_config.ignored_filetypes, defaults.ignored_filetypes)
 	end
 
+	--- disable undofile for ignored filetypes
+	--- note that this only disable undo to be saved to disk, the undo will still be available in memory
 	vim.api.nvim_create_autocmd("FileType", {
 		group = utils.augroup("no_undofile"),
 		pattern = M.config.ignored_filetypes,
@@ -67,6 +69,8 @@ function M.setup(user_config)
 		end,
 	})
 
+	--- emit an event when a new undopoint is created that used to update the UI
+	--- this is the best effort of detecting when an undopoint is created
 	vim.api.nvim_create_autocmd({ "BufWritePost", "TextChanged", "InsertLeave" }, {
 		group = utils.augroup("undopoint_created"),
 		callback = function()
@@ -74,6 +78,7 @@ function M.setup(user_config)
 		end,
 	})
 
+	--- ignore large files if set up
 	vim.api.nvim_create_autocmd("BufReadPre", {
 		group = utils.augroup("ignore_large_files"),
 		callback = function(ev)
@@ -84,6 +89,7 @@ function M.setup(user_config)
 			local path = vim.fn.expand(ev.match)
 			if vim.fn.getfsize(path) > M.config.ignore_filesize then
 				vim.opt_local.undofile = false
+				vim.notify(("Ignoring large file: %s"):format(path), vim.log.levels.WARN)
 			end
 		end,
 	})
