@@ -406,7 +406,7 @@ function M.show(ut, main_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			require("time-machine.tags").tag_sequence(api.nvim_win_get_cursor(0)[1], bufnr, main_bufnr, function()
+			require("time-machine.tags").create_tag(api.nvim_win_get_cursor(0)[1], bufnr, main_bufnr, function()
 				M.refresh(bufnr, seq_map, main_bufnr)
 			end)
 		end,

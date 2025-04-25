@@ -1,5 +1,6 @@
 ---@alias TimeMachine.DiffTool "native"|"difft"|"diff"
 ---@alias TimeMachine.SplitDirection 'left'|'right'
+---@alias TimeMachine.SeqMap table<integer, string|integer[]>
 
 ---@class TimeMachine.Config
 ---@field diff_tool? TimeMachine.DiffTool The diff tool to use

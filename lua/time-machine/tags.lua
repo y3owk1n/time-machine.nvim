@@ -5,26 +5,26 @@ local undotree = require("time-machine.undotree")
 
 local tags_dir = vim.fn.stdpath("data") .. "/time_machine/tags"
 
--- Returns the tag-file path for this buffer’s undo history.
----@param bufnr number The buffer whose undofile we want to find
----@return string|nil The path to the tagfile, or nil if none
-function M.get_tags_path(bufnr)
-	local uf = undotree.get_undofile(bufnr)
-	if not uf then
+--- Returns the tag-file path for this buffer’s undo history.
+---@param content_bufnr number The buffer whose undofile we want to find
+---@return string|nil tagfile_path The path to the tagfile, or nil if none
+function M.get_tags_path(content_bufnr)
+	local ut = undotree.get_undofile(content_bufnr)
+	if not ut then
 		return nil
 	end
 
-	-- take just the filename (hash) of the undofile
-	local base = vim.fn.fnamemodify(uf, ":t")
+	-- filename of the undofile for easier lookup
+	local base = vim.fn.fnamemodify(ut, ":t")
 	vim.fn.mkdir(tags_dir, "p")
 	return tags_dir .. "/" .. base .. ".json"
 end
 
--- Load the tags for this buffer’s undo history (or {} if none)
----@param bufnr number The buffer whose undofile we want to find
----@return table<string, string[]> The tags for this buffer’s undo history
-function M.load_tags(bufnr)
-	local path = M.get_tags_path(bufnr)
+--- Load the tags for this buffer’s undo history (or {} if none)
+---@param content_bufnr number The buffer whose undofile we want to find
+---@return table<string, string[]> tags The tags for this buffer’s undo history
+function M.load_tags(content_bufnr)
+	local path = M.get_tags_path(content_bufnr)
 	if not path or vim.fn.filereadable(path) == 0 then
 		return {}
 	end
@@ -33,40 +33,44 @@ function M.load_tags(bufnr)
 	return (ok and type(tbl) == "table") and tbl or {}
 end
 
--- Save `tags` (a table mapping seq-string → list-of-tags) for `bufnr`
----@param tags table<string, string[]> The tags for this buffer’s undo history
----@param bufnr number The buffer whose undofile we want to find
-local function save_tags(tags, bufnr)
-	local path = M.get_tags_path(bufnr)
+--- Save the provided tags
+---@param tags_to_save table<string, string[]> The tags for this buffer’s undo history
+---@param content_bufnr number The buffer whose undofile we want to find
+local function save_tags(tags_to_save, content_bufnr)
+	local path = M.get_tags_path(content_bufnr)
+
 	if not path then
 		vim.notify("Cannot save tags: no undofile for this buffer", vim.log.levels.WARN)
 		return
 	end
-	local json = vim.fn.json_encode(tags)
+
+	local json = vim.fn.json_encode(tags_to_save)
 	vim.fn.writefile(vim.split(json, "\n"), path)
 end
 
 --- Prompt for comma-sep tags and save them for the undo-sequence under the cursor
----@param line_no number  Cursor line in the snapshot UI buffer
----@param ui_bufnr number  The snapshot UI buffer
----@param main_bufnr number The real buffer whose undo history we're tagging
----@param success_cb function|nil  Optional callback to call after tags are saved
-function M.tag_sequence(line_no, ui_bufnr, main_bufnr, success_cb)
-	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = main_bufnr })
+---@param cur_line_no number  Cursor line in the snapshot UI buffer
+---@param time_machine_bufnr number  The snapshot UI buffer
+---@param content_bufnr number The real buffer whose undo history we're tagging
+---@param success_cb? function|nil  Optional callback to call after tags are saved
+function M.create_tag(cur_line_no, time_machine_bufnr, content_bufnr, success_cb)
+	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = content_bufnr })
 
 	if not persistent then
 		vim.notify("Persistent undofile is not enabled", vim.log.levels.WARN)
 		return
 	end
 
-	---@type table<string, string[]>
-	local seq_map = vim.api.nvim_buf_get_var(ui_bufnr, constants.seq_map_buf_var)
-	local seq = seq_map[line_no]
+	--- Get the sequences map from the buffer variables
+	---@type TimeMachine.SeqMap
+	local seq_map = vim.api.nvim_buf_get_var(time_machine_bufnr, constants.seq_map_buf_var)
+
+	local seq = seq_map[cur_line_no]
 	if not seq or seq == "" or seq == 0 then
 		return
 	end
 
-	local tags = M.load_tags(main_bufnr)
+	local tags = M.load_tags(content_bufnr)
 	local current_tags = tags[tostring(seq)] or {}
 
 	vim.ui.input(
@@ -79,7 +83,7 @@ function M.tag_sequence(line_no, ui_bufnr, main_bufnr, success_cb)
 
 			if input:match("^%s*$") then
 				tags[tostring(seq)] = nil
-				save_tags(tags, main_bufnr)
+				save_tags(tags, content_bufnr)
 				vim.notify(string.format("Removed tags for seq %d", seq), vim.log.levels.INFO)
 				if success_cb then
 					success_cb()
@@ -96,9 +100,8 @@ function M.tag_sequence(line_no, ui_bufnr, main_bufnr, success_cb)
 				end
 			end
 
-			-- load, assign, save
 			tags[tostring(seq)] = list
-			save_tags(tags, main_bufnr)
+			save_tags(tags, content_bufnr)
 
 			vim.notify(string.format("Saved tags [%s] for seq %d", table.concat(list, ", "), seq), vim.log.levels.INFO)
 
@@ -109,6 +112,8 @@ function M.tag_sequence(line_no, ui_bufnr, main_bufnr, success_cb)
 	)
 end
 
+--- Remove all tagfiles
+---@return nil
 function M.remove_tagfiles()
 	for _, f in ipairs(vim.fn.glob(tags_dir .. "/*", false, true)) do
 		pcall(os.remove, f)
@@ -116,8 +121,11 @@ function M.remove_tagfiles()
 	vim.notify("Removed all tagfiles", vim.log.levels.INFO)
 end
 
-function M.remove_tagfile(bufnr)
-	local path = M.get_tags_path(bufnr)
+-- Remove the tagfile for the given buffer
+---@param content_bufnr number The buffer whose tagfile we want to remove
+---@return nil
+function M.remove_tagfile(content_bufnr)
+	local path = M.get_tags_path(content_bufnr)
 	if path and vim.fn.filereadable(path) == 1 then
 		os.remove(path)
 		vim.notify("Removed tagfile: " .. path, vim.log.levels.INFO)
