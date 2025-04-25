@@ -70,6 +70,28 @@ local function set_highlights(bufnr, seq_map, current_seq, lines)
 	api.nvim_buf_clear_namespace(bufnr, constants.ns, 0, -1)
 
 	for i, id in ipairs(seq_map) do
+		if id == "" then
+			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
+			for tag in line:gmatch("%b[]") do
+				local start_col = line:find(tag, 1, true) - 1
+				api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
+					end_col = start_col + #tag,
+					hl_group = constants.hl.keymap,
+				})
+			end
+		end
+
+		if type(id) == "number" then
+			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
+			for seq in line:gmatch("%b[]") do
+				local start_col = line:find(seq, 1, true) - 1
+				api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
+					end_col = start_col + #seq,
+					hl_group = constants.hl.seq,
+				})
+			end
+		end
+
 		if id == current_seq then
 			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
 			local end_col = line and #line or 0
@@ -85,19 +107,10 @@ local function set_highlights(bufnr, seq_map, current_seq, lines)
 				virt_text = { { string.rep(" ", pad), constants.hl.current } },
 				virt_text_win_col = text_width,
 			})
-			break
 		end
 	end
 
 	for i, line in ipairs(lines) do
-		for tag in line:gmatch("%b[]") do
-			local start_col = line:find(tag, 1, true) - 1
-			api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, start_col, {
-				end_col = start_col + #tag,
-				hl_group = constants.hl.keymap,
-			})
-		end
-
 		local info_matches = { "Persistent:", "Buffer:", "Undo File:", "Tag File:" }
 
 		for _, info_match in ipairs(info_matches) do

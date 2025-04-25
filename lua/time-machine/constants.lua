@@ -14,6 +14,7 @@ M.constants = {
 		current = "TimeMachineCurrent",
 		keymap = "TimeMachineKeymap",
 		info = "TimeMachineInfo",
+		seq = "TimeMachineSeq",
 	},
 	icons = {
 		saved = "◆ ",
