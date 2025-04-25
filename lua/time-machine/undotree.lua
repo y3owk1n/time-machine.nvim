@@ -4,7 +4,7 @@ local M = {}
 
 --- Get the undofile for a given buffer
 ---@param bufnr number|nil  Buffer number (defaults to current buffer)
----@return string|nil ufile The undofile path
+---@return string|nil undofile The undofile path
 function M.get_undofile_path(bufnr)
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
 
@@ -15,15 +15,15 @@ function M.get_undofile_path(bufnr)
 		return nil
 	end
 
-	local abs = vim.fn.fnamemodify(name, ":p")
-	local ufile = vim.fn.undofile(abs)
+	local filename = vim.fn.fnamemodify(name, ":p")
+	local undofile = vim.fn.undofile(filename)
 
-	return ufile
+	return undofile
 end
 
 --- Get the undotree for a given buffer
 ---@param bufnr integer The buffer number
----@return vim.fn.undotree.ret|nil
+---@return vim.fn.undotree.ret|nil undotree The undotree
 function M.get_undotree(bufnr)
 	if vim.api.nvim_buf_is_valid(bufnr) == 0 then
 		return nil
@@ -37,13 +37,13 @@ end
 --- Remove all undofiles
 ---@return boolean ok `true` if we removed it successfully, `false` otherwise
 function M.remove_undofiles()
-	-- 1) Delete every undofile under your 'undodir'
 	local dirs = vim.split(vim.o.undodir, ",", { trimempty = true })
 	for _, dir in ipairs(dirs) do
 		for _, f in ipairs(vim.fn.glob(dir .. "/*", false, true)) do
 			pcall(os.remove, f)
 		end
 	end
+
 	vim.notify("Removed all undofiles from disk", vim.log.levels.INFO)
 
 	local names = {}
@@ -71,12 +71,12 @@ end
 function M.remove_undofile(bufnr)
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
 
-	local ufile = M.get_undofile_path(bufnr)
-	if ufile ~= "" and vim.fn.filereadable(ufile) == 1 then
-		os.remove(ufile)
-		vim.notify("Removed undofile: " .. ufile, vim.log.levels.INFO)
+	local undofile = M.get_undofile_path(bufnr)
+	if undofile ~= "" and vim.fn.filereadable(undofile) == 1 then
+		os.remove(undofile)
+		vim.notify("Removed undofile: " .. undofile, vim.log.levels.INFO)
 	else
-		vim.notify("No undofile found: " .. ufile, vim.log.levels.WARN)
+		vim.notify("No undofile found: " .. undofile, vim.log.levels.WARN)
 	end
 
 	M.refresh_buffer_window(bufnr)
