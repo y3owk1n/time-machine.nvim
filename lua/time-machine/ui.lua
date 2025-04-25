@@ -117,11 +117,10 @@ local function set_header(lines, seq_map, bufnr)
 
 	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = bufnr })
 
-	local current_text = constants.icons.current .. "= Current"
 	local saved_text = constants.icons.saved .. "= Saved"
 	local point_text = constants.icons.point .. "= Point"
 
-	local annotation = current_text .. " " .. saved_text .. " " .. point_text
+	local annotation = saved_text .. " " .. point_text
 
 	local header_lines = {
 		"[g?] Actions/Help [<CR>] Restore [r] Refresh [p] Preview [t] Tag [q] Close",
@@ -227,9 +226,7 @@ local function build_tree_representation(ut, seq_map, tags)
 		end
 
 		-- Draw node symbol
-		line[col + 1] = (entry.seq == ut.seq_cur and constants.icons.current)
-			or (entry.save and entry.save > 0 and constants.icons.saved)
-			or constants.icons.point
+		line[col + 1] = (entry.save and entry.save > 0 and constants.icons.saved) or constants.icons.point
 
 		verticals[col] = true
 
