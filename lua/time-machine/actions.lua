@@ -1,6 +1,7 @@
 local ui = require("time-machine.ui")
 local constants = require("time-machine.constants").constants
 local undotree = require("time-machine.undotree")
+local tags = require("time-machine.tags")
 
 local M = {}
 
@@ -48,6 +49,7 @@ function M.purge_all(force)
 		end
 	end
 	local ok, err = pcall(function()
+		tags.remove_tagfiles()
 		undotree.remove_undofiles()
 	end)
 	if not ok then
@@ -73,6 +75,9 @@ function M.purge_current(force)
 			return
 		end
 	end
+
+	--- remove tag file first, as it needs the undotree info
+	tags.remove_tagfile(0)
 	undotree.remove_undofile(0)
 end
 

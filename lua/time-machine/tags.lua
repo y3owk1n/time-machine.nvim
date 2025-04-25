@@ -3,6 +3,8 @@ local M = {}
 local constants = require("time-machine.constants").constants
 local undotree = require("time-machine.undotree")
 
+local tags_dir = vim.fn.stdpath("data") .. "/time_machine/tags"
+
 -- Returns the tag-file path for this buffer’s undo history.
 ---@param bufnr number The buffer whose undofile we want to find
 ---@return string|nil The path to the tagfile, or nil if none
@@ -14,9 +16,8 @@ function M.get_tags_path(bufnr)
 
 	-- take just the filename (hash) of the undofile
 	local base = vim.fn.fnamemodify(uf, ":t")
-	local dir = vim.fn.stdpath("data") .. "/time_machine/tags"
-	vim.fn.mkdir(dir, "p")
-	return dir .. "/" .. base .. ".json"
+	vim.fn.mkdir(tags_dir, "p")
+	return tags_dir .. "/" .. base .. ".json"
 end
 
 -- Load the tags for this buffer’s undo history (or {} if none)
@@ -99,6 +100,23 @@ function M.tag_sequence(line_no, ui_bufnr, main_bufnr, success_cb)
 			end
 		end
 	)
+end
+
+function M.remove_tagfiles()
+	for _, f in ipairs(vim.fn.glob(tags_dir .. "/*", false, true)) do
+		pcall(os.remove, f)
+	end
+	vim.notify("Removed all tagfiles", vim.log.levels.INFO)
+end
+
+function M.remove_tagfile(bufnr)
+	local path = M.get_tags_path(bufnr)
+	if path and vim.fn.filereadable(path) == 1 then
+		os.remove(path)
+		vim.notify("Removed tagfile: " .. path, vim.log.levels.INFO)
+	else
+		vim.notify("No tagfile found: " .. path, vim.log.levels.WARN)
+	end
 end
 
 return M
