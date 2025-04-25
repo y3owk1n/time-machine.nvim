@@ -1,13 +1,18 @@
 # time-machine.nvim
 
 Undo. Redo. Time travel.
-Take control of your edit history with an interactive timeline, diff previews, taggings and live reloading trees.
+Take control of your edit history with an interactive timeline, diff previews, taggings, live reloading trees and cleanup functions.
 
 <!-- panvimdoc-ignore-start -->
 
 ![time-travel-demo](https://github.com/user-attachments/assets/2dc6c6e4-338e-4322-9698-f7d8b8d65cb7)
 
 <!-- panvimdoc-ignore-end -->
+
+> [!warning]
+>
+> - The documentation may not cover all the features of the plugin. I will update it as we go.
+> - There is no test yet for now, but it will be added soon. Hopefully nothing breaks.
 
 ## 🚀 Features
 
@@ -52,7 +57,7 @@ return {
 If you are using other package managers you need to call `setup`:
 
 ```lua
-require("dotmd").setup({
+require("time-machine").setup({
   -- your configuration
 })
 ```
@@ -60,16 +65,22 @@ require("dotmd").setup({
 ### Requirements
 
 - Neovim 0.11+ with Lua support
-- The following diff CLI is optional to be installed in your $PATH:
-  - `difft`
-  - `diff`
+- Optional diff utilities in your $PATH:
+  - `difft` for syntax-aware diffs
+  - Standard `diff` utility
+- Recommended Neovim settings:
+
+```lua
+vim.opt.undofile = true                      -- Enable persistent undo
+vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
+```
 
 ## ⚙️ Configuration
 
 > [!important]
 > Make sure to run `:checkhealth time-machine` if something isn't working properly.
 
-**dotmd.nvim** is highly configurable. And the default configurations are as below.
+**time-machine.nvim** is highly configurable. And the default configurations are as below.
 
 ### Default Options
 
@@ -87,16 +98,16 @@ require("dotmd").setup({
 ---@type TimeMachine.Config
 {
  split_opts = {
-  split = "left",
-  width = 50,
+  split = "left", -- where to open the tree panel
+  width = 50, -- width of the tree panel
  },
- diff_tool = "native",
+ diff_tool = "native", -- default diff engine
  native_diff_opts = {
   result_type = "unified",
   ctxlen = 3,
   algorithm = "histogram",
  },
- ignore_filesize = nil,
+ ignore_filesize = nil, -- e.g. 10 * 1024 * 1024
  ignored_filetypes = {
   "terminal",
   "nofile",
@@ -110,6 +121,9 @@ require("dotmd").setup({
  },
 }
 ```
+
+> [!note]
+> `ignored_filesize` and `ignored_filetypes` are does not disable undo, it only prevent the undo to save to the undofile. You don't have to set them if you don't want to.
 
 ## 🚀 Quick Start
 
@@ -182,11 +196,11 @@ require("time-machine").purge_all(force)
 
 ## ⌨️ Keybindings
 
-`<CR>` **Restore** - Restore to the selected sequence
-`r` **Refresh** - Refresh the data
-`p` **Preview** - Show the diff of the selected sequence
-`t` **Tag** - Tag the selected sequence
-`q` **Close** - Close the window
+- `<CR>` **Restore** - Restore to the selected sequence
+- `r` **Refresh** - Refresh the data
+- `p` **Preview** - Show the diff of the selected sequence
+- `t` **Tag** - Tag the selected sequence (only work if the buffer is persistent)
+- `q` **Close** - Close the window
 
 ## 🎨 Hlgroups
 
