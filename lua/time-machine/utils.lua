@@ -118,4 +118,22 @@ function M.merge_lists(default, user)
 	return result
 end
 
+--- Close a buffer
+---@param bufnr integer The buffer number
+---@return nil
+function M.close_buf(bufnr)
+	if vim.api.nvim_buf_is_valid(bufnr) then
+		vim.api.nvim_buf_delete(bufnr, { force = true })
+	end
+end
+
+--- Close a window
+---@param win integer The window number
+---@return nil
+function M.close_win(win)
+	if vim.api.nvim_win_is_valid(win) then
+		vim.api.nvim_win_close(win, true)
+	end
+end
+
 return M

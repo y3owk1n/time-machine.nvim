@@ -9,7 +9,7 @@ local tags_dir = vim.fn.stdpath("data") .. "/time_machine/tags"
 ---@param content_bufnr number The buffer whose undofile we want to find
 ---@return string|nil tagfile_path The path to the tagfile, or nil if none
 function M.get_tags_path(content_bufnr)
-	local ut = undotree.get_undofile(content_bufnr)
+	local ut = undotree.get_undofile_path(content_bufnr)
 	if not ut then
 		return nil
 	end

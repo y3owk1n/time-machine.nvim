@@ -13,7 +13,7 @@ function M.toggle()
 
 	--- if the current buffer is a time machine buffer, close it
 	if utils.is_time_machine_active(cur_bufnr) then
-		ui.close_buf(cur_bufnr)
+		utils.close_buf(cur_bufnr)
 		return
 	end
 
@@ -26,9 +26,9 @@ function M.toggle()
 			local content_bufnr = vim.api.nvim_buf_get_var(time_machine_bufnr, constants.content_buf_var)
 
 			if content_bufnr ~= cur_bufnr then
-				vim.api.nvim_win_close(time_machine_win, true)
+				utils.close_win(time_machine_win)
 			else
-				ui.close_buf(time_machine_bufnr)
+				utils.close_buf(time_machine_bufnr)
 				return
 			end
 		end
@@ -41,7 +41,7 @@ function M.toggle()
 		return
 	end
 
-	ui.show(ut, cur_bufnr)
+	ui.show_tree(ut, cur_bufnr)
 end
 
 --- Restore to an undopoint

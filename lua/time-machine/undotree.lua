@@ -5,7 +5,7 @@ local M = {}
 --- Get the undofile for a given buffer
 ---@param bufnr number|nil  Buffer number (defaults to current buffer)
 ---@return string|nil ufile The undofile path
-function M.get_undofile(bufnr)
+function M.get_undofile_path(bufnr)
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
 
 	local name = vim.api.nvim_buf_get_name(bufnr)
@@ -71,7 +71,7 @@ end
 function M.remove_undofile(bufnr)
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
 
-	local ufile = M.get_undofile(bufnr)
+	local ufile = M.get_undofile_path(bufnr)
 	if ufile ~= "" and vim.fn.filereadable(ufile) == 1 then
 		os.remove(ufile)
 		vim.notify("Removed undofile: " .. ufile, vim.log.levels.INFO)

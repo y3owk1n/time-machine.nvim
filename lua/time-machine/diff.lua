@@ -37,7 +37,7 @@ function M.preview_diff_native(old_lines, new_lines)
 		end,
 	})
 
-	require("time-machine.ui").create_native_float(preview_buf, "Preview (Native)")
+	require("time-machine.window").create_native_float_win(preview_buf, "Preview (Native)")
 end
 
 --- Diff with an external tool
@@ -67,7 +67,7 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 
 	local preview_buf = vim.api.nvim_create_buf(false, true)
 
-	local win = require("time-machine.ui").create_native_float(preview_buf, "Preview (" .. diff_type .. ")")
+	local win = require("time-machine.window").create_native_float_win(preview_buf, "Preview (" .. diff_type .. ")")
 
 	if not win then
 		return
@@ -83,7 +83,7 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 	})
 
 	vim.keymap.set("n", "q", function()
-		require("time-machine.ui").close_win(win)
+		require("time-machine.utils").close_win(win)
 	end, { buffer = preview_buf, nowait = true, noremap = true, silent = true })
 end
 

@@ -15,8 +15,6 @@
 
 ---@class TimeMachine.SeqMapRaw
 ---@field entry vim.fn.undotree.entry The undotree entry
----@field parent_seq integer|nil The parent sequence number
----@field children_seq integer[] The child sequence numbers
 ---@field branch_id integer|nil The branch ID
 ---@field tags string[] The tags
 
