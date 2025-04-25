@@ -9,8 +9,7 @@ M.config = {}
 local defaults = {
 	split_opts = {
 		split = "left",
-		width = 0.3,
-		height = 0.3,
+		width = 50,
 	},
 	diff_tool = "native",
 	native_diff_opts = {

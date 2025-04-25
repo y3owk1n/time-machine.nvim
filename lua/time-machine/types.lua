@@ -1,5 +1,5 @@
 ---@alias TimeMachine.DiffTool "native"|"difft"|"diff"
----@alias TimeMachine.SplitDirection 'left'|'right'|'above'|'below'
+---@alias TimeMachine.SplitDirection 'left'|'right'
 
 ---@class TimeMachine.Config
 ---@field diff_tool? TimeMachine.DiffTool The diff tool to use
@@ -11,7 +11,6 @@
 ---@class TimeMachine.SplitOpts
 ---@field split? TimeMachine.SplitDirection The split direction
 ---@field width? integer The width of the split
----@field height? integer The height of the split
 
 ---@class TimeMachine.SeqMapRaw
 ---@field entry vim.fn.undotree.entry The undotree entry

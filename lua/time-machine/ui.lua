@@ -393,12 +393,19 @@ function M.show(ut, main_bufnr)
 
 	local config_split_opts = require("time-machine.config").config.split_opts or {}
 
-	local split_opts = vim.tbl_deep_extend("force", config_split_opts, {
-		width = math.floor(vim.o.columns * config_split_opts.width),
-		height = math.floor(vim.o.lines * config_split_opts.height),
-	})
+	local width = config_split_opts.width
 
-	vim.api.nvim_open_win(bufnr, true, split_opts)
+	if config_split_opts.split == "left" then
+		vim.cmd("topleft vnew")
+	else
+		vim.cmd("botright vnew")
+	end
+
+	local win = vim.api.nvim_get_current_win()
+	vim.api.nvim_win_set_buf(win, bufnr)
+	vim.api.nvim_win_set_width(win, width)
+	vim.api.nvim_set_option_value("winfixwidth", true, { scope = "local", win = win })
+	vim.api.nvim_set_option_value("statusline", "", { scope = "local", win = win })
 
 	vim.api.nvim_buf_set_var(bufnr, constants.seq_map_buf_var, seq_map)
 	vim.api.nvim_buf_set_var(bufnr, constants.main_buf_var, main_bufnr)
