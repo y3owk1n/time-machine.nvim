@@ -29,12 +29,24 @@ end
 
 function M.check()
 	separator("Time Machine - Neovim Version Check")
-	report_status(vim.fn.has("nvim-0.11.0") == 1 and "ok" or "error", "Time Machine requires Neovim 0.11.0 or higher.")
+	report_status(
+		vim.fn.has("nvim-0.11.0") == 1 and "ok" or "error",
+		"Time Machine requires Neovim 0.11.0 or higher."
+	)
 
 	separator("Time Machine - Undo configuration check")
-	report_status(vim.o.undofile and "ok" or "warn", "Time Machine recommends undofile to be enabled.")
-	report_status(vim.o.undodir and "ok" or "warn", "Time Machine recommends undodir to be set.")
-	report_status(vim.o.undolevels and "ok" or "warn", "Time Machine recommends undolevels to be set.")
+	report_status(
+		vim.o.undofile and "ok" or "warn",
+		"Time Machine recommends undofile to be enabled."
+	)
+	report_status(
+		vim.o.undodir and "ok" or "warn",
+		"Time Machine recommends undodir to be set."
+	)
+	report_status(
+		vim.o.undolevels and "ok" or "warn",
+		"Time Machine recommends undolevels to be set."
+	)
 
 	separator("Time Machine - Diff Tools Check")
 	local config = require("time-machine.config").config
@@ -48,7 +60,10 @@ function M.check()
 
 		if diff_tools_map[config.diff_tool] then
 			if vim.fn.executable(config.diff_tool) == 1 then
-				report_status("ok", diff_tools_map[config.diff_tool] .. " is installed.")
+				report_status(
+					"ok",
+					diff_tools_map[config.diff_tool] .. " is installed."
+				)
 			else
 				report_status(
 					"error",
@@ -59,7 +74,12 @@ function M.check()
 				)
 			end
 		else
-			report_status("warn", "Diff tools configured: " .. config.diff_tool .. " is not supported.")
+			report_status(
+				"warn",
+				"Diff tools configured: "
+					.. config.diff_tool
+					.. " is not supported."
+			)
 		end
 	end
 end

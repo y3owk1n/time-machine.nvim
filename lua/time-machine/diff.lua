@@ -24,7 +24,11 @@ function M.preview_diff_native(old_lines, new_lines)
 
 	require("time-machine.ui").set_standard_buf_options(preview_buf)
 
-	vim.api.nvim_set_option_value("syntax", "diff", { scope = "local", buf = preview_buf })
+	vim.api.nvim_set_option_value(
+		"syntax",
+		"diff",
+		{ scope = "local", buf = preview_buf }
+	)
 
 	vim.api.nvim_buf_set_keymap(preview_buf, "n", "q", "", {
 		nowait = true,
@@ -37,7 +41,10 @@ function M.preview_diff_native(old_lines, new_lines)
 		end,
 	})
 
-	require("time-machine.window").create_native_float_win(preview_buf, "Preview (Native)")
+	require("time-machine.window").create_native_float_win(
+		preview_buf,
+		"Preview (Native)"
+	)
 end
 
 --- Diff with an external tool
@@ -67,20 +74,26 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 
 	local preview_buf = vim.api.nvim_create_buf(false, true)
 
-	local win = require("time-machine.window").create_native_float_win(preview_buf, "Preview (" .. diff_type .. ")")
+	local win = require("time-machine.window").create_native_float_win(
+		preview_buf,
+		"Preview (" .. diff_type .. ")"
+	)
 
 	if not win then
 		return
 	end
 
 	--- run the diff tool inside the terminal
-	vim.fn.jobstart({ cmd[1], unpack(cmd, 2, cmd.n), old_lines_file, new_lines_file }, {
-		term = true,
-		on_exit = function()
-			os.remove(old_lines_file)
-			os.remove(new_lines_file)
-		end,
-	})
+	vim.fn.jobstart(
+		{ cmd[1], unpack(cmd, 2, cmd.n), old_lines_file, new_lines_file },
+		{
+			term = true,
+			on_exit = function()
+				os.remove(old_lines_file)
+				os.remove(new_lines_file)
+			end,
+		}
+	)
 
 	vim.keymap.set("n", "q", function()
 		require("time-machine.utils").close_win(win)
@@ -119,7 +132,11 @@ function M.compute_diff_lines(old_lines, new_lines)
 	local old_text = table.concat(old_lines, "\n")
 	local new_text = table.concat(new_lines, "\n")
 
-	local diff_result = vim.diff(old_text, new_text, require("time-machine.config").config.native_diff_opts)
+	local diff_result = vim.diff(
+		old_text,
+		new_text,
+		require("time-machine.config").config.native_diff_opts
+	)
 
 	if not diff_result then
 		return { "[No differences]" }
@@ -138,7 +155,16 @@ function M.compute_diff_lines(old_lines, new_lines)
 		local lines = {}
 		for _, hunk in ipairs(diff_result) do
 			local a_start, a_count, b_start, b_count = unpack(hunk)
-			table.insert(lines, string.format("@@ -%d,%d +%d,%d @@", a_start, a_count, b_start, b_count))
+			table.insert(
+				lines,
+				string.format(
+					"@@ -%d,%d +%d,%d @@",
+					a_start,
+					a_count,
+					b_start,
+					b_count
+				)
+			)
 
 			for i = 0, a_count - 1 do
 				table.insert(lines, "-" .. (old_lines[a_start + i] or ""))

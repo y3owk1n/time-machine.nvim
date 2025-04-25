@@ -40,7 +40,10 @@ local function save_tags(tags_to_save, content_bufnr)
 	local path = M.get_tags_path(content_bufnr)
 
 	if not path then
-		vim.notify("Cannot save tags: no undofile for this buffer", vim.log.levels.WARN)
+		vim.notify(
+			"Cannot save tags: no undofile for this buffer",
+			vim.log.levels.WARN
+		)
 		return
 	end
 
@@ -53,8 +56,16 @@ end
 ---@param time_machine_bufnr number  The snapshot UI buffer
 ---@param content_bufnr number The real buffer whose undo history we're tagging
 ---@param success_cb? function|nil  Optional callback to call after tags are saved
-function M.create_tag(cur_line_no, time_machine_bufnr, content_bufnr, success_cb)
-	local persistent = vim.api.nvim_get_option_value("undofile", { scope = "local", buf = content_bufnr })
+function M.create_tag(
+	cur_line_no,
+	time_machine_bufnr,
+	content_bufnr,
+	success_cb
+)
+	local persistent = vim.api.nvim_get_option_value(
+		"undofile",
+		{ scope = "local", buf = content_bufnr }
+	)
 
 	if not persistent then
 		vim.notify("Persistent undofile is not enabled", vim.log.levels.WARN)
@@ -63,7 +74,8 @@ function M.create_tag(cur_line_no, time_machine_bufnr, content_bufnr, success_cb
 
 	--- Get the sequences map from the buffer variables
 	---@type TimeMachine.SeqMap
-	local seq_map = vim.api.nvim_buf_get_var(time_machine_bufnr, constants.seq_map_buf_var)
+	local seq_map =
+		vim.api.nvim_buf_get_var(time_machine_bufnr, constants.seq_map_buf_var)
 
 	local seq = seq_map[cur_line_no]
 	if not seq or seq == "" or seq == 0 then
@@ -74,7 +86,10 @@ function M.create_tag(cur_line_no, time_machine_bufnr, content_bufnr, success_cb
 	local current_tags = tags[tostring(seq)] or {}
 
 	vim.ui.input(
-		{ prompt = string.format("Tags for seq %d (comma-sep): ", seq), default = table.concat(current_tags, ", ") },
+		{
+			prompt = string.format("Tags for seq %d (comma-sep): ", seq),
+			default = table.concat(current_tags, ", "),
+		},
 		function(input)
 			if input == nil then
 				vim.notify("Tagging aborted", vim.log.levels.INFO)
@@ -84,7 +99,10 @@ function M.create_tag(cur_line_no, time_machine_bufnr, content_bufnr, success_cb
 			if input:match("^%s*$") then
 				tags[tostring(seq)] = nil
 				save_tags(tags, content_bufnr)
-				vim.notify(string.format("Removed tags for seq %d", seq), vim.log.levels.INFO)
+				vim.notify(
+					string.format("Removed tags for seq %d", seq),
+					vim.log.levels.INFO
+				)
 				if success_cb then
 					success_cb()
 				end
@@ -103,7 +121,14 @@ function M.create_tag(cur_line_no, time_machine_bufnr, content_bufnr, success_cb
 			tags[tostring(seq)] = list
 			save_tags(tags, content_bufnr)
 
-			vim.notify(string.format("Saved tags [%s] for seq %d", table.concat(list, ", "), seq), vim.log.levels.INFO)
+			vim.notify(
+				string.format(
+					"Saved tags [%s] for seq %d",
+					table.concat(list, ", "),
+					seq
+				),
+				vim.log.levels.INFO
+			)
 
 			if success_cb then
 				success_cb()
