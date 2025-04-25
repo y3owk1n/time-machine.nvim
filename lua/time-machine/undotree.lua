@@ -68,7 +68,6 @@ end
 ---@return boolean ok `true` if we removed a file, `false` otherwise
 function M.remove_undofile(bufnr)
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
-	local buf_name = vim.api.nvim_buf_get_name(bufnr)
 
 	local ufile = M.get_undofile(bufnr)
 	if ufile ~= "" and vim.fn.filereadable(ufile) == 1 then
@@ -77,6 +76,19 @@ function M.remove_undofile(bufnr)
 	else
 		vim.notify("No undofile found: " .. ufile, vim.log.levels.WARN)
 	end
+
+	M.refresh_buffer_window(bufnr)
+
+	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.undofile_deleted })
+
+	return true
+end
+
+--- Refresh all the buffers and windows
+---@param bufnr integer The buffer number
+---@return nil
+function M.refresh_buffer_window(bufnr)
+	local buf_name = vim.api.nvim_buf_get_name(bufnr)
 
 	local wins = {}
 	for _, w in ipairs(vim.api.nvim_list_wins()) do
@@ -107,9 +119,11 @@ function M.remove_undofile(bufnr)
 		vim.api.nvim_win_set_buf(w, newbuf)
 	end
 
-	vim.api.nvim_exec_autocmds("User", { pattern = constants.events.undofile_deleted })
-
-	return true
+	-- to avoid the `file exists, use ! to override` error after replacing the buffer
+	vim.api.nvim_buf_call(newbuf, function()
+		vim.cmd("cabbrev <buffer> w w!")
+		vim.cmd("cabbrev <buffer> W W!")
+	end)
 end
 
 return M
