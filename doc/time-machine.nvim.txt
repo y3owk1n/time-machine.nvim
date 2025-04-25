@@ -3,31 +3,213 @@
 ==============================================================================
 Table of Contents                        *time-machine.nvim-table-of-contents*
 
-1. time-machine.nvim (WIP)         |time-machine.nvim-time-machine.nvim-(wip)|
-  - todos                    |time-machine.nvim-time-machine.nvim-(wip)-todos|
+1. time-machine.nvim                     |time-machine.nvim-time-machine.nvim|
+  - Features                    |time-machine.nvim-time-machine.nvim-features|
+  - Installation            |time-machine.nvim-time-machine.nvim-installation|
+  - Configuration          |time-machine.nvim-time-machine.nvim-configuration|
+  - Quick Start              |time-machine.nvim-time-machine.nvim-quick-start|
+  - API                              |time-machine.nvim-time-machine.nvim-api|
+  - Keybindings              |time-machine.nvim-time-machine.nvim-keybindings|
+  - Hlgroups                    |time-machine.nvim-time-machine.nvim-hlgroups|
+  - Contributing            |time-machine.nvim-time-machine.nvim-contributing|
 
 ==============================================================================
-1. time-machine.nvim (WIP)         *time-machine.nvim-time-machine.nvim-(wip)*
+1. time-machine.nvim                     *time-machine.nvim-time-machine.nvim*
 
-Time Machine is a lightweight Neovim plugin that enhances the undo
-functionality.
-
-
-TODOS                        *time-machine.nvim-time-machine.nvim-(wip)-todos*
-
-- Add support for external diff tools
-- Add support for tagging an undo
-- Better tags handling and cleanup
-- Properly handle post undofile deletion with tags cleanup
-- Refactor spaghetti code
-- Add test
-- Add health check
-- Add proper readme
+Undo. Redo. Time travel. Take control of your edit history with an interactive
+timeline, diff previews, taggings and live reloading trees.
 
 
-MAYBE? ~
+FEATURES                        *time-machine.nvim-time-machine.nvim-features*
 
-- Add support for git branch aware undo
+- **Interactive History Tree**Navigate your entire undo history in a collapsible tree view, grouping related edits for an intuitive overview.
+- **Live Diff Preview**Instantly preview the changes introduced at any point in time with unified or custom diff formats.
+- **Tag & Bookmark**Mark important snapshots with custom tags for quick access—never lose your critical checkpoints.
+- **Multiple Diff Engines**Out-of-the-box support for native Vim diff, difft, or standard diff—use whichever suits your workflow.
+- **Hot Reload**Keep your undo tree up-to-date without manually refreshing, with automatic snapshot reloads happening in the background.
+- **Undo File Cleaning**Easily purge individual buffers or all undo files, with optional force flags to prevent accidental data loss.
+
+
+INSTALLATION                *time-machine.nvim-time-machine.nvim-installation*
+
+Using lazy.nvim <https://github.com/folke/lazy.nvim>
+
+>lua
+    -- time-machine.lua
+    return {
+     "y3owk1n/time-machine.nvim",
+     version = "*", -- remove this if you want to use the `main` branch
+     opts = {
+      -- your configuration comes here
+      -- or leave it empty to use the default settings
+      -- refer to the configuration section below
+     }
+    }
+<
+
+Ifyou are using other package managers you need to call `setup`
+
+>lua
+    require("dotmd").setup({
+      -- your configuration
+    })
+<
+
+
+REQUIREMENTS ~
+
+- Neovim0.11+ with Lua support
+- The following diff CLI is optional to be installed in your $PATH:
+    - `difft`
+    - `diff`
+
+
+CONFIGURATION              *time-machine.nvim-time-machine.nvim-configuration*
+
+
+  [!important] Make sure to run `:checkhealth time-machine` if something isn’t
+  working properly.
+**dotmd.nvim** is highly configurable. And the default configurations are as
+below.
+
+
+DEFAULT OPTIONS ~
+
+>lua
+    ---@class TimeMachine.Config
+    ---@field diff_tool? TimeMachine.DiffTool The diff tool to use
+    ---@field native_diff_opts? vim.diff.Opts The options for vim.diff
+    ---@field ignore_filesize? integer|nil The file size to ignore undo saved to disk
+    ---@field ignored_filetypes? string[] The file types to ignore undo saved to disk
+    ---@field split_opts? TimeMachine.SplitOpts The split options
+    
+    ---@alias TimeMachine.DiffTool "native"|"difft"|"diff"
+    ---@alias TimeMachine.SplitDirection 'left'|'right'
+    
+    ---@type TimeMachine.Config
+    {
+     split_opts = {
+      split = "left",
+      width = 50,
+     },
+     diff_tool = "native",
+     native_diff_opts = {
+      result_type = "unified",
+      ctxlen = 3,
+      algorithm = "histogram",
+     },
+     ignore_filesize = nil,
+     ignored_filetypes = {
+      "terminal",
+      "nofile",
+      "time-machine-list",
+      "mason",
+      "snacks_picker_list",
+      "snacks_picker_input",
+      "snacks_dashboard",
+      "snacks_notif_history",
+      "lazy",
+     },
+    }
+<
+
+
+QUICK START                  *time-machine.nvim-time-machine.nvim-quick-start*
+
+See the example below for how to configure **time-machine.nvim**.
+
+>lua
+    {
+     "y3owk1n/time-machine.nvim",
+     event = { "VeryLazy" },
+     ---@type TimeMachine.Config
+     opts = {},
+     keys = {
+      {
+       "<leader>tt",
+       function()
+        require("time-machine").actions.toggle()
+       end,
+       mode = "n",
+       desc = "[Time Machine] Toggle Tree",
+      },
+      {
+       "<leader>tx",
+       function()
+        require("time-machine").actions.purge_current()
+       end,
+       mode = "n",
+       desc = "[Time Machine] Purge current",
+      },
+      {
+       "<leader>tX",
+       function()
+        require("time-machine").actions.purge_all()
+       end,
+       mode = "n",
+       desc = "[Time Machine] Purge all",
+      },
+     },
+    },
+<
+
+
+API                                  *time-machine.nvim-time-machine.nvim-api*
+
+**time-machine.nvim** provides the following api functions that you can use to
+map to your own keybindings:
+
+
+TOGGLE THE TREE ~
+
+Toggle the undotree based on current buffer.
+
+>lua
+    require("time-machine").toggle()
+<
+
+
+PURGE UNDOFILE FOR THE CURRENT BUFFER ~
+
+Purge the undofile for the current buffer (including tagfile).
+
+>lua
+    ---@param force? boolean Whether to force the purge
+    require("time-machine").purge_buffer(force)
+<
+
+
+PURGE ALL UNDOFILES ~
+
+Purge all undofiles (including tagfiles).
+
+>lua
+    ---@param force? boolean Whether to force the purge
+    require("time-machine").purge_all(force)
+<
+
+
+KEYBINDINGS                  *time-machine.nvim-time-machine.nvim-keybindings*
+
+`<CR>` **Restore** - Restore to the selected sequence `r` **Refresh** - Refresh
+the data `p` **Preview** - Show the diff of the selected sequence `t` **Tag** -
+Tag the selected sequence `q` **Close** - Close the window
+
+
+HLGROUPS                        *time-machine.nvim-time-machine.nvim-hlgroups*
+
+- `TimeMachineCurrent` - Current sequence
+- `TimeMachineKeymap` - Keymap
+- `TimeMachineInfo` - Info
+- `TimeMachineSeq` - Sequence
+- `TimeMachineTag` - Tag
+
+
+CONTRIBUTING                *time-machine.nvim-time-machine.nvim-contributing*
+
+Read the documentation carefully before submitting any issue.
+
+Feature and pull requests are welcome.
 
 Generated by panvimdoc <https://github.com/kdheepak/panvimdoc>
 
