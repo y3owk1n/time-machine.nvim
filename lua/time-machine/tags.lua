@@ -75,7 +75,12 @@ function M.tag_sequence(line_no, ui_bufnr, main_bufnr, success_cb)
 	vim.ui.input(
 		{ prompt = string.format("Tags for seq %d (comma-sep): ", seq), default = table.concat(current_tags, ", ") },
 		function(input)
-			if not input or input:match("^%s*$") then
+			if input == nil then
+				vim.notify("Tagging aborted", vim.log.levels.INFO)
+				return
+			end
+
+			if input:match("^%s*$") then
 				tags[tostring(seq)] = nil
 				save_tags(tags, main_bufnr)
 				vim.notify(string.format("Removed tags for seq %d", seq), vim.log.levels.INFO)
