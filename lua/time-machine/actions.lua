@@ -8,22 +8,27 @@ local M = {}
 
 --- Show the undotree for a buffer
 ---@return nil
-function M.show_tree()
+function M.toggle_tree()
 	local bufnr = vim.api.nvim_get_current_buf()
 
 	local is_time_machine = utils.is_time_machine_buf(bufnr)
 
 	local found_bufnr = utils.find_time_machine_list_buf()
 
+	--- if the current buffer is a time machine buffer, close it
 	if is_time_machine then
 		ui.close(bufnr)
 		return
 	end
 
+	--- if time machine buffer is found, check if it's refering the same buffer as current buffer, if not then close it and later open the latest versio
 	if found_bufnr then
 		if vim.api.nvim_buf_is_valid(found_bufnr) then
-			ui.close(found_bufnr)
-			return
+			local main_bufnr = vim.api.nvim_buf_get_var(found_bufnr, constants.main_buf_var)
+
+			if main_bufnr ~= bufnr then
+				ui.close(found_bufnr)
+			end
 		end
 	end
 

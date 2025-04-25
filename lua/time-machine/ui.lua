@@ -396,6 +396,7 @@ function M.show(ut, main_bufnr)
 	})
 
 	vim.api.nvim_buf_set_var(bufnr, constants.seq_map_buf_var, seq_map)
+	vim.api.nvim_buf_set_var(bufnr, constants.main_buf_var, main_bufnr)
 
 	vim.api.nvim_create_autocmd("User", {
 		group = utils.augroup("ui_refresh"),
