@@ -56,7 +56,9 @@ function M.remove_undofiles()
 
 	for _, n in ipairs(names) do
 		local bufnr = vim.fn.bufnr(n)
-		M.remove_undofile(bufnr)
+		M.refresh_buffer_window(bufnr)
+
+		vim.api.nvim_exec_autocmds("User", { pattern = constants.events.undofile_deleted })
 	end
 
 	vim.notify("Purged undo history for all buffers", vim.log.levels.INFO)
