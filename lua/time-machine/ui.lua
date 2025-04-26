@@ -7,6 +7,8 @@ local window = require("time-machine.window")
 
 local M = {}
 
+local main_timeline_annotation = "╭─ Main timeline"
+
 --- Set standard buffer options
 ---@param bufnr integer The buffer number
 ---@return nil
@@ -72,6 +74,22 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 					{
 						end_col = start_col + #keymap,
 						hl_group = constants.hl.keymap,
+					}
+				)
+			end
+
+			--- get the main timeline annotation
+			if line:find(main_timeline_annotation) then
+				local start_col = line:find(main_timeline_annotation, 1, true)
+					- 1
+				vim.api.nvim_buf_set_extmark(
+					bufnr,
+					constants.ns,
+					i - 1,
+					start_col,
+					{
+						end_col = start_col + #main_timeline_annotation,
+						hl_group = constants.hl.timeline,
 					}
 				)
 			end
@@ -223,6 +241,8 @@ local function set_header(lines, seq_map, content_bufnr)
 	if tags_path then
 		table.insert(header_lines, #header_lines - 2, "Tag File: " .. tags_path)
 	end
+
+	table.insert(header_lines, main_timeline_annotation)
 
 	for i = #header_lines, 1, -1 do
 		table.insert(lines, 1, header_lines[i])
