@@ -111,6 +111,30 @@ function M.setup_autocmds()
 	})
 end
 
+function M.setup_usercmds()
+	local actions = require("time-machine.actions")
+
+	vim.api.nvim_create_user_command("TimeMachineToggle", function()
+		actions.toggle()
+	end, {
+		desc = "Toggle the Time Machine UI",
+	})
+
+	vim.api.nvim_create_user_command("TimeMachinePurgeBuffer", function(opts)
+		actions.purge_buffer(opts.bang)
+	end, {
+		bang = true,
+		desc = "Purge the current buffer's undofile",
+	})
+
+	vim.api.nvim_create_user_command("TimeMachinePurgeAll", function(opts)
+		actions.purge_all(opts.bang)
+	end, {
+		bang = true,
+		desc = "Purge all undofiles",
+	})
+end
+
 --- Setup Time Machine
 ---@param user_config TimeMachine.Config
 ---@return nil
@@ -125,6 +149,7 @@ function M.setup(user_config)
 	end
 
 	M.setup_autocmds()
+	M.setup_usercmds()
 	M.setup_highlights()
 end
 

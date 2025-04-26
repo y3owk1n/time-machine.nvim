@@ -170,7 +170,11 @@ See the example below for how to configure **time-machine.nvim**.
 ```lua
 {
  "y3owk1n/time-machine.nvim",
- event = { "VeryLazy" },
+ cmd = {
+  "TimeMachineToggle",
+  "TimeMachinePurgeBuffer",
+  "TimeMachinePurgeAll",
+ },
  ---@type TimeMachine.Config
  opts = {},
  keys = {
@@ -216,7 +220,7 @@ See the example below for how to configure **time-machine.nvim**.
 Toggle the undotree based on current buffer.
 
 ```lua
-require("time-machine").toggle()
+require("time-machine").toggle() -- or :TimeMachineToggle
 ```
 
 ### Purge undofile for the current buffer
@@ -225,7 +229,7 @@ Purge the undofile for the current buffer (including tagfile).
 
 ```lua
 ---@param force? boolean Whether to force the purge
-require("time-machine").purge_buffer(force)
+require("time-machine").purge_buffer(force) -- or :TimeMachinePurgeBuffer
 ```
 
 ### Purge all undofiles
@@ -234,7 +238,7 @@ Purge all undofiles (including tagfiles).
 
 ```lua
 ---@param force? boolean Whether to force the purge
-require("time-machine").purge_all(force)
+require("time-machine").purge_all(force) -- or :TimeMachinePurgeAll
 ```
 
 ## ⌨️ Keybindings
