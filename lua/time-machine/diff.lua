@@ -96,14 +96,31 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 		table.insert(to_run_cmd, 2, cmd_args)
 	end
 
-	--- run the diff tool inside the terminal
-	vim.fn.jobstart(to_run_cmd, {
+	if vim.fn.executable(cmd[1]) == 0 then
+		vim.notify("Diff tool not found: " .. cmd[1], vim.log.levels.ERROR)
+		require("time-machine.utils").close_win(win)
+		os.remove(old_lines_file)
+		os.remove(new_lines_file)
+		return
+	end
+
+	local ok = pcall(vim.fn.jobstart, to_run_cmd, {
 		term = true,
 		on_exit = function()
 			os.remove(old_lines_file)
 			os.remove(new_lines_file)
 		end,
 	})
+
+	if not ok then
+		vim.notify(
+			"Failed to start diff tool: " .. cmd[1],
+			vim.log.levels.ERROR
+		)
+		require("time-machine.utils").close_win(win)
+		os.remove(old_lines_file)
+		os.remove(new_lines_file)
+	end
 
 	vim.keymap.set("n", "q", function()
 		require("time-machine.utils").close_win(win)
