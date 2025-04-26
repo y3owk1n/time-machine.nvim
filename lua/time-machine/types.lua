@@ -17,6 +17,7 @@
 ---@field tag_sequence? string The keymap to tag the sequence
 ---@field close? string The keymap to close the timeline
 ---@field help? string The keymap to show the help
+---@field toggle_current_timeline? string The keymap to toggle to only show the current timeline
 
 ---@class TimeMachine.Config.SplitOpts
 ---@field split? TimeMachine.SplitDirection The split direction

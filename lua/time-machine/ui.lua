@@ -9,6 +9,8 @@ local M = {}
 
 local main_timeline_annotation = "╭─ Main timeline"
 
+local is_current_timeline_toggled = false
+
 --- Set standard buffer options
 ---@param bufnr integer The buffer number
 ---@return nil
@@ -180,8 +182,13 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 	end
 
 	for i, line in ipairs(lines) do
-		local info_matches =
-			{ "Persistent:", "Buffer:", "Undo File:", "Tag File:" }
+		local info_matches = {
+			"Timeline View",
+			"Persistent:",
+			"Content Buffer:",
+			"Undo File:",
+			"Tag File:",
+		}
 
 		--- get the info area
 		for _, info_match in ipairs(info_matches) do
@@ -219,6 +226,9 @@ local function set_header(lines, seq_map, content_bufnr)
 
 	local keymaps = require("time-machine.config").config.keymaps or {}
 
+	local timeline_view_text = is_current_timeline_toggled and "current"
+		or "all"
+
 	---@type string[]
 	local header_lines = {
 		string.format(
@@ -227,8 +237,9 @@ local function set_header(lines, seq_map, content_bufnr)
 			keymaps.help
 		),
 		"",
+		"Timeline View: " .. timeline_view_text,
 		"Persistent: " .. tostring(persistent),
-		"Buffer: " .. content_bufnr,
+		"Content Buffer: " .. content_bufnr,
 		"",
 		annotation,
 		"",
@@ -260,8 +271,14 @@ end
 ---@param time_machine_bufnr integer The buffer number
 ---@param seq_map TimeMachine.SeqMap The map of line numbers to seqs
 ---@param content_bufnr integer The main buffer number
+---@param show_current_timeline_only? boolean Whether to only show the current timeline
 ---@return nil
-function M.refresh(time_machine_bufnr, seq_map, content_bufnr)
+function M.refresh(
+	time_machine_bufnr,
+	seq_map,
+	content_bufnr,
+	show_current_timeline_only
+)
 	if
 		not time_machine_bufnr
 		or not vim.api.nvim_buf_is_valid(time_machine_bufnr)
@@ -282,7 +299,11 @@ function M.refresh(time_machine_bufnr, seq_map, content_bufnr)
 
 	seq_map = {}
 
-	local tree_lines = tree.build_tree_lines(ut, seq_map, tags)
+	show_current_timeline_only = show_current_timeline_only
+		or is_current_timeline_toggled
+
+	local tree_lines =
+		tree.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 
 	for _, line in ipairs(tree_lines) do
 		table.insert(lines, line.content)
@@ -333,7 +354,8 @@ function M.show_tree(ut, content_bufnr)
 	local tags = require("time-machine.tags").load_tags(content_bufnr)
 
 	local seq_map = {}
-	local tree_lines = tree.build_tree_lines(ut, seq_map, tags)
+	local tree_lines =
+		tree.build_tree_lines(ut, seq_map, tags, is_current_timeline_toggled)
 	local lines = {}
 
 	for _, line in ipairs(tree_lines) do
@@ -399,7 +421,12 @@ function M.show_tree(ut, content_bufnr)
 			noremap = true,
 			silent = true,
 			callback = function()
-				M.refresh(time_machine_bufnr, seq_map, content_bufnr)
+				M.refresh(
+					time_machine_bufnr,
+					seq_map,
+					content_bufnr,
+					is_current_timeline_toggled
+				)
 				vim.notify("Refreshed", vim.log.levels.INFO)
 			end,
 		}
@@ -422,7 +449,12 @@ function M.show_tree(ut, content_bufnr)
 					time_machine_bufnr,
 					content_bufnr,
 					function()
-						M.refresh(time_machine_bufnr, seq_map, content_bufnr)
+						M.refresh(
+							time_machine_bufnr,
+							seq_map,
+							content_bufnr,
+							is_current_timeline_toggled
+						)
 					end
 				)
 			end,
@@ -446,6 +478,33 @@ function M.show_tree(ut, content_bufnr)
 			M.show_help()
 		end,
 	})
+
+	vim.api.nvim_buf_set_keymap(
+		time_machine_bufnr,
+		"n",
+		keymaps.toggle_current_timeline,
+		"",
+		{
+			nowait = true,
+			noremap = true,
+			silent = true,
+			callback = function()
+				is_current_timeline_toggled = not is_current_timeline_toggled
+				M.refresh(
+					time_machine_bufnr,
+					seq_map,
+					content_bufnr,
+					is_current_timeline_toggled
+				)
+				vim.notify(
+					"Now in "
+						.. (is_current_timeline_toggled and "current" or "all")
+						.. " timeline",
+					vim.log.levels.INFO
+				)
+			end,
+		}
+	)
 
 	local time_machine_win_id =
 		window.create_native_split_win(time_machine_bufnr)
@@ -480,7 +539,12 @@ function M.show_tree(ut, content_bufnr)
 		callback = function()
 			-- only refresh if that buffer is still open
 			if vim.api.nvim_buf_is_valid(time_machine_bufnr) then
-				M.refresh(time_machine_bufnr, seq_map, content_bufnr)
+				M.refresh(
+					time_machine_bufnr,
+					seq_map,
+					content_bufnr,
+					is_current_timeline_toggled
+				)
 			end
 		end,
 	})
@@ -505,6 +569,7 @@ function M.show_help()
 		preview_sequence_diff = "Show the diff of the selected sequence",
 		tag_sequence = "Tag the selected sequence",
 		close = "Close the window/bufffer",
+		toggle_current_timeline = "Toggle to only show the current timeline",
 	}
 
 	local help_lines = {
