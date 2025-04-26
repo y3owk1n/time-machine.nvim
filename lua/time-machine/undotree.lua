@@ -83,6 +83,7 @@ function M.remove_undofile(bufnr)
 		vim.notify("Removed undofile: " .. undofile, vim.log.levels.INFO)
 	else
 		vim.notify("No undofile found: " .. undofile, vim.log.levels.WARN)
+		return false
 	end
 
 	M.refresh_buffer_window(bufnr)
