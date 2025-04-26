@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.2](https://github.com/y3owk1n/time-machine.nvim/compare/v1.2.1...v1.2.2) (2025-04-26)
+
+
+### Bug Fixes
+
+* **actions.purge:** use `vim.ui.select` instead of `vim.fn.input` ([#32](https://github.com/y3owk1n/time-machine.nvim/issues/32)) ([f1be003](https://github.com/y3owk1n/time-machine.nvim/commit/f1be003d0fac1f7c40dafabd8659b7a6b9920729))
+* **actions.restore:** ensure to early return if no `content_bufnr` found ([#36](https://github.com/y3owk1n/time-machine.nvim/issues/36)) ([355488e](https://github.com/y3owk1n/time-machine.nvim/commit/355488e2ec2a9511fbbf76592c6d2cf898a8d6e5))
+* **actions.toggle:** ensure checking for time machine buf for proper toggling ([#30](https://github.com/y3owk1n/time-machine.nvim/issues/30)) ([14b7e53](https://github.com/y3owk1n/time-machine.nvim/commit/14b7e53c9d9323380a7e400a6195ce318de1db35))
+* **ui.set_header:** check if `tags_path` actually exists before creating it's header line ([#37](https://github.com/y3owk1n/time-machine.nvim/issues/37)) ([563c755](https://github.com/y3owk1n/time-machine.nvim/commit/563c75520c60600e3ee20a3922022cbff7d03852))
+* **undotree.refresh_buffer_window:** reorder re-attachment of refreshed buffer window ([#35](https://github.com/y3owk1n/time-machine.nvim/issues/35)) ([150bcb1](https://github.com/y3owk1n/time-machine.nvim/commit/150bcb1ae0bead71c91a62ba1669ffcb31d60938))
+* **undotree.remove_undo_file:** do not try to refresh buffer if failed to remove undofile ([#34](https://github.com/y3owk1n/time-machine.nvim/issues/34)) ([f9dcbbe](https://github.com/y3owk1n/time-machine.nvim/commit/f9dcbbedfd064c65d68559de44873ea18e9dca01))
+
 ## [1.2.1](https://github.com/y3owk1n/time-machine.nvim/compare/v1.2.0...v1.2.1) (2025-04-26)
 
 
