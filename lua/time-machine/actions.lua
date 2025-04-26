@@ -11,6 +11,12 @@ local M = {}
 function M.toggle()
 	local cur_bufnr = vim.api.nvim_get_current_buf()
 
+	--- if the current buffer is a time machine buffer, close it
+	if utils.is_time_machine_active(cur_bufnr) then
+		utils.close_buf(cur_bufnr)
+		return
+	end
+
 	-- Skip unnamed buffers
 	if vim.api.nvim_buf_get_name(cur_bufnr) == "" then
 		vim.notify(
@@ -26,12 +32,6 @@ function M.toggle()
 			"Current buffer is not listed, cannot show undotree",
 			vim.log.levels.WARN
 		)
-		return
-	end
-
-	--- if the current buffer is a time machine buffer, close it
-	if utils.is_time_machine_active(cur_bufnr) then
-		utils.close_buf(cur_bufnr)
 		return
 	end
 
