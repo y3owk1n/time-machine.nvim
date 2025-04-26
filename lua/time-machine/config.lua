@@ -11,6 +11,10 @@ local defaults = {
 		split = "left",
 		width = 50,
 	},
+	float_opts = {
+		width = 0.8,
+		height = 0.8,
+	},
 	diff_tool = "native",
 	native_diff_opts = {
 		result_type = "unified",
