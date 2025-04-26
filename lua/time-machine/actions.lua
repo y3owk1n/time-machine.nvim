@@ -73,6 +73,7 @@ end
 function M.restore(seq, content_bufnr)
 	if not content_bufnr then
 		vim.notify("No content buffer found", vim.log.levels.ERROR)
+		return
 	end
 
 	vim.api.nvim_buf_call(content_bufnr, function()
