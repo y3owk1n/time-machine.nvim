@@ -263,8 +263,12 @@ require("time-machine").purge_all(force) -- or :TimeMachinePurgeAll
 - `TimeMachineSeq` - Individual sequence number
 - `TimeMachineTag` - Tags text
 
+<!-- panvimdoc-ignore-start -->
+
 ## 🤝 Contributing
 
 Read the documentation carefully before submitting any issue.
 
 Feature and pull requests are welcome.
+
+<!-- panvimdoc-ignore-end -->
