@@ -219,7 +219,7 @@ local function set_header(lines, seq_map, content_bufnr)
 
 	---@type string[]
 	local header_lines = {
-		"[g?] Actions/Help [<CR>] Restore [r] Refresh [p] Preview [t] Tag [q] Close",
+		"[<CR>] Restore [g?] More Actions/Help",
 		"",
 		"Persistent: " .. tostring(persistent),
 		"Buffer: " .. content_bufnr,
