@@ -38,6 +38,7 @@ function M.setup_highlights()
 
 	local defaults_colors = {
 		current = { bg = "#3c3836", fg = "#fabd2f", bold = true },
+		timeline = { fg = "#fabd2f", bold = true },
 		keymap = { fg = "#8bd5ca", italic = true },
 		info = { fg = "#939AB7", italic = true },
 		seq = { fg = "#ed8796", bold = true },
