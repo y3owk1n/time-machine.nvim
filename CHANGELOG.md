@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/y3owk1n/time-machine.nvim/compare/v1.2.0...v1.2.1) (2025-04-26)
+
+
+### Bug Fixes
+
+* **diff.preview_diff_external:** early return and pcall on diff cmds ([#29](https://github.com/y3owk1n/time-machine.nvim/issues/29)) ([3d76354](https://github.com/y3owk1n/time-machine.nvim/commit/3d763547c358480503c998584ea88d45974a3cf3))
+* **healthcheck:** add delta to healthcheck ([#27](https://github.com/y3owk1n/time-machine.nvim/issues/27)) ([c4fa2e1](https://github.com/y3owk1n/time-machine.nvim/commit/c4fa2e1153659e29d180cb7cd41dcf4eb0261120))
+
 ## [1.2.0](https://github.com/y3owk1n/time-machine.nvim/compare/v1.1.0...v1.2.0) (2025-04-26)
 
 
