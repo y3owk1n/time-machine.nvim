@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.0](https://github.com/y3owk1n/time-machine.nvim/compare/v1.0.0...v1.1.0) (2025-04-26)
+
+
+### Features
+
+* **config:** make keymaps configurable ([#13](https://github.com/y3owk1n/time-machine.nvim/issues/13)) ([7c91087](https://github.com/y3owk1n/time-machine.nvim/commit/7c910874e82830707d538b916787bf0c07198694))
+* **ui:** add toggleable timeline view ([#15](https://github.com/y3owk1n/time-machine.nvim/issues/15)) ([7b3c1ab](https://github.com/y3owk1n/time-machine.nvim/commit/7b3c1abcd13bab1665dd54029ce97db2e5a26995))
+* **ui:** make float size configurable ([#17](https://github.com/y3owk1n/time-machine.nvim/issues/17)) ([96d4114](https://github.com/y3owk1n/time-machine.nvim/commit/96d411410a9cd6cb33707c94ca739b94008c64e9))
+
+
+### Bug Fixes
+
+* **ui:** add annotation for the main timeline ([#11](https://github.com/y3owk1n/time-machine.nvim/issues/11)) ([06971b3](https://github.com/y3owk1n/time-machine.nvim/commit/06971b35858a8f849c8faac47546ed04484cc9ff))
+* **ui:** add highlights to current timeline icon ([#9](https://github.com/y3owk1n/time-machine.nvim/issues/9)) ([500ce6f](https://github.com/y3owk1n/time-machine.nvim/commit/500ce6f7e9beb30b5efdced0b97e99002424c69d))
+* **ui:** declutter header keymaps ui ([#12](https://github.com/y3owk1n/time-machine.nvim/issues/12)) ([c203de0](https://github.com/y3owk1n/time-machine.nvim/commit/c203de04eafa8815b4c00bbb3a789574b2d52dce))
+* **ui:** force main timeline to always have separator ([#16](https://github.com/y3owk1n/time-machine.nvim/issues/16)) ([0588c3b](https://github.com/y3owk1n/time-machine.nvim/commit/0588c3b4249d00614ec5b09b6e44da56a169c71f))
+
 ## 1.0.0 (2025-04-25)
 
 
