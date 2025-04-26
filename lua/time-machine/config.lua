@@ -65,19 +65,7 @@ function M.setup_highlights()
 	end
 end
 
---- Setup Time Machine
----@param user_config TimeMachine.Config
----@return nil
-function M.setup(user_config)
-	M.config = vim.tbl_deep_extend("force", defaults, user_config or {})
-
-	if user_config.ignored_filetypes and #user_config.ignored_filetypes > 0 then
-		M.config.ignored_filetypes = utils.merge_lists(
-			user_config.ignored_filetypes,
-			defaults.ignored_filetypes
-		)
-	end
-
+function M.setup_autocmds()
 	--- disable undofile for ignored filetypes
 	--- note that this only disable undo to be saved to disk, the undo will still be available in memory
 	vim.api.nvim_create_autocmd("FileType", {
@@ -121,7 +109,22 @@ function M.setup(user_config)
 			end
 		end,
 	})
+end
 
+--- Setup Time Machine
+---@param user_config TimeMachine.Config
+---@return nil
+function M.setup(user_config)
+	M.config = vim.tbl_deep_extend("force", defaults, user_config or {})
+
+	if user_config.ignored_filetypes and #user_config.ignored_filetypes > 0 then
+		M.config.ignored_filetypes = utils.merge_lists(
+			user_config.ignored_filetypes,
+			defaults.ignored_filetypes
+		)
+	end
+
+	M.setup_autocmds()
 	M.setup_highlights()
 end
 
