@@ -258,7 +258,7 @@ local function set_header(lines, seq_map, content_bufnr)
 
 	local tags_path = require("time-machine.tags").get_tags_path(content_bufnr)
 
-	if tags_path then
+	if tags_path and vim.fn.filereadable(tags_path) == 1 then
 		table.insert(header_lines, #header_lines - 2, "Tag File: " .. tags_path)
 	end
 
