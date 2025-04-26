@@ -94,6 +94,7 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ---@field ignore_filesize? integer|nil The file size to ignore undo saved to disk
 ---@field ignored_filetypes? string[] The file types to ignore undo saved to disk
 ---@field split_opts? TimeMachine.Config.SplitOpts The split options
+---@field float_opts? TimeMachine.Config.FloatOpts The floating window options
 ---@field keymaps? TimeMachine.Config.Keymaps The keymaps for actions
 
 ---@class TimeMachine.Config.Keymaps
@@ -108,6 +109,10 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ---@class TimeMachine.Config.SplitOpts
 ---@field split? TimeMachine.SplitDirection The split direction
 ---@field width? integer The width of the split
+
+---@class TimeMachine.Config.FloatOpts
+---@field width? integer The width of the window
+---@field height? integer The height of the window
 ```
 
 ```lua
@@ -115,7 +120,11 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 {
  split_opts = {
   split = "left", -- where to open the tree panel
-  width = 50, -- width of the tree panel
+  width = 50, -- columns number
+ },
+ float_opts = {
+  width = 0.8, -- between 0 and 1
+  height = 0.8, -- between 0 and 1
  },
  diff_tool = "native", -- default diff engine
  native_diff_opts = {

@@ -8,6 +8,7 @@
 ---@field ignore_filesize? integer|nil The file size to ignore undo saved to disk
 ---@field ignored_filetypes? string[] The file types to ignore undo saved to disk
 ---@field split_opts? TimeMachine.Config.SplitOpts The split options
+---@field float_opts? TimeMachine.Config.FloatOpts The floating window options
 ---@field keymaps? TimeMachine.Config.Keymaps The keymaps for actions
 
 ---@class TimeMachine.Config.Keymaps
@@ -22,6 +23,10 @@
 ---@class TimeMachine.Config.SplitOpts
 ---@field split? TimeMachine.SplitDirection The split direction
 ---@field width? integer The width of the split
+
+---@class TimeMachine.Config.FloatOpts
+---@field width? integer The width of the window
+---@field height? integer The height of the window
 
 ---@class TimeMachine.SeqMapRaw
 ---@field entry vim.fn.undotree.entry The undotree entry

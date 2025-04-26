@@ -10,8 +10,6 @@ local winborder = vim.api.nvim_get_option_value(
 ---@type vim.api.keyset.win_config
 local shared_win_opts = {
 	relative = "editor",
-	width = 0.8,
-	height = 0.8,
 	border = winborder,
 	title_pos = "center",
 	footer = "Press `q` to exit",
@@ -30,9 +28,20 @@ function M.create_native_float_win(bufnr, title)
 		end
 	end
 
-	local win_opts = vim.tbl_deep_extend("force", shared_win_opts, {
+	local config_float_opts = require("time-machine.config").config.float_opts
+		or {}
+
+	---@type vim.api.keyset.win_config
+	local win_opts = {
+		relative = "editor",
+		border = winborder,
+		width = config_float_opts.width or 0.8,
+		height = config_float_opts.height or 0.8,
 		title = "Time Machine" .. (title and (" - " .. title) or ""),
-	})
+		title_pos = "center",
+		footer = "Press `q` to exit",
+		footer_pos = "center",
+	}
 
 	win_opts.width = math.floor(vim.o.columns * win_opts.width)
 	win_opts.height = math.floor(vim.o.lines * win_opts.height)
