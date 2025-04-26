@@ -95,7 +95,7 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 		for c = 0, max_column do
 			line[c + 1] = verticals[c] and "│ " or "  "
 
-			--- force main timeline to have separator always
+			--- force current timeline to have separator always (1st column)
 			if c == 0 then
 				line[c + 1] = "│ "
 			end

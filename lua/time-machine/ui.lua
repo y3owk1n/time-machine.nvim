@@ -7,7 +7,7 @@ local window = require("time-machine.window")
 
 local M = {}
 
-local main_timeline_annotation = "╭─ Main timeline"
+local current_timeline_annotation = "╭─ Current timeline"
 
 local is_current_timeline_toggled = false
 
@@ -80,17 +80,20 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 				)
 			end
 
-			--- get the main timeline annotation
-			if line:find(main_timeline_annotation) then
-				local start_col = line:find(main_timeline_annotation, 1, true)
-					- 1
+			--- get the current timeline annotation
+			if line:find(current_timeline_annotation) then
+				local start_col = line:find(
+					current_timeline_annotation,
+					1,
+					true
+				) - 1
 				vim.api.nvim_buf_set_extmark(
 					bufnr,
 					constants.ns,
 					i - 1,
 					start_col,
 					{
-						end_col = start_col + #main_timeline_annotation,
+						end_col = start_col + #current_timeline_annotation,
 						hl_group = constants.hl.timeline,
 					}
 				)
@@ -100,7 +103,7 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 		--- is within sequence
 		if type(id) == "number" then
 			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
-			--- get the first character (main timeline)
+			--- get the first character (current timeline)
 			local first_char = line:sub(1, 1)
 			if first_char and first_char ~= "" then
 				local start_col = line:find(first_char, 1, true) - 1
@@ -259,7 +262,7 @@ local function set_header(lines, seq_map, content_bufnr)
 		table.insert(header_lines, #header_lines - 2, "Tag File: " .. tags_path)
 	end
 
-	table.insert(header_lines, main_timeline_annotation)
+	table.insert(header_lines, current_timeline_annotation)
 
 	for i = #header_lines, 1, -1 do
 		table.insert(lines, 1, header_lines[i])
