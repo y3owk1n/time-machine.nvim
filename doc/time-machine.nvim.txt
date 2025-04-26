@@ -23,6 +23,7 @@ timeline, diff previews, taggings, live reloading trees and cleanup functions.
   [!warning]
   - The documentation may not cover all the features of the plugin. I will update it as we go.
   - There is no test yet for now, but it will be added soon. Hopefully nothing breaks.
+  - The plugin will never be perfect for everyone, but if you have any workflow or feature request, please open an issue, better yet, a PR.
 
 FEATURES                        *time-machine.nvim-time-machine.nvim-features*
 
