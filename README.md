@@ -98,6 +98,8 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ---@field keymaps? TimeMachine.Config.Keymaps The keymaps for actions
 
 ---@class TimeMachine.Config.Keymaps
+---@field undo? string The keymap to undo
+---@field redo? string The keymap to redo
 ---@field restore_undopoint? string The keymap to restore the undopoint
 ---@field refresh_timeline? string The keymap to refresh the timeline
 ---@field preview_sequence_diff? string The keymap to preview the sequence diff
@@ -133,6 +135,8 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
   algorithm = "histogram",
  },
  keymaps = {
+  undo = "u",
+  redo = "<C-r>",
   restore_undopoint = "<CR>",
   refresh_timeline = "r",
   preview_sequence_diff = "p",
@@ -242,6 +246,8 @@ require("time-machine").purge_all(force)
 - `q` **Close** - Close the window
 - `c` **Toggle timeline** - Toggle the timeline to current timeline or all
 - `g?` **Help** - Show the help
+- `u` **Undo** - Undo the selected sequence in the current timeline
+- `<C-r>` **Redo** - Redo the selected sequence in the current timeline
 
 ## 🎨 Hlgroups
 

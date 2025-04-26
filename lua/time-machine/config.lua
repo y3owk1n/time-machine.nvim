@@ -22,6 +22,8 @@ local defaults = {
 		algorithm = "histogram",
 	},
 	keymaps = {
+		undo = "u",
+		redo = "<C-r>",
 		restore_undopoint = "<CR>",
 		refresh_timeline = "r",
 		preview_sequence_diff = "p",
