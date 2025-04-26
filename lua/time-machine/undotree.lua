@@ -123,13 +123,16 @@ function M.refresh_buffer_window(bufnr)
 	vim.api.nvim_set_option_value("modified", mod_flag, { buf = newbuf })
 	vim.api.nvim_set_option_value("filetype", ft_flag, { buf = newbuf })
 
-	vim.api.nvim_buf_delete(bufnr, { force = true })
-
-	vim.api.nvim_buf_set_name(newbuf, buf_name)
-
+	--- set the new buffer to the current window
 	for _, w in ipairs(wins) do
 		vim.api.nvim_win_set_buf(w, newbuf)
 	end
+
+	--- delete the old buffer, this must be done before setting the name
+	vim.api.nvim_buf_delete(bufnr, { force = true })
+
+	--- set the new buffer name
+	vim.api.nvim_buf_set_name(newbuf, buf_name)
 
 	-- to avoid the `file exists, use ! to override` error after replacing the buffer
 	vim.api.nvim_buf_call(newbuf, function()
