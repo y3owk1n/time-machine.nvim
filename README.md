@@ -160,6 +160,11 @@ See the example below for how to configure **time-machine.nvim**.
  opts = {},
  keys = {
   {
+   "<leader>t",
+   "",
+   desc = "Time Machine",
+  },
+  {
    "<leader>tt",
    function()
     require("time-machine").actions.toggle()
