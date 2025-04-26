@@ -479,6 +479,30 @@ function M.show_tree(ut, content_bufnr)
 		end,
 	})
 
+	vim.api.nvim_buf_set_keymap(time_machine_bufnr, "n", keymaps.undo, "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
+		callback = function()
+			vim.api.nvim_buf_call(content_bufnr, function()
+				vim.cmd("undo")
+				M.refresh(time_machine_bufnr, seq_map, content_bufnr)
+			end)
+		end,
+	})
+
+	vim.api.nvim_buf_set_keymap(time_machine_bufnr, "n", keymaps.redo, "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
+		callback = function()
+			vim.api.nvim_buf_call(content_bufnr, function()
+				vim.cmd("redo")
+				M.refresh(time_machine_bufnr, seq_map, content_bufnr)
+			end)
+		end,
+	})
+
 	vim.api.nvim_buf_set_keymap(
 		time_machine_bufnr,
 		"n",
@@ -564,6 +588,8 @@ function M.show_help()
 	local keymaps = require("time-machine.config").config.keymaps or {}
 
 	local help_descriptions = {
+		undo = "Undo the selected sequence in the current timeline",
+		redo = "Redo the selected sequence in the current timeline",
 		restore_undopoint = "Restore to the selected sequence",
 		refresh_timeline = "Refresh the data",
 		preview_sequence_diff = "Show the diff of the selected sequence",

@@ -12,6 +12,8 @@
 ---@field keymaps? TimeMachine.Config.Keymaps The keymaps for actions
 
 ---@class TimeMachine.Config.Keymaps
+---@field undo? string The keymap to undo
+---@field redo? string The keymap to redo
 ---@field restore_undopoint? string The keymap to restore the undopoint
 ---@field refresh_timeline? string The keymap to refresh the timeline
 ---@field preview_sequence_diff? string The keymap to preview the sequence diff
