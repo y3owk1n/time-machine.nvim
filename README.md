@@ -5,7 +5,7 @@ Take control of your edit history with an interactive timeline, diff previews, t
 
 <!-- panvimdoc-ignore-start -->
 
-![time-travel-demo](https://github.com/user-attachments/assets/2dc6c6e4-338e-4322-9698-f7d8b8d65cb7)
+![time-machine-demo](https://github.com/user-attachments/assets/b35a8ddd-b418-4ff8-a291-ea4c6a80228e)
 
 <!-- panvimdoc-ignore-end -->
 
