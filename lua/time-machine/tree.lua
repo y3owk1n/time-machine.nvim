@@ -51,13 +51,24 @@ end
 ---@param ut vim.fn.undotree.ret
 ---@param seq_map TimeMachine.SeqMap The map of line numbers to seqs
 ---@param tags string[] The tags for this buffer’s undo history
+---@param show_current_timeline_only? boolean Whether to only show the current timeline
 ---@return TimeMachine.TreeLine[] tree_lines The tree lines
-function M.build_tree_lines(ut, seq_map, tags)
+function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 	if not ut or not ut.entries or #ut.entries == 0 then
 		return {}
 	end
 
+	show_current_timeline_only = show_current_timeline_only or false
+
 	local seq_map_raw = build_seq_map_raw(ut.entries, tags)
+
+	if show_current_timeline_only then
+		for i, seq in ipairs(seq_map_raw) do
+			if seq.branch_id ~= 0 then
+				seq_map_raw[i] = nil
+			end
+		end
+	end
 
 	local all_seqs = {}
 	for seq in pairs(seq_map_raw) do

@@ -103,6 +103,7 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ---@field tag_sequence? string The keymap to tag the sequence
 ---@field close? string The keymap to close the timeline
 ---@field help? string The keymap to show the help
+---@field toggle_current_timeline? string The keymap to toggle to only show the current timeline
 
 ---@class TimeMachine.Config.SplitOpts
 ---@field split? TimeMachine.SplitDirection The split direction
@@ -129,6 +130,7 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
   tag_sequence = "t",
   close = "q",
   help = "g?",
+  toggle_current_timeline = "c",
  },
  ignore_filesize = nil, -- e.g. 10 * 1024 * 1024
  ignored_filetypes = {
@@ -229,6 +231,8 @@ require("time-machine").purge_all(force)
 - `p` **Preview** - Show the diff of the selected sequence
 - `t` **Tag** - Tag the selected sequence (only work if the buffer is persistent)
 - `q` **Close** - Close the window
+- `c` **Toggle timeline** - Toggle the timeline to current timeline or all
+- `g?` **Help** - Show the help
 
 ## 🎨 Hlgroups
 

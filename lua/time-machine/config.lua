@@ -24,6 +24,7 @@ local defaults = {
 		tag_sequence = "t",
 		close = "q",
 		help = "g?",
+		toggle_current_timeline = "c",
 	},
 	ignore_filesize = nil,
 	ignored_filetypes = {
