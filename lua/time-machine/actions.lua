@@ -91,18 +91,34 @@ end
 ---@param force? boolean Whether to force the purge
 ---@return nil
 function M.purge_all(force)
-	if not force then
-		local confirm = vim.fn.input("Delete ALL undofiles? [y/N] ")
-		if confirm:lower() ~= "y" then
-			return
-		end
-	end
-
-	local ok, err = pcall(function()
+	local function action()
 		--- remove tag files first, as it needs the undotree info
 		tags.remove_tagfiles()
 		undotree.remove_undofiles()
-	end)
+	end
+
+	if not force then
+		vim.ui.select(
+			{ "Yes", "No" },
+			{ prompt = "Delete ALL undofiles?" },
+			function(choice)
+				if choice == "Yes" then
+					local ok, err = pcall(action)
+
+					if not ok then
+						vim.notify(
+							"Failed to purge all undofiles: " .. tostring(err),
+							vim.log.levels.ERROR
+						)
+					end
+				end
+			end
+		)
+
+		return
+	end
+
+	local ok, err = pcall(action)
 
 	if not ok then
 		vim.notify(
@@ -129,17 +145,41 @@ function M.purge_buffer(force)
 		return
 	end
 
-	if not force then
-		local confirm =
-			vim.fn.input("Delete the current undofile" .. "? [y/N] ")
-		if confirm:lower() ~= "y" then
-			return
-		end
+	local function action()
+		--- remove tag file first, as it needs the undotree info
+		tags.remove_tagfile(cur_bufnr)
+		undotree.remove_undofile(cur_bufnr)
 	end
 
-	--- remove tag file first, as it needs the undotree info
-	tags.remove_tagfile(0)
-	undotree.remove_undofile(0)
+	if not force then
+		vim.ui.select(
+			{ "Yes", "No" },
+			{ prompt = "Delete the current undofile?" },
+			function(choice)
+				if choice == "Yes" then
+					local ok, err = pcall(action)
+
+					if not ok then
+						vim.notify(
+							"Failed to purge the current undofiles: "
+								.. tostring(err),
+							vim.log.levels.ERROR
+						)
+					end
+				end
+			end
+		)
+		return
+	end
+
+	local ok, err = pcall(action)
+
+	if not ok then
+		vim.notify(
+			"Failed to purge the current undofiles: " .. tostring(err),
+			vim.log.levels.ERROR
+		)
+	end
 end
 
 return M
