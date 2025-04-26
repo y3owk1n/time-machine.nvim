@@ -7,9 +7,18 @@
 ---@field native_diff_opts? vim.diff.Opts The options for vim.diff
 ---@field ignore_filesize? integer|nil The file size to ignore undo saved to disk
 ---@field ignored_filetypes? string[] The file types to ignore undo saved to disk
----@field split_opts? TimeMachine.SplitOpts The split options
+---@field split_opts? TimeMachine.Config.SplitOpts The split options
+---@field keymaps? TimeMachine.Config.Keymaps The keymaps for actions
 
----@class TimeMachine.SplitOpts
+---@class TimeMachine.Config.Keymaps
+---@field restore_undopoint? string The keymap to restore the undopoint
+---@field refresh_timeline? string The keymap to refresh the timeline
+---@field preview_sequence_diff? string The keymap to preview the sequence diff
+---@field tag_sequence? string The keymap to tag the sequence
+---@field close? string The keymap to close the timeline
+---@field help? string The keymap to show the help
+
+---@class TimeMachine.Config.SplitOpts
 ---@field split? TimeMachine.SplitDirection The split direction
 ---@field width? integer The width of the split
 

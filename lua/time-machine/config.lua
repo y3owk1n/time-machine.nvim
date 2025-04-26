@@ -17,6 +17,14 @@ local defaults = {
 		ctxlen = 3,
 		algorithm = "histogram",
 	},
+	keymaps = {
+		restore_undopoint = "<CR>",
+		refresh_timeline = "r",
+		preview_sequence_diff = "p",
+		tag_sequence = "t",
+		close = "q",
+		help = "g?",
+	},
 	ignore_filesize = nil,
 	ignored_filetypes = {
 		"terminal",

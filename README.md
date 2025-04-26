@@ -85,16 +85,31 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ### Default Options
 
 ```lua
+---@alias TimeMachine.DiffTool "native"|"difft"|"diff"
+---@alias TimeMachine.SplitDirection 'left'|'right'
+
 ---@class TimeMachine.Config
 ---@field diff_tool? TimeMachine.DiffTool The diff tool to use
 ---@field native_diff_opts? vim.diff.Opts The options for vim.diff
 ---@field ignore_filesize? integer|nil The file size to ignore undo saved to disk
 ---@field ignored_filetypes? string[] The file types to ignore undo saved to disk
----@field split_opts? TimeMachine.SplitOpts The split options
+---@field split_opts? TimeMachine.Config.SplitOpts The split options
+---@field keymaps? TimeMachine.Config.Keymaps The keymaps for actions
 
----@alias TimeMachine.DiffTool "native"|"difft"|"diff"
----@alias TimeMachine.SplitDirection 'left'|'right'
+---@class TimeMachine.Config.Keymaps
+---@field restore_undopoint? string The keymap to restore the undopoint
+---@field refresh_timeline? string The keymap to refresh the timeline
+---@field preview_sequence_diff? string The keymap to preview the sequence diff
+---@field tag_sequence? string The keymap to tag the sequence
+---@field close? string The keymap to close the timeline
+---@field help? string The keymap to show the help
 
+---@class TimeMachine.Config.SplitOpts
+---@field split? TimeMachine.SplitDirection The split direction
+---@field width? integer The width of the split
+```
+
+```lua
 ---@type TimeMachine.Config
 {
  split_opts = {
@@ -106,6 +121,14 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
   result_type = "unified",
   ctxlen = 3,
   algorithm = "histogram",
+ },
+ keymaps = {
+  restore_undopoint = "<CR>",
+  refresh_timeline = "r",
+  preview_sequence_diff = "p",
+  tag_sequence = "t",
+  close = "q",
+  help = "g?",
  },
  ignore_filesize = nil, -- e.g. 10 * 1024 * 1024
  ignored_filetypes = {
@@ -204,11 +227,12 @@ require("time-machine").purge_all(force)
 
 ## 🎨 Hlgroups
 
-- `TimeMachineCurrent` - Current sequence
-- `TimeMachineKeymap` - Keymap
-- `TimeMachineInfo` - Info
-- `TimeMachineSeq` - Sequence
-- `TimeMachineTag` - Tag
+- `TimeMachineCurrent` - Current sequence (current line)
+- `TimeMachineTimeline` - Current active timeline (for the icon)
+- `TimeMachineKeymap` - Keymaps at the header section
+- `TimeMachineInfo` - Info at the header section
+- `TimeMachineSeq` - Individual sequence number
+- `TimeMachineTag` - Tags text
 
 ## 🤝 Contributing
 
