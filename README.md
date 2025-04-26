@@ -85,7 +85,7 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ### Default Options
 
 ```lua
----@alias TimeMachine.DiffTool "native"|"difft"|"diff"
+---@alias TimeMachine.DiffTool "native"|"difft"|"diff"|"delta"
 ---@alias TimeMachine.SplitDirection 'left'|'right'
 
 ---@class TimeMachine.Config

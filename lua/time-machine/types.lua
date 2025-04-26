@@ -1,4 +1,4 @@
----@alias TimeMachine.DiffTool "native"|"difft"|"diff"
+---@alias TimeMachine.DiffTool "native"|"difft"|"diff"|"delta"
 ---@alias TimeMachine.SplitDirection 'left'|'right'
 ---@alias TimeMachine.SeqMap table<integer, string|integer[]>
 

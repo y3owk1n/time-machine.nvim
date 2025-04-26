@@ -58,8 +58,9 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 	end
 
 	local cmds = {
-		["difft"] = { "difft", "--width=80", "--color=always" },
+		["difft"] = { "difft" },
 		["diff"] = { "diff", "--color=always" },
+		["delta"] = { "delta" },
 	}
 
 	local cmd = cmds[diff_type]
@@ -83,17 +84,26 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 		return
 	end
 
+	local cmd_args = unpack(cmd, 2, cmd.n)
+
+	local to_run_cmd = {
+		cmd[1],
+		old_lines_file,
+		new_lines_file,
+	}
+
+	if cmd_args then
+		table.insert(to_run_cmd, 2, cmd_args)
+	end
+
 	--- run the diff tool inside the terminal
-	vim.fn.jobstart(
-		{ cmd[1], unpack(cmd, 2, cmd.n), old_lines_file, new_lines_file },
-		{
-			term = true,
-			on_exit = function()
-				os.remove(old_lines_file)
-				os.remove(new_lines_file)
-			end,
-		}
-	)
+	vim.fn.jobstart(to_run_cmd, {
+		term = true,
+		on_exit = function()
+			os.remove(old_lines_file)
+			os.remove(new_lines_file)
+		end,
+	})
 
 	vim.keymap.set("n", "q", function()
 		require("time-machine.utils").close_win(win)
