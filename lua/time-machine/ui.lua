@@ -217,9 +217,15 @@ local function set_header(lines, seq_map, content_bufnr)
 
 	local annotation = saved_text .. " " .. point_text
 
+	local keymaps = require("time-machine.config").config.keymaps or {}
+
 	---@type string[]
 	local header_lines = {
-		"[<CR>] Restore [g?] More Actions/Help",
+		string.format(
+			"[%s] Restore [%s] More Actions/Help",
+			keymaps.restore_undopoint,
+			keymaps.help
+		),
 		"",
 		"Persistent: " .. tostring(persistent),
 		"Buffer: " .. content_bufnr,
@@ -344,60 +350,86 @@ function M.show_tree(ut, content_bufnr)
 
 	set_highlights(time_machine_bufnr, seq_map, ut.seq_cur, lines)
 
-	vim.api.nvim_buf_set_keymap(time_machine_bufnr, "n", "p", "", {
-		nowait = true,
-		noremap = true,
-		silent = true,
-		callback = function()
-			local cursor_pos = vim.api.nvim_win_get_cursor(0)[1]
-			M.preview_diff(
-				cursor_pos,
-				time_machine_bufnr,
-				content_bufnr,
-				orig_win_id
-			)
-		end,
-	})
+	local keymaps = require("time-machine.config").config.keymaps or {}
 
-	vim.api.nvim_buf_set_keymap(time_machine_bufnr, "n", "<CR>", "", {
-		nowait = true,
-		noremap = true,
-		silent = true,
-		callback = function()
-			local cursor_pos = vim.api.nvim_win_get_cursor(0)[1]
-			M.handle_restore(cursor_pos, time_machine_bufnr, content_bufnr)
-		end,
-	})
+	vim.api.nvim_buf_set_keymap(
+		time_machine_bufnr,
+		"n",
+		keymaps.preview_sequence_diff,
+		"",
+		{
+			nowait = true,
+			noremap = true,
+			silent = true,
+			callback = function()
+				local cursor_pos = vim.api.nvim_win_get_cursor(0)[1]
+				M.preview_diff(
+					cursor_pos,
+					time_machine_bufnr,
+					content_bufnr,
+					orig_win_id
+				)
+			end,
+		}
+	)
 
-	vim.api.nvim_buf_set_keymap(time_machine_bufnr, "n", "r", "", {
-		nowait = true,
-		noremap = true,
-		silent = true,
-		callback = function()
-			M.refresh(time_machine_bufnr, seq_map, content_bufnr)
-			vim.notify("Refreshed", vim.log.levels.INFO)
-		end,
-	})
+	vim.api.nvim_buf_set_keymap(
+		time_machine_bufnr,
+		"n",
+		keymaps.restore_undopoint,
+		"",
+		{
+			nowait = true,
+			noremap = true,
+			silent = true,
+			callback = function()
+				local cursor_pos = vim.api.nvim_win_get_cursor(0)[1]
+				M.handle_restore(cursor_pos, time_machine_bufnr, content_bufnr)
+			end,
+		}
+	)
 
-	vim.api.nvim_buf_set_keymap(time_machine_bufnr, "n", "t", "", {
-		nowait = true,
-		noremap = true,
-		silent = true,
-		callback = function()
-			local cursor_pos = vim.api.nvim_win_get_cursor(0)[1]
+	vim.api.nvim_buf_set_keymap(
+		time_machine_bufnr,
+		"n",
+		keymaps.refresh_timeline,
+		"",
+		{
+			nowait = true,
+			noremap = true,
+			silent = true,
+			callback = function()
+				M.refresh(time_machine_bufnr, seq_map, content_bufnr)
+				vim.notify("Refreshed", vim.log.levels.INFO)
+			end,
+		}
+	)
 
-			require("time-machine.tags").create_tag(
-				cursor_pos,
-				time_machine_bufnr,
-				content_bufnr,
-				function()
-					M.refresh(time_machine_bufnr, seq_map, content_bufnr)
-				end
-			)
-		end,
-	})
+	vim.api.nvim_buf_set_keymap(
+		time_machine_bufnr,
+		"n",
+		keymaps.tag_sequence,
+		"",
+		{
+			nowait = true,
+			noremap = true,
+			silent = true,
+			callback = function()
+				local cursor_pos = vim.api.nvim_win_get_cursor(0)[1]
 
-	vim.api.nvim_buf_set_keymap(time_machine_bufnr, "n", "q", "", {
+				require("time-machine.tags").create_tag(
+					cursor_pos,
+					time_machine_bufnr,
+					content_bufnr,
+					function()
+						M.refresh(time_machine_bufnr, seq_map, content_bufnr)
+					end
+				)
+			end,
+		}
+	)
+
+	vim.api.nvim_buf_set_keymap(time_machine_bufnr, "n", keymaps.close, "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
@@ -406,7 +438,7 @@ function M.show_tree(ut, content_bufnr)
 		end,
 	})
 
-	vim.api.nvim_buf_set_keymap(time_machine_bufnr, "n", "g?", "", {
+	vim.api.nvim_buf_set_keymap(time_machine_bufnr, "n", keymaps.help, "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
@@ -465,16 +497,25 @@ end
 --- Show the help text
 ---@return nil
 function M.show_help()
+	local keymaps = require("time-machine.config").config.keymaps or {}
+
+	local help_descriptions = {
+		restore_undopoint = "Restore to the selected sequence",
+		refresh_timeline = "Refresh the data",
+		preview_sequence_diff = "Show the diff of the selected sequence",
+		tag_sequence = "Tag the selected sequence",
+		close = "Close the window/bufffer",
+	}
+
 	local help_lines = {
 		"## Actions/Help",
 		"",
-		"`<CR>` **Restore** - Restore to the selected sequence",
-		"`r` **Refresh** - Refresh the data",
-		"`p` **Preview** - Show the diff of the selected sequence",
-		"`t` **Tag** - Tag the selected sequence",
-		"`q` **Close** - Close the window",
-		"",
 	}
+
+	for help_key, help_line in pairs(help_descriptions) do
+		local line = string.format("`%s` **%s**", keymaps[help_key], help_line)
+		table.insert(help_lines, line)
+	end
 
 	local bufnr = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, help_lines)
@@ -486,7 +527,7 @@ function M.show_help()
 		{ scope = "local", buf = bufnr }
 	)
 
-	vim.api.nvim_buf_set_keymap(bufnr, "n", "q", "", {
+	vim.api.nvim_buf_set_keymap(bufnr, "n", keymaps.close, "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
