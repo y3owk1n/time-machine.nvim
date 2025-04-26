@@ -56,6 +56,7 @@ function M.check()
 		local diff_tools_map = {
 			difft = "difft",
 			diff = "diff",
+			delta = "delta",
 		}
 
 		if diff_tools_map[config.diff_tool] then
