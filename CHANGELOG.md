@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.2.0](https://github.com/y3owk1n/time-machine.nvim/compare/v1.1.0...v1.2.0) (2025-04-26)
+
+
+### Features
+
+* **config:** add usercmd for actions ([#22](https://github.com/y3owk1n/time-machine.nvim/issues/22)) ([d4b2d41](https://github.com/y3owk1n/time-machine.nvim/commit/d4b2d41043f0f3412615b9759c92974f5bfd759b))
+* **diff:** add `delta` support ([#23](https://github.com/y3owk1n/time-machine.nvim/issues/23)) ([e470fad](https://github.com/y3owk1n/time-machine.nvim/commit/e470fad0b9958c30ba38e7258fdd306e9c6b9c3b))
+* **ui:** add `undo` and `redo` keymaps ([#19](https://github.com/y3owk1n/time-machine.nvim/issues/19)) ([b2cad9d](https://github.com/y3owk1n/time-machine.nvim/commit/b2cad9dfd612c28e5095575bae413dad4cb64d8d))
+
+
+### Bug Fixes
+
+* **actions.toggle:** skip unnamed and unlisted buffers ([#26](https://github.com/y3owk1n/time-machine.nvim/issues/26)) ([cbe4f70](https://github.com/y3owk1n/time-machine.nvim/commit/cbe4f7098573eaf5ac7dc109d29d78e3f267789d))
+* **ui:** rename `main timeline` to `current timeline` that makes more sense ([#25](https://github.com/y3owk1n/time-machine.nvim/issues/25)) ([d1be672](https://github.com/y3owk1n/time-machine.nvim/commit/d1be672142757bdbfdc005be1248c847bacf2595))
+
 ## [1.1.0](https://github.com/y3owk1n/time-machine.nvim/compare/v1.0.0...v1.1.0) (2025-04-26)
 
 
