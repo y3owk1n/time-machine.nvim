@@ -19,19 +19,11 @@ function M.toggle()
 
 	-- Skip unnamed buffers
 	if vim.api.nvim_buf_get_name(cur_bufnr) == "" then
-		vim.notify(
-			"Current buffer has no name, cannot show undotree",
-			vim.log.levels.WARN
-		)
 		return
 	end
 
 	-- Skip unlisted buffers
 	if not vim.api.nvim_get_option_value("buflisted", { buf = cur_bufnr }) then
-		vim.notify(
-			"Current buffer is not listed, cannot show undotree",
-			vim.log.levels.WARN
-		)
 		return
 	end
 
