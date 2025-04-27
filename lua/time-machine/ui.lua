@@ -8,8 +8,18 @@ local window = require("time-machine.window")
 local M = {}
 
 local current_timeline_annotation = "╭─ Current timeline"
-
 local is_current_timeline_toggled = false
+local ns = constants.ns
+local hl = constants.hl
+local info_matches = {
+	"Timeline View",
+	"Persistent:",
+	"Content Buffer:",
+	"Undo File:",
+	"Tag File:",
+}
+local str_find = string.find
+local str_gmatch = string.gmatch
 
 --- Set standard buffer options
 ---@param bufnr integer The buffer number
@@ -59,117 +69,77 @@ end
 ---@param lines string[] The lines of the content
 ---@return nil
 local function set_highlights(bufnr, seq_map, curr_seq, lines)
-	vim.api.nvim_buf_clear_namespace(bufnr, constants.ns, 0, -1)
-
+	vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
 	local buf_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 
 	for i, id in ipairs(seq_map) do
+		local row = i - 1
+		local line = buf_lines[i]
+
 		--- is not sequence
 		if id == "" then
 			--- get the keymaps e.g. [g?]
-			local line = buf_lines[i]
-			for keymap in line:gmatch("%b[]") do
-				local start_col = line:find(keymap, 1, true) - 1
-				vim.api.nvim_buf_set_extmark(
-					bufnr,
-					constants.ns,
-					i - 1,
-					start_col,
-					{
-						end_col = start_col + #keymap,
-						hl_group = constants.hl.keymap,
-					}
-				)
+			for keymap in str_gmatch(line, "%b[]") do
+				local start_col = str_find(line, keymap, 1, true) - 1
+				vim.api.nvim_buf_set_extmark(bufnr, ns, row, start_col, {
+					end_col = start_col + #keymap,
+					hl_group = hl.keymap,
+				})
 			end
 
 			--- get the current timeline annotation
-			if line:find(current_timeline_annotation) then
-				local start_col = line:find(
-					current_timeline_annotation,
-					1,
-					true
-				) - 1
-				vim.api.nvim_buf_set_extmark(
-					bufnr,
-					constants.ns,
-					i - 1,
-					start_col,
-					{
-						end_col = start_col + #current_timeline_annotation,
-						hl_group = constants.hl.timeline,
-					}
-				)
+			local ann_col = str_find(line, current_timeline_annotation, 1, true)
+			if ann_col then
+				local start_col = ann_col - 1
+				vim.api.nvim_buf_set_extmark(bufnr, ns, row, start_col, {
+					end_col = start_col + #current_timeline_annotation,
+					hl_group = hl.timeline,
+				})
 			end
 		end
 
 		--- is within sequence
 		if type(id) == "number" then
-			local line = buf_lines[i]
 			--- get the first character (current timeline)
 			local first_char = line:sub(1, 1)
 			if first_char and first_char ~= "" then
-				local start_col = line:find(first_char, 1, true) - 1
-				vim.api.nvim_buf_set_extmark(
-					bufnr,
-					constants.ns,
-					i - 1,
-					start_col,
-					{
-						end_col = start_col + #first_char,
-						hl_group = constants.hl.timeline,
-					}
-				)
+				local start_col = str_find(line, first_char, 1, true) - 1
+				vim.api.nvim_buf_set_extmark(bufnr, ns, row, start_col, {
+					end_col = start_col + #first_char,
+					hl_group = hl.timeline,
+				})
 			end
 
 			--- match the sequence number
-			for seq in line:gmatch("%b[]") do
-				local start_col = line:find(seq, 1, true) - 1
-				vim.api.nvim_buf_set_extmark(
-					bufnr,
-					constants.ns,
-					i - 1,
-					start_col,
-					{
-						end_col = start_col + #seq,
-						hl_group = constants.hl.seq,
-					}
-				)
+			for seq in str_gmatch(line, "%b[]") do
+				local start_col = str_find(line, seq, 1, true) - 1
+				vim.api.nvim_buf_set_extmark(bufnr, ns, row, start_col, {
+					end_col = start_col + #seq,
+					hl_group = hl.seq,
+				})
 			end
 
 			--- match time and the rest behind time (which is tags)
 			local time, rest = line:match("(%d+%a+ ago)%s*(.*)$")
 			if time then
-				local start_col = line:find(time, 1, true) - 1
-				vim.api.nvim_buf_set_extmark(
-					bufnr,
-					constants.ns,
-					i - 1,
-					start_col,
-					{
-						end_col = start_col + #time,
-						hl_group = constants.hl.info,
-					}
-				)
+				local start_col = str_find(line, time, 1, true) - 1
+				vim.api.nvim_buf_set_extmark(bufnr, ns, row, start_col, {
+					end_col = start_col + #time,
+					hl_group = hl.info,
+				})
 			end
 
 			if rest and rest ~= "" then
-				local start_col = line:find(rest, 1, true) - 1
-				vim.api.nvim_buf_set_extmark(
-					bufnr,
-					constants.ns,
-					i - 1,
-					start_col,
-					{
-						end_col = start_col + #rest,
-						hl_group = constants.hl.tag,
-					}
-				)
+				local start_col = str_find(line, rest, 1, true) - 1
+				vim.api.nvim_buf_set_extmark(bufnr, ns, row, start_col, {
+					end_col = start_col + #rest,
+					hl_group = hl.tag,
+				})
 			end
 		end
 
 		--- is the current sequence
 		if id == curr_seq then
-			local line = buf_lines[i]
 			local end_col = line and #line or 0
 
 			local text_width = vim.fn.strdisplaywidth(line)
@@ -177,34 +147,24 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 
 			local pad = win_width - text_width
 
-			vim.api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, 0, {
+			vim.api.nvim_buf_set_extmark(bufnr, ns, row, 0, {
 				end_col = end_col,
-				hl_group = constants.hl.current,
-				virt_text = { { string.rep(" ", pad), constants.hl.current } },
+				hl_group = hl.current,
+				virt_text = { { string.rep(" ", pad), hl.current } },
 				virt_text_win_col = text_width,
 			})
 		end
 	end
 
 	for i, line in ipairs(lines) do
-		local info_matches = {
-			"Timeline View",
-			"Persistent:",
-			"Content Buffer:",
-			"Undo File:",
-			"Tag File:",
-		}
-
 		--- get the info area
 		for _, info_match in ipairs(info_matches) do
-			if line:find(info_match) then
-				local current_line =
-					vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
-				local end_col = current_line and #current_line or 0
+			if str_find(line, info_match, 1, true) then
+				local end_col = line and #line or 0
 
-				vim.api.nvim_buf_set_extmark(bufnr, constants.ns, i - 1, 0, {
+				vim.api.nvim_buf_set_extmark(bufnr, ns, i - 1, 0, {
 					end_col = end_col,
-					hl_group = constants.hl.info,
+					hl_group = hl.info,
 				})
 			end
 		end
