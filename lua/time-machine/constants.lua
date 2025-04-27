@@ -11,6 +11,7 @@ M.constants = {
 		redo_called = "TimeMachineRedoCalled",
 		undo_restored = "TimeMachineUndoRestored",
 		undofile_deleted = "TimeMachineUndofileDeleted",
+		tags_created = "TimeMachineTagsCreated",
 	},
 	hl = {
 		current = "TimeMachineCurrent",

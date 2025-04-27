@@ -416,15 +416,7 @@ function M.show_tree(ut, content_bufnr)
 				require("time-machine.tags").create_tag(
 					cursor_pos,
 					time_machine_bufnr,
-					content_bufnr,
-					function()
-						M.refresh(
-							time_machine_bufnr,
-							seq_map,
-							content_bufnr,
-							is_current_timeline_toggled
-						)
-					end
+					content_bufnr
 				)
 			end,
 		}
@@ -536,6 +528,7 @@ function M.show_tree(ut, content_bufnr)
 			constants.events.undo_restored,
 			constants.events.undo_called,
 			constants.events.redo_called,
+			constants.events.tags_created,
 		},
 		callback = function()
 			-- only refresh if that buffer is still open
