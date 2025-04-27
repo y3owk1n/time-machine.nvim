@@ -10,11 +10,15 @@ local ext_cmds = {
 ---@param lines string[] The lines to write
 ---@return string path The path to the temp file
 local function write_temp(lines)
-	-- create a unique temp filename
-	local template = vim.fn.tempname() .. ".txt"
-	-- write it
-	vim.fn.writefile(lines, template, "b")
-	return template
+	local path = vim.fn.tempname() .. ".txt"
+
+	local fd = assert(vim.uv.fs_open(path, "w", 420)) -- 0o644
+
+	local data = table.concat(lines, "\n")
+	vim.uv.fs_write(fd, data, -1)
+	vim.uv.fs_close(fd)
+
+	return path
 end
 
 --- Diff with the native diff (vim.diff)
