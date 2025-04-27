@@ -98,8 +98,18 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 		return
 	end
 
-	local cmd_args =
-		vim.list_extend({ old_lines_file, new_lines_file }, cmd.args)
+	local cmd_args = {}
+	vim.list_extend(cmd_args, cmd.args or {})
+
+	local user_args =
+		require("time-machine.config").config.external_diff_args[diff_type]
+
+	if user_args then
+		vim.list_extend(cmd_args, user_args)
+	end
+
+	table.insert(cmd_args, old_lines_file)
+	table.insert(cmd_args, new_lines_file)
 
 	local ok = pcall(vim.fn.jobstart, { cmd.cmd, unpack(cmd_args) }, {
 		term = true,

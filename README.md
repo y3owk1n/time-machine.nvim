@@ -92,6 +92,7 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ---@class TimeMachine.Config
 ---@field diff_tool? TimeMachine.DiffTool The diff tool to use
 ---@field native_diff_opts? vim.diff.Opts The options for vim.diff
+---@field external_diff_args? table<TimeMachine.DiffTool, string[]> The arguments for external diff tools
 ---@field ignore_filesize? integer|nil The file size to ignore undo saved to disk
 ---@field ignored_filetypes? string[] The file types to ignore undo saved to disk
 ---@field split_opts? TimeMachine.Config.SplitOpts The split options
@@ -130,11 +131,12 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
   height = 0.8, -- between 0 and 1
  },
  diff_tool = "native", -- default diff engine
- native_diff_opts = {
+ native_diff_opts = { -- only used when diff_tool is "native"
   result_type = "unified",
   ctxlen = 3,
   algorithm = "histogram",
  },
+ external_diff_args = {}, -- set additional arguments for external diff tools
  keymaps = {
   undo = "u",
   redo = "<C-r>",

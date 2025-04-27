@@ -21,6 +21,7 @@ local defaults = {
 		ctxlen = 3,
 		algorithm = "histogram",
 	},
+	external_diff_args = {},
 	keymaps = {
 		undo = "u",
 		redo = "<C-r>",
