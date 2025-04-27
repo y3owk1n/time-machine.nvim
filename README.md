@@ -32,8 +32,8 @@ Take control of your edit history with an interactive timeline, diff previews, t
 - [Configuration](#%EF%B8%8F-configuration)
 - [Quick Start](#-quick-start)
 - [API](#-api)
-- [Keybindings](#-keybindings)
-- [Events](#-events)
+- [Keybindings](#%EF%B8%8F-keybindings)
+- [Events](#%EF%B8%8F-events)
 - [Hlgroup](#-hlgroups)
 - [Contributing](#-contributing)
 
