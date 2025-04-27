@@ -7,15 +7,6 @@ local winborder = vim.api.nvim_get_option_value(
 	{ scope = "local" }
 ) or "none"
 
----@type vim.api.keyset.win_config
-local shared_win_opts = {
-	relative = "editor",
-	border = winborder,
-	title_pos = "center",
-	footer = "Press `q` to exit",
-	footer_pos = "center",
-}
-
 --- Create a floating window for native
 ---@param bufnr integer The buffer to open
 ---@param title? string The title appended after `Time Machine`
