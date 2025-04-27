@@ -155,48 +155,40 @@ function M.compute_diff_lines(old_lines, new_lines)
 		require("time-machine.config").config.native_diff_opts
 	)
 
-	if not diff_result then
+	if
+		not diff_result or (type(diff_result) == "string" and diff_result == "")
+	then
 		return { "[No differences]" }
 	end
 
-	--- Handle unified diff
+	--- unified diff
 	if type(diff_result) == "string" then
-		if diff_result == "" then
-			return { "[No differences]" }
-		end
 		return vim.split(diff_result, "\n", { plain = true })
 	end
 
 	--- indices diff
-	if type(diff_result) == "table" then
-		local lines = {}
-		for _, hunk in ipairs(diff_result) do
-			local a_start, a_count, b_start, b_count = unpack(hunk)
-			table.insert(
-				lines,
-				string.format(
-					"@@ -%d,%d +%d,%d @@",
-					a_start,
-					a_count,
-					b_start,
-					b_count
-				)
+	local lines = {}
+	for _, hunk in ipairs(diff_result) do
+		local a_start, a_count, b_start, b_count = unpack(hunk)
+		table.insert(
+			lines,
+			string.format(
+				"@@ -%d,%d +%d,%d @@",
+				a_start,
+				a_count,
+				b_start,
+				b_count
 			)
+		)
 
-			for i = 0, a_count - 1 do
-				table.insert(lines, "-" .. (old_lines[a_start + i] or ""))
-			end
-			for i = 0, b_count - 1 do
-				table.insert(lines, "+" .. (new_lines[b_start + i] or ""))
-			end
+		for i = 0, a_count - 1 do
+			table.insert(lines, "-" .. (old_lines[a_start + i] or ""))
 		end
-		if #lines == 0 then
-			return { "[No differences]" }
+		for i = 0, b_count - 1 do
+			table.insert(lines, "+" .. (new_lines[b_start + i] or ""))
 		end
-		return lines
 	end
-
-	return { "[Invalid diff format]" }
+	return #lines > 0 and lines or { "[No differences]" }
 end
 
 return M
