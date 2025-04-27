@@ -40,14 +40,14 @@ function M.preview_diff_native(old_lines, new_lines)
 		{ scope = "local", buf = preview_buf }
 	)
 
-	vim.api.nvim_buf_set_keymap(preview_buf, "n", "q", "", {
+	local keymaps = require("time-machine.config").config.keymaps or {}
+
+	vim.api.nvim_buf_set_keymap(preview_buf, "n", keymaps.close, "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
 		callback = function()
-			if vim.api.nvim_buf_is_valid(preview_buf) then
-				vim.api.nvim_buf_delete(preview_buf, { force = true })
-			end
+			require("time-machine.utils").close_buf(preview_buf)
 		end,
 	})
 
@@ -129,7 +129,9 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 		os.remove(new_lines_file)
 	end
 
-	vim.keymap.set("n", "q", function()
+	local keymaps = require("time-machine.config").config.keymaps or {}
+
+	vim.keymap.set("n", keymaps.close, function()
 		require("time-machine.utils").close_win(win)
 	end, { buffer = preview_buf, nowait = true, noremap = true, silent = true })
 end
