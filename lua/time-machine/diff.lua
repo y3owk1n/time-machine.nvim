@@ -1,5 +1,11 @@
 local M = {}
 
+local ext_cmds = {
+	difft = { cmd = "difft", args = {} },
+	diff = { cmd = "diff", args = { "--color=always" } },
+	delta = { cmd = "delta", args = {} },
+}
+
 -- Write an array of lines to a temp file, return its path
 ---@param lines string[] The lines to write
 ---@return string path The path to the temp file
@@ -57,16 +63,18 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 		return
 	end
 
-	local cmds = {
-		["difft"] = { "difft" },
-		["diff"] = { "diff", "--color=always" },
-		["delta"] = { "delta" },
-	}
-
-	local cmd = cmds[diff_type]
+	local cmd = ext_cmds[diff_type]
 
 	if not cmd then
-		vim.notify("Invalid diff tool: " .. diff_type, vim.log.levels.ERROR)
+		vim.notify(
+			"Diff tool not supported: " .. diff_type,
+			vim.log.levels.ERROR
+		)
+		return
+	end
+
+	if vim.fn.executable(cmd.cmd) == 0 then
+		vim.notify("Diff tool not found: " .. cmd.cmd, vim.log.levels.ERROR)
 		return
 	end
 
@@ -81,30 +89,15 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 	)
 
 	if not win then
-		return
-	end
-
-	local cmd_args = unpack(cmd, 2, cmd.n)
-
-	local to_run_cmd = {
-		cmd[1],
-		old_lines_file,
-		new_lines_file,
-	}
-
-	if cmd_args then
-		table.insert(to_run_cmd, 2, cmd_args)
-	end
-
-	if vim.fn.executable(cmd[1]) == 0 then
-		vim.notify("Diff tool not found: " .. cmd[1], vim.log.levels.ERROR)
-		require("time-machine.utils").close_win(win)
 		os.remove(old_lines_file)
 		os.remove(new_lines_file)
 		return
 	end
 
-	local ok = pcall(vim.fn.jobstart, to_run_cmd, {
+	local cmd_args =
+		vim.list_extend({ old_lines_file, new_lines_file }, cmd.args)
+
+	local ok = pcall(vim.fn.jobstart, { cmd.cmd, unpack(cmd_args) }, {
 		term = true,
 		on_exit = function()
 			os.remove(old_lines_file)
