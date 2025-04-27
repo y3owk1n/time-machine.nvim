@@ -200,6 +200,8 @@ See the example below for how to configure **time-machine.nvim** with keybinding
   "TimeMachineToggle",
   "TimeMachinePurgeBuffer",
   "TimeMachinePurgeAll",
+  "TimeMachineLogShow",
+  "TimeMachineLogClear",
  },
  ---@type TimeMachine.Config
  opts = {},
@@ -223,6 +225,11 @@ See the example below for how to configure **time-machine.nvim** with keybinding
    "<leader>tX",
    "<cmd>TimeMachinePurgeAll<cr>",
    desc = "[Time Machine] Purge all",
+  },
+  {
+   "<leader>tl",
+   "<cmd>TimeMachineLogShow<cr>",
+   desc = "[Time Machine] Show log",
   },
  },
 },
