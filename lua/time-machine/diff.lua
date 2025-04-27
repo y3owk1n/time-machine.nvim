@@ -146,7 +146,7 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 	if not ok then
 		logger.error("Failed to start diff tool: %s", cmd.cmd)
 		vim.notify(
-			"Failed to start diff tool: " .. cmd[1],
+			"Failed to start diff tool: " .. cmd.cmd,
 			vim.log.levels.ERROR
 		)
 		require("time-machine.utils").close_win(win)
