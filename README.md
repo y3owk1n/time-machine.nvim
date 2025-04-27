@@ -141,6 +141,8 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
   "snacks_notif_history",
   "lazy",
  },
+ log_level = vim.log.levels.WARN,
+ log_file = vim.fn.stdpath("cache") .. "/time-machine.log",
 }
 ```
 
@@ -164,6 +166,8 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ---@field split_opts? TimeMachine.Config.SplitOpts The split options
 ---@field float_opts? TimeMachine.Config.FloatOpts The floating window options
 ---@field keymaps? TimeMachine.Config.Keymaps The keymaps for actions
+---@field log_level? integer The log level
+---@field log_file? string The log file path
 
 ---@class TimeMachine.Config.Keymaps
 ---@field undo? string The keymap to undo
@@ -316,6 +320,32 @@ require("time-machine").purge_all(force)
 :TimeMachinePurgeAll
 :TimeMachinePurgeAll! -- force
 :lua require("time-machine").purge_all()
+```
+
+### Show the log file
+
+Show the log file in floats.
+
+```lua
+require("time-machine").show_log()
+
+-- or any of the equivalents
+
+:TimeMachineLogShow
+:lua require("time-machine").show_log()
+```
+
+### Clear the log file
+
+Clear the log file.
+
+```lua
+require("time-machine").clear_log()
+
+-- or any of the equivalents
+
+:TimeMachineLogClear
+:lua require("time-machine").clear_log()
 ```
 
 ## ⌨️ Keybindings

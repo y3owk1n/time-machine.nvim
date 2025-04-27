@@ -2,15 +2,24 @@ local M = {}
 
 local constants = require("time-machine.constants").constants
 local utils = require("time-machine.utils")
+local logger = require("time-machine.logger")
 
 -- Build a sequence map with direct parent references
 ---@param entries vim.fn.undotree.entry[]
 ---@param tags string[] The tags for this buffer’s undo history
 ---@return TimeMachine.SeqMapRaw seq_map_raw The sequence map in raw
 local function build_seq_map_raw(entries, tags)
+	logger.debug(
+		"build_seq_map_raw() called with %d entries, %d tag entries",
+		#entries,
+		vim.tbl_count(tags or {})
+	)
+
 	local seq_map_raw = {}
 
 	local function walk(entry, branch_idx)
+		logger.debug("Visiting seq %d on branch %d", entry.seq, branch_idx or 0)
+
 		seq_map_raw[entry.seq] = seq_map_raw[entry.seq]
 			or {
 				entry = entry,
@@ -29,6 +38,7 @@ local function build_seq_map_raw(entries, tags)
 	end
 
 	table.insert(seq_map_raw, 1, { branch_id = 0, entry = { seq = 0 } })
+	logger.info("Built raw seq map with %d entries", #seq_map_raw)
 
 	return seq_map_raw
 end
@@ -37,6 +47,8 @@ end
 ---@param seq_map_raw TimeMachine.SeqMapRaw
 ---@return integer max_column
 local function get_max_column(seq_map_raw)
+	logger.debug("get_max_column() called")
+
 	local max_branch_id = 0
 	for _, seq in ipairs(seq_map_raw) do
 		if seq.branch_id and seq.branch_id > max_branch_id then
@@ -44,6 +56,7 @@ local function get_max_column(seq_map_raw)
 		end
 	end
 
+	logger.info("Max indentation column: %d", max_branch_id)
 	return max_branch_id
 end
 
@@ -54,7 +67,16 @@ end
 ---@param show_current_timeline_only? boolean Whether to only show the current timeline
 ---@return TimeMachine.TreeLine[] tree_lines The tree lines
 function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
-	if not ut or not ut.entries or #ut.entries == 0 then
+	local entry_count = ut and ut.entries and #ut.entries or 0
+	logger.debug(
+		"build_tree_lines() called with %d entries, %d tags, show_current=%s",
+		entry_count,
+		vim.tbl_count(tags or {}),
+		tostring(show_current_timeline_only)
+	)
+
+	if entry_count == 0 then
+		logger.warn("No undotree entries found; returning empty tree_lines")
 		return {}
 	end
 
@@ -63,6 +85,7 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 	local seq_map_raw = build_seq_map_raw(ut.entries, tags)
 
 	if show_current_timeline_only then
+		logger.info("Filtering to current timeline only")
 		for i, seq in ipairs(seq_map_raw) do
 			if seq.branch_id ~= 0 then
 				seq_map_raw[i] = nil
@@ -79,6 +102,7 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 	table.sort(all_seqs, function(a, b)
 		return a > b
 	end)
+	logger.debug("Sorted %d sequences for display", #all_seqs)
 
 	local max_column = get_max_column(seq_map_raw)
 	local tree_lines = {}
@@ -88,6 +112,8 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 		local info = seq_map_raw[seq]
 		local entry = info.entry
 		local col = info.branch_id or 0
+
+		logger.debug("Rendering seq %d at column %d", seq, col)
 
 		local line = {}
 
@@ -128,6 +154,8 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 		})
 		seq_map[#tree_lines] = seq - 1
 	end
+
+	logger.info("Built %d tree lines", #tree_lines)
 
 	return tree_lines
 end

@@ -45,6 +45,8 @@ local defaults = {
 		"snacks_notif_history",
 		"lazy",
 	},
+	log_level = vim.log.levels.WARN,
+	log_file = vim.fn.stdpath("cache") .. "/time-machine.log",
 }
 
 --- Setup Time Machine colors
@@ -66,6 +68,19 @@ function M.setup_highlights()
 	end
 end
 
+--- Setup logger
+---@return nil
+function M.setup_logger()
+	local logger = require("time-machine.logger")
+
+	logger.setup({
+		level = M.config.log_level,
+		logfile = M.config.log_file,
+	})
+end
+
+--- Setup autocommands
+---@return nil
 function M.setup_autocmds()
 	--- disable undofile for ignored filetypes
 	--- note that this only disable undo to be saved to disk, the undo will still be available in memory
@@ -112,6 +127,8 @@ function M.setup_autocmds()
 	})
 end
 
+--- Setup user commands
+---@return nil
 function M.setup_usercmds()
 	local actions = require("time-machine.actions")
 
@@ -134,6 +151,19 @@ function M.setup_usercmds()
 		bang = true,
 		desc = "Purge all undofiles",
 	})
+
+	vim.api.nvim_create_user_command("TimeMachineLogShow", function()
+		actions.show_log()
+	end, {
+		desc = "Show Time Machine log",
+	})
+
+	vim.api.nvim_create_user_command("TimeMachineLogClear", function(opts)
+		actions.clear_log(opts.bang)
+	end, {
+		bang = true,
+		desc = "Clear Time Machine log",
+	})
 end
 
 --- Setup Time Machine
@@ -149,6 +179,7 @@ function M.setup(user_config)
 		)
 	end
 
+	M.setup_logger()
 	M.setup_autocmds()
 	M.setup_usercmds()
 	M.setup_highlights()

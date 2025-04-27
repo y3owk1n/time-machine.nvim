@@ -27,12 +27,23 @@ local function separator(title)
 	vim.health.start(title)
 end
 
+---Prints a message to the health section.
+---@param text string The message to print.
+local function line(text)
+	vim.health.info(text)
+end
+
 function M.check()
+	local config = require("time-machine.config").config
+
 	separator("Time Machine - Neovim Version Check")
 	report_status(
 		vim.fn.has("nvim-0.11.0") == 1 and "ok" or "error",
 		"Time Machine requires Neovim 0.11.0 or higher."
 	)
+
+	separator("Time Machine - Logs Check")
+	line(string.format("Log file: %s", config.log_file))
 
 	separator("Time Machine - Undo configuration check")
 	report_status(
@@ -49,7 +60,6 @@ function M.check()
 	)
 
 	separator("Time Machine - Diff Tools Check")
-	local config = require("time-machine.config").config
 	if config.diff_tool ~= "native" then
 		report_status("ok", "Diff tools configured: " .. config.diff_tool)
 
