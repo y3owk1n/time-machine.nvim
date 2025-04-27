@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.3.0](https://github.com/y3owk1n/time-machine.nvim/compare/v1.2.2...v1.3.0) (2025-04-27)
+
+
+### Features
+
+* **diff:** support user defined args for external diff tools and configurable from config opts ([#47](https://github.com/y3owk1n/time-machine.nvim/issues/47)) ([2def5dc](https://github.com/y3owk1n/time-machine.nvim/commit/2def5dc1c8b24f393aef97ada53484da35189b41))
+
+
+### Bug Fixes
+
+* **diff.preview:** use configured close mapping to quit diff panel ([#49](https://github.com/y3owk1n/time-machine.nvim/issues/49)) ([b89cd28](https://github.com/y3owk1n/time-machine.nvim/commit/b89cd2868753409d9754aff3b8c666ff1bb86948))
+* **ui.set_header:** only show undofile path when it is readable ([#46](https://github.com/y3owk1n/time-machine.nvim/issues/46)) ([f869ee4](https://github.com/y3owk1n/time-machine.nvim/commit/f869ee4f4cd1cf5dbc4796ec5c5d287c6c018047))
+* **ui.set_highlights:** single buf_lines call and iterate with id ([#38](https://github.com/y3owk1n/time-machine.nvim/issues/38)) ([ce5ae16](https://github.com/y3owk1n/time-machine.nvim/commit/ce5ae169ea516c7837b999d29be3fb3584630a19))
+* **ui:** send event `tags_created` and refresh via autocmd instead of manual ([#52](https://github.com/y3owk1n/time-machine.nvim/issues/52)) ([d8a608b](https://github.com/y3owk1n/time-machine.nvim/commit/d8a608b95bf274f77155455e141f8d775aed0c53))
+* **ui:** send event `undo` and `redo` instead of manual refresh the UI ([#51](https://github.com/y3owk1n/time-machine.nvim/issues/51)) ([13bed56](https://github.com/y3owk1n/time-machine.nvim/commit/13bed56eba390c1eb19324e74054e296cf295824))
+
+
+### Performance Improvements
+
+* **diff.preview_diff_external:** validate executables before IO ([#42](https://github.com/y3owk1n/time-machine.nvim/issues/42)) ([4985430](https://github.com/y3owk1n/time-machine.nvim/commit/49854302ecfcbbe207407b60f77e3b51048d3db9))
+* **diff.read_buffer_at_seq:** avoid manual window switching ([#43](https://github.com/y3owk1n/time-machine.nvim/issues/43)) ([8312dba](https://github.com/y3owk1n/time-machine.nvim/commit/8312dba1b6e74bf615a3588cb33f3cf924e13530))
+* **diff.write_temp:** replace `vim.fn.writefile` with faster `vim.uv.fs` functions ([#44](https://github.com/y3owk1n/time-machine.nvim/issues/44)) ([ba9e42c](https://github.com/y3owk1n/time-machine.nvim/commit/ba9e42c35dc6746d6d7d2b5af3e50ca3a121b150))
+* **ui:** cache looksup to reduce round trips ([#40](https://github.com/y3owk1n/time-machine.nvim/issues/40)) ([a86fa5e](https://github.com/y3owk1n/time-machine.nvim/commit/a86fa5e466f40b5116cfcb76fa443f2902a4fab7))
+
 ## [1.2.2](https://github.com/y3owk1n/time-machine.nvim/compare/v1.2.1...v1.2.2) (2025-04-26)
 
 
