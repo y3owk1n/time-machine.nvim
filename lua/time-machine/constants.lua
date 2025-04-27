@@ -7,6 +7,8 @@ M.constants = {
 	ns = vim.api.nvim_create_namespace("time-machine"),
 	events = {
 		undo_created = "TimeMachineUndoCreated",
+		undo_called = "TimeMachineUndoCalled",
+		redo_called = "TimeMachineRedoCalled",
 		undo_restored = "TimeMachineUndoRestored",
 		undofile_deleted = "TimeMachineUndofileDeleted",
 	},

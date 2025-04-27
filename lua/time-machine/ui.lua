@@ -455,7 +455,10 @@ function M.show_tree(ut, content_bufnr)
 		callback = function()
 			vim.api.nvim_buf_call(content_bufnr, function()
 				vim.cmd("undo")
-				M.refresh(time_machine_bufnr, seq_map, content_bufnr)
+				vim.api.nvim_exec_autocmds(
+					"User",
+					{ pattern = constants.events.undo_called }
+				)
 			end)
 		end,
 	})
@@ -467,7 +470,10 @@ function M.show_tree(ut, content_bufnr)
 		callback = function()
 			vim.api.nvim_buf_call(content_bufnr, function()
 				vim.cmd("redo")
-				M.refresh(time_machine_bufnr, seq_map, content_bufnr)
+				vim.api.nvim_exec_autocmds(
+					"User",
+					{ pattern = constants.events.redo_called }
+				)
 			end)
 		end,
 	})
@@ -528,6 +534,8 @@ function M.show_tree(ut, content_bufnr)
 		pattern = {
 			constants.events.undo_created,
 			constants.events.undo_restored,
+			constants.events.undo_called,
+			constants.events.redo_called,
 		},
 		callback = function()
 			-- only refresh if that buffer is still open
