@@ -207,6 +207,8 @@ keybindings.
       "TimeMachineToggle",
       "TimeMachinePurgeBuffer",
       "TimeMachinePurgeAll",
+      "TimeMachineLogShow",
+      "TimeMachineLogClear",
      },
      ---@type TimeMachine.Config
      opts = {},
@@ -230,6 +232,11 @@ keybindings.
        "<leader>tX",
        "<cmd>TimeMachinePurgeAll<cr>",
        desc = "[Time Machine] Purge all",
+      },
+      {
+       "<leader>tl",
+       "<cmd>TimeMachineLogShow<cr>",
+       desc = "[Time Machine] Show log",
       },
      },
     },
