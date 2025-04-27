@@ -25,6 +25,7 @@ Unlike standard undo/redo functionality, Time Machine gives you:
 - Persistent bookmarks to save important states
 - Visual representation of edits for better understanding
 - Cleanup tools to manage your undo history files
+- Written in Lua and zero dependencies
 
 ## 🚀 Features
 
