@@ -165,7 +165,8 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ```
 
 > [!note]
-> `ignored_filesize` and `ignored_filetypes` are does not disable undo, it only prevent the undo to save to the undofile. You don't have to set them if you don't want to.
+> `ignored_filesize` and `ignored_filetypes` does not disable the undo functionality, it only prevents the undo to be saved to the undofile.
+> You don't have to set them if you don't want to.
 
 ## 🚀 Quick Start
 
