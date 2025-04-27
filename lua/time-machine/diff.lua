@@ -122,25 +122,18 @@ end
 
 --- Get the diff of a sequence of undos
 ---@param content_bufnr number The buffer number
----@param content_win number The window number
+---@param content_win_id number The window number
 ---@param seq string The sequence of undos
 ---@return string[] lines The diff of the sequence of undos
-function M.read_buffer_at_seq(content_bufnr, content_win, seq)
-	local cur_win = vim.api.nvim_get_current_win()
-
-	--- Set the current window to the main content window
-	vim.api.nvim_set_current_win(content_win)
-
-	-- grab current seq, jump back
-	local cur_seq = vim.fn.undotree().seq_cur
-	vim.cmd("undo " .. seq)
-	local lines = vim.api.nvim_buf_get_lines(content_bufnr, 0, -1, false)
-	-- restore
-	vim.cmd("undo " .. cur_seq)
-
-	-- return to wherever we were
-	vim.api.nvim_set_current_win(cur_win)
-
+function M.read_buffer_at_seq(content_bufnr, content_win_id, seq)
+	local lines
+	vim.api.nvim_buf_call(content_bufnr, function()
+		vim.api.nvim_set_current_win(content_win_id)
+		local cur = vim.fn.undotree().seq_cur
+		vim.cmd("undo " .. seq)
+		lines = vim.api.nvim_buf_get_lines(content_bufnr, 0, -1, false)
+		vim.cmd("undo " .. cur)
+	end)
 	return lines
 end
 
