@@ -55,13 +55,7 @@ end
 ---@param cur_line_no number  Cursor line in the snapshot UI buffer
 ---@param time_machine_bufnr number  The snapshot UI buffer
 ---@param content_bufnr number The real buffer whose undo history we're tagging
----@param success_cb? function|nil  Optional callback to call after tags are saved
-function M.create_tag(
-	cur_line_no,
-	time_machine_bufnr,
-	content_bufnr,
-	success_cb
-)
+function M.create_tag(cur_line_no, time_machine_bufnr, content_bufnr)
 	local persistent = vim.api.nvim_get_option_value(
 		"undofile",
 		{ scope = "local", buf = content_bufnr }
@@ -101,9 +95,11 @@ function M.create_tag(
 				string.format("Removed tags for seq %d", seq),
 				vim.log.levels.INFO
 			)
-			if success_cb then
-				success_cb()
-			end
+
+			vim.api.nvim_exec_autocmds(
+				"User",
+				{ pattern = constants.events.tags_created }
+			)
 			return
 		end
 
@@ -128,9 +124,10 @@ function M.create_tag(
 			vim.log.levels.INFO
 		)
 
-		if success_cb then
-			success_cb()
-		end
+		vim.api.nvim_exec_autocmds(
+			"User",
+			{ pattern = constants.events.tags_created }
+		)
 	end)
 end
 
