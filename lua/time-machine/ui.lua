@@ -4,6 +4,7 @@ local undotree = require("time-machine.undotree")
 local diff = require("time-machine.diff")
 local tree = require("time-machine.tree")
 local window = require("time-machine.window")
+local logger = require("time-machine.logger")
 
 local M = {}
 
@@ -25,6 +26,8 @@ local str_gmatch = string.gmatch
 ---@param bufnr integer The buffer number
 ---@return nil
 function M.set_standard_buf_options(bufnr)
+	logger.debug("set_standard_buf_options(%d)", bufnr)
+
 	vim.api.nvim_set_option_value(
 		"filetype",
 		constants.time_machine_ft,
@@ -60,6 +63,8 @@ function M.set_standard_buf_options(bufnr)
 		false,
 		{ scope = "local", buf = bufnr }
 	)
+
+	logger.info("Standard buffer options set on %d", bufnr)
 end
 
 --- Set highlights for the UI
@@ -69,6 +74,13 @@ end
 ---@param lines string[] The lines of the content
 ---@return nil
 local function set_highlights(bufnr, seq_map, curr_seq, lines)
+	logger.debug(
+		"set_highlights(buf=%d, curr_seq=%s, %d lines)",
+		bufnr,
+		tostring(curr_seq),
+		#lines
+	)
+
 	vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
 	local buf_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 
@@ -169,6 +181,8 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 			end
 		end
 	end
+
+	logger.info("Highlights applied to buffer %d", bufnr)
 end
 
 --- Set header for the UI
@@ -177,6 +191,8 @@ end
 ---@param content_bufnr integer The content buffer number
 ---@return nil
 local function set_header(lines, seq_map, content_bufnr)
+	logger.debug("set_header(content_bufnr=%d)", content_bufnr)
+
 	local undofile_path = undotree.get_undofile_path(content_bufnr)
 
 	local persistent = vim.api.nvim_get_option_value(
@@ -234,6 +250,8 @@ local function set_header(lines, seq_map, content_bufnr)
 		table.insert(lines, 1, header_lines[i])
 		table.insert(seq_map, 1, "")
 	end
+
+	logger.info("Header set with %d lines", #header_lines)
 end
 
 --- Refresh the UI
@@ -248,16 +266,28 @@ function M.refresh(
 	content_bufnr,
 	show_current_timeline_only
 )
+	logger.debug(
+		"refresh(buf=%d, content=%d, cur_only=%s)",
+		time_machine_bufnr,
+		content_bufnr,
+		tostring(show_current_timeline_only)
+	)
+
 	if
 		not time_machine_bufnr
 		or not vim.api.nvim_buf_is_valid(time_machine_bufnr)
 	then
+		logger.warn(
+			"Invalid time machine buffer: %s",
+			tostring(time_machine_bufnr)
+		)
 		return
 	end
 
 	local ut = undotree.get_undotree(content_bufnr)
 
 	if not ut then
+		logger.warn("No undotree for buffer %d", content_bufnr)
 		vim.notify("No undotree found", vim.log.levels.WARN)
 		return
 	end
@@ -311,6 +341,12 @@ function M.refresh(
 	)
 
 	set_highlights(time_machine_bufnr, seq_map, ut.seq_cur, lines)
+
+	logger.info(
+		"Refreshed UI for buffer %d with %d lines",
+		time_machine_bufnr,
+		#lines
+	)
 end
 
 --- Show the undo history for a buffer
@@ -318,6 +354,8 @@ end
 ---@param content_bufnr integer The main buffer number
 ---@return nil
 function M.show_tree(ut, content_bufnr)
+	logger.debug("show_tree(content=%d)", content_bufnr)
+
 	local orig_win_id = vim.api.nvim_get_current_win()
 
 	local tags = require("time-machine.tags").load_tags(content_bufnr)
@@ -550,11 +588,15 @@ function M.show_tree(ut, content_bufnr)
 			utils.close_buf(time_machine_bufnr)
 		end,
 	})
+
+	logger.info("Time-machine UI opened for buffer %d", content_bufnr)
 end
 
 --- Show the help text
 ---@return nil
 function M.show_help()
+	logger.debug("show_help() called")
+
 	local keymaps = require("time-machine.config").config.keymaps or {}
 
 	local help_descriptions = {
@@ -598,6 +640,8 @@ function M.show_help()
 	})
 
 	window.create_native_float_win(bufnr, "Help")
+
+	logger.info("Help window displayed")
 end
 
 --- Preview the diff of a sequence
@@ -612,8 +656,11 @@ function M.preview_diff(
 	content_bufnr,
 	orig_win_id
 )
+	logger.debug("preview_diff(line=%d)", line_num)
+
 	local full_id = utils.get_seq_from_line(time_machine_bufnr, line_num)
 	if not full_id or full_id == "" then
+		logger.warn("No seq under cursor at line %d", line_num)
 		return
 	end
 
@@ -624,8 +671,10 @@ function M.preview_diff(
 	local config = require("time-machine.config").config
 
 	if config.diff_tool == "native" then
+		logger.info("Using native diff tool")
 		diff.preview_diff_native(old_lines, new_lines)
 	else
+		logger.info("Using external diff tool: %s", config.diff_tool)
 		diff.preview_diff_external(config.diff_tool, old_lines, new_lines)
 	end
 end
@@ -636,13 +685,17 @@ end
 ---@param content_bufnr integer The main buffer number
 ---@return nil
 function M.handle_restore(line_num, time_machine_bufnr, content_bufnr)
+	logger.debug("handle_restore(line=%d)", line_num)
+
 	local full_id = utils.get_seq_from_line(time_machine_bufnr, line_num)
 	if not full_id or full_id == "" then
+		logger.warn("Invalid seq at line %d", line_num)
 		return
 	end
 
 	local seq = tonumber(full_id)
 	if not seq then
+		logger.error("Invalid sequence id: %q", full_id)
 		vim.notify(
 			("Invalid sequence id: %q"):format(full_id),
 			vim.log.levels.ERROR
@@ -650,7 +703,67 @@ function M.handle_restore(line_num, time_machine_bufnr, content_bufnr)
 		return
 	end
 
+	logger.info("Restoring to seq %d", seq)
 	require("time-machine.actions").restore(seq, content_bufnr)
+end
+
+--- Show the help text
+---@return nil
+function M.show_log()
+	logger.debug("show_log() called")
+
+	local keymaps = require("time-machine.config").config.keymaps or {}
+	local log_file = require("time-machine.config").config.log_file
+
+	if not log_file or log_file == "" then
+		logger.warn("No log_file configured; aborting show_log()")
+		vim.notify("No log file found", vim.log.levels.WARN)
+		return
+	end
+
+	logger.info("Opening log file: %s", log_file)
+	local f, err = io.open(log_file, "r")
+	if not f then
+		logger.error("Failed to open log file %s: %s", log_file, tostring(err))
+		vim.notify("No log file found at " .. log_file, vim.log.levels.WARN)
+		return
+	end
+
+	local lines = {}
+	for line in f:lines() do
+		table.insert(lines, line)
+	end
+	f:close()
+	logger.debug("Read %d lines from log file", #lines)
+
+	local bufnr = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+
+	M.set_standard_buf_options(bufnr)
+	vim.api.nvim_set_option_value(
+		"syntax",
+		"log",
+		{ scope = "local", buf = bufnr }
+	)
+	logger.info("Log buffer %d populated and options set", bufnr)
+
+	vim.api.nvim_buf_set_keymap(bufnr, "n", keymaps.close, "", {
+		nowait = true,
+		noremap = true,
+		silent = true,
+		callback = function()
+			logger.info("Closing log buffer %d", bufnr)
+			utils.close_buf(bufnr)
+		end,
+	})
+
+	local win = window.create_native_float_win(bufnr, "Log")
+
+	if win then
+		logger.info("Log window %d displayed", win)
+	else
+		logger.error("Failed to display log window")
+	end
 end
 
 return M

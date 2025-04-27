@@ -1,3 +1,5 @@
+local logger = require("time-machine.logger")
+
 local M = {}
 
 local native_float = nil
@@ -12,7 +14,18 @@ local winborder = vim.api.nvim_get_option_value(
 ---@param title? string The title appended after `Time Machine`
 ---@return integer|nil win_id The window handle
 function M.create_native_float_win(bufnr, title)
+	logger.debug(
+		"create_native_float_win(buf=%d, title=%s)",
+		bufnr,
+		tostring(title)
+	)
+
 	if native_float then
+		logger.info(
+			"Reusing existing float window %d for buffer %d",
+			native_float,
+			bufnr
+		)
 		if vim.api.nvim_win_is_valid(native_float) then
 			vim.api.nvim_win_set_buf(native_float, bufnr)
 			return
@@ -41,6 +54,14 @@ function M.create_native_float_win(bufnr, title)
 
 	local win = vim.api.nvim_open_win(bufnr, true, win_opts)
 
+	if not win then
+		logger.error("Failed to open native float window for buffer %d", bufnr)
+		return
+	end
+
+	native_float = win
+	logger.info("Opened native float window %d (buf=%d)", win, bufnr)
+
 	return win
 end
 
@@ -48,6 +69,8 @@ end
 ---@param bufnr integer The buffer to open
 ---@return integer|nil win_id The window handle
 function M.create_native_split_win(bufnr)
+	logger.debug("create_native_split_win(buf=%d)", bufnr)
+
 	local config_split_opts = require("time-machine.config").config.split_opts
 		or {}
 
@@ -55,8 +78,10 @@ function M.create_native_split_win(bufnr)
 
 	if config_split_opts.split == "left" then
 		vim.cmd("topleft vnew")
+		logger.info("Opening split on left for buffer %d", bufnr)
 	else
 		vim.cmd("botright vnew")
+		logger.info("Opening split on right for buffer %d", bufnr)
 	end
 
 	local win = vim.api.nvim_get_current_win()
@@ -91,6 +116,12 @@ function M.create_native_split_win(bufnr)
 		{ scope = "local", win = win }
 	)
 
+	logger.info(
+		"Opened native split window %d (buf=%d) width=%d",
+		win,
+		bufnr,
+		width
+	)
 	return win
 end
 
