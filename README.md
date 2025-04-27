@@ -86,13 +86,14 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ### Default Options
 
 ```lua
----@alias TimeMachine.DiffTool "native"|"difft"|"diff"|"delta"
+---@alias TimeMachine.DiffTool "native"|TimeMachine.DiffToolExternal
+---@alias TimeMachine.DiffToolExternal "difft"|"diff"|"delta"
 ---@alias TimeMachine.SplitDirection 'left'|'right'
 
 ---@class TimeMachine.Config
 ---@field diff_tool? TimeMachine.DiffTool The diff tool to use
 ---@field native_diff_opts? vim.diff.Opts The options for vim.diff
----@field external_diff_args? table<TimeMachine.DiffTool, string[]> The arguments for external diff tools
+---@field external_diff_args? table<TimeMachine.DiffToolExternal, string[]> The arguments for external diff tools
 ---@field ignore_filesize? integer|nil The file size to ignore undo saved to disk
 ---@field ignored_filetypes? string[] The file types to ignore undo saved to disk
 ---@field split_opts? TimeMachine.Config.SplitOpts The split options
