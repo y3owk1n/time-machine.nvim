@@ -210,7 +210,11 @@ local function set_header(lines, seq_map, content_bufnr)
 		"",
 	}
 
-	if persistent then
+	if
+		persistent
+		and undofile_path
+		and vim.fn.filereadable(undofile_path) == 1
+	then
 		table.insert(
 			header_lines,
 			#header_lines - 2,
