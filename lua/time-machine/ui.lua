@@ -61,11 +61,13 @@ end
 local function set_highlights(bufnr, seq_map, curr_seq, lines)
 	vim.api.nvim_buf_clear_namespace(bufnr, constants.ns, 0, -1)
 
+	local buf_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+
 	for i, id in ipairs(seq_map) do
 		--- is not sequence
 		if id == "" then
 			--- get the keymaps e.g. [g?]
-			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
+			local line = buf_lines[i]
 			for keymap in line:gmatch("%b[]") do
 				local start_col = line:find(keymap, 1, true) - 1
 				vim.api.nvim_buf_set_extmark(
@@ -102,7 +104,7 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 
 		--- is within sequence
 		if type(id) == "number" then
-			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
+			local line = buf_lines[i]
 			--- get the first character (current timeline)
 			local first_char = line:sub(1, 1)
 			if first_char and first_char ~= "" then
@@ -167,7 +169,7 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 
 		--- is the current sequence
 		if id == curr_seq then
-			local line = vim.api.nvim_buf_get_lines(bufnr, i - 1, i, false)[1]
+			local line = buf_lines[i]
 			local end_col = line and #line or 0
 
 			local text_width = vim.fn.strdisplaywidth(line)
