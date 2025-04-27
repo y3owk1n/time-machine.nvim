@@ -33,6 +33,7 @@ Take control of your edit history with an interactive timeline, diff previews, t
 - [Quick Start](#-quick-start)
 - [API](#-api)
 - [Keybindings](#-keybindings)
+- [Events](#-events)
 - [Hlgroup](#-hlgroups)
 - [Contributing](#-contributing)
 
@@ -274,6 +275,30 @@ require("time-machine").purge_all(force)
 - `g?` **Help** - Show the help
 - `u` **Undo** - Undo the selected sequence in the current timeline
 - `<C-r>` **Redo** - Redo the selected sequence in the current timeline
+
+## 🕰️ Events
+
+- `TimeMachineUndoCreated` - Fired when a new undopoint is created (Best effort to match what Neovim does)
+- `TimeMachineUndoCalled` - Fired when an undo from time machine panel is called (Not on the content buffer)
+- `TimeMachineRedoCalled` - Fired when a redo from time machine panel is called (Not on the content buffer)
+- `TimeMachineUndoRestored` - Fired when a specific undopoint sequence is restored
+- `TimeMachineUndofileDeleted` - Fired when an undofile is deleted (purging)
+- `TimeMachineTagsCreated` - Fired when tags are created from time machine panel
+
+> [!note]
+> If you want to be safe, you can use the `constants` to get the event instead of the string.
+> For example `require("time-machine").constants.events.ev_that_you_want`
+
+You can then listen to these user events and do something with them.
+
+```lua
+vim.api.nvim_create_autocmd("User", {
+  pattern = "TimeMachineUndoCreated",
+  callback = function()
+    -- do something
+  end,
+})
+```
 
 ## 🎨 Hlgroups
 
