@@ -21,6 +21,15 @@ local function write_temp(lines)
 
 	local data = table.concat(lines, "\n")
 	local written = vim.uv.fs_write(fd, data, -1)
+	if written ~= #data then
+		logger.warn(
+			"Incomplete write: %d of %d bytes written to %s",
+			written,
+			#data,
+			path
+		)
+	end
+
 	vim.uv.fs_close(fd)
 
 	logger.debug("Wrote %d bytes to %s", written, path)
