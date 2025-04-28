@@ -2,6 +2,7 @@ local M = {}
 
 local constants = require("time-machine.constants").constants
 local utils = require("time-machine.utils")
+local logger = require("time-machine.logger")
 
 M.config = {}
 
@@ -71,8 +72,6 @@ end
 --- Setup logger
 ---@return nil
 function M.setup_logger()
-	local logger = require("time-machine.logger")
-
 	logger.setup({
 		level = M.config.log_level,
 		logfile = M.config.log_file,
@@ -99,13 +98,28 @@ function M.setup_autocmds()
 		{
 			group = utils.augroup("undopoint_created"),
 			callback = function(ev)
+				--- do not emit event if the buffer is a time machine panel
 				if utils.is_time_machine_active(ev.buf) then
 					return
 				end
+
+				local filetype =
+					vim.api.nvim_get_option_value("filetype", { buf = ev.buf })
+
+				--- do not emit event if the filetype is in the ignored list or the filetype is empty
+				if
+					filetype == ""
+					or vim.tbl_contains(M.config.ignored_filetypes, filetype)
+				then
+					return
+				end
+
 				vim.api.nvim_exec_autocmds(
 					"User",
 					{ pattern = constants.events.undo_created }
 				)
+
+				logger.info("Event emitted: %s", constants.events.undo_created)
 			end,
 		}
 	)
