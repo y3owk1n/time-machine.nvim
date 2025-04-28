@@ -50,7 +50,7 @@ function M.create_native_float_win(bufnr, title)
 	return win
 end
 
---- Create a floating window for native
+--- Create a split window for native
 ---@param bufnr integer The buffer to open
 ---@return integer|nil win_id The window handle
 function M.create_native_split_win(bufnr)
@@ -61,17 +61,17 @@ function M.create_native_split_win(bufnr)
 
 	local width = config_split_opts.width or 50
 
-	if config_split_opts.split == "left" then
-		vim.cmd("topleft vnew")
-		logger.info("Opening split on left for buffer %d", bufnr)
-	else
-		vim.cmd("botright vnew")
-		logger.info("Opening split on right for buffer %d", bufnr)
+	local side = config_split_opts.split == "left" and "topleft" or "botright"
+
+	if not vim.api.nvim_buf_is_valid(bufnr) then
+		logger.error("Invalid buffer %d", bufnr)
+		return
 	end
 
-	local win = vim.api.nvim_get_current_win()
+	vim.cmd(string.format("%s vertical sbuffer %d", side, bufnr))
+	logger.info("Opening split on %s for buffer %d", side, bufnr)
 
-	vim.api.nvim_win_set_buf(win, bufnr)
+	local win = vim.api.nvim_get_current_win()
 
 	vim.api.nvim_win_set_width(win, width)
 
