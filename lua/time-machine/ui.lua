@@ -489,6 +489,8 @@ function M.show_tree(ut, content_bufnr)
 					"User",
 					{ pattern = constants.events.undo_called }
 				)
+
+				logger.info("Event emitted: %s", constants.events.undo_called)
 			end)
 		end,
 	})
@@ -504,6 +506,8 @@ function M.show_tree(ut, content_bufnr)
 					"User",
 					{ pattern = constants.events.redo_called }
 				)
+
+				logger.info("Event emitted: %s", constants.events.redo_called)
 			end)
 		end,
 	})
