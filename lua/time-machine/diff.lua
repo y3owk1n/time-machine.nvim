@@ -166,6 +166,7 @@ function M.preview_diff_external(diff_type, old_lines, new_lines)
 	local keymaps = require("time-machine.config").config.keymaps or {}
 
 	vim.keymap.set("n", keymaps.close, function()
+		logger.info("Closing external diff preview window %d", win)
 		require("time-machine.utils").close_win(win)
 	end, { buffer = preview_buf, nowait = true, noremap = true, silent = true })
 
