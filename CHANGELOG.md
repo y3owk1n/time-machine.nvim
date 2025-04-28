@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.0](https://github.com/y3owk1n/time-machine.nvim/compare/v1.3.0...v1.4.0) (2025-04-28)
+
+
+### Features
+
+* add detailed loggers with configurations ([#60](https://github.com/y3owk1n/time-machine.nvim/issues/60)) ([349e1b9](https://github.com/y3owk1n/time-machine.nvim/commit/349e1b95f05cc586e87bd7a4d86e603dc4336e8d))
+
+
+### Bug Fixes
+
+* **actions.toggle:** do not notify if condition not met for toggling ([#57](https://github.com/y3owk1n/time-machine.nvim/issues/57)) ([501dfd1](https://github.com/y3owk1n/time-machine.nvim/commit/501dfd116d50451b7fc2527f041ad3484af56255))
+* **config.setup_autocmds:** ignore time machine buffer for emitting `undo_created` event ([#62](https://github.com/y3owk1n/time-machine.nvim/issues/62)) ([287067a](https://github.com/y3owk1n/time-machine.nvim/commit/287067a9b1eaaaeccd750ad7f36401ac62e348f4))
+
 ## [1.3.0](https://github.com/y3owk1n/time-machine.nvim/compare/v1.2.2...v1.3.0) (2025-04-27)
 
 
