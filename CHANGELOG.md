@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.2](https://github.com/y3owk1n/time-machine.nvim/compare/v1.4.1...v1.4.2) (2025-04-28)
+
+
+### Bug Fixes
+
+* **ui:** avoid reusing existing floats ([#69](https://github.com/y3owk1n/time-machine.nvim/issues/69)) ([ce03a29](https://github.com/y3owk1n/time-machine.nvim/commit/ce03a29977d751a90c8e4d760a5d1834bb3c35be))
+* **utils:** allow optional bufnr and winid to close it ([#67](https://github.com/y3owk1n/time-machine.nvim/issues/67)) ([ffcd3be](https://github.com/y3owk1n/time-machine.nvim/commit/ffcd3beed1c6e93db4142f9800a63b3a0e5d27c9))
+* **window.create_native_split_win:** eliminate orphaned empty buffer when creating split ([#71](https://github.com/y3owk1n/time-machine.nvim/issues/71)) ([77a5fd1](https://github.com/y3owk1n/time-machine.nvim/commit/77a5fd1686de336edaa7e5c10cc0f889d72117d1))
+
 ## [1.4.1](https://github.com/y3owk1n/time-machine.nvim/compare/v1.4.0...v1.4.1) (2025-04-28)
 
 
