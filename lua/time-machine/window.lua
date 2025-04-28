@@ -63,6 +63,11 @@ function M.create_native_split_win(bufnr)
 
 	local side = config_split_opts.split == "left" and "topleft" or "botright"
 
+	if not vim.api.nvim_buf_is_valid(bufnr) then
+		logger.error("Invalid buffer %d", bufnr)
+		return
+	end
+
 	vim.cmd(string.format("%s vertical sbuffer %d", side, bufnr))
 	logger.info("Opening split on %s for buffer %d", side, bufnr)
 
