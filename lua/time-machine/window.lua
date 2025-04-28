@@ -2,8 +2,6 @@ local logger = require("time-machine.logger")
 
 local M = {}
 
-local native_float = nil
-
 local winborder = vim.api.nvim_get_option_value(
 	"winborder",
 	{ scope = "local" }
@@ -19,18 +17,6 @@ function M.create_native_float_win(bufnr, title)
 		bufnr,
 		tostring(title)
 	)
-
-	if native_float then
-		logger.info(
-			"Reusing existing float window %d for buffer %d",
-			native_float,
-			bufnr
-		)
-		if vim.api.nvim_win_is_valid(native_float) then
-			vim.api.nvim_win_set_buf(native_float, bufnr)
-			return
-		end
-	end
 
 	local config_float_opts = require("time-machine.config").config.float_opts
 		or {}
@@ -59,7 +45,6 @@ function M.create_native_float_win(bufnr, title)
 		return
 	end
 
-	native_float = win
 	logger.info("Opened native float window %d (buf=%d)", win, bufnr)
 
 	return win
