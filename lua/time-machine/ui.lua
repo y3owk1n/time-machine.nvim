@@ -379,6 +379,60 @@ function M.show_tree(ut, content_bufnr)
 
 	set_highlights(time_machine_bufnr, seq_map, ut.seq_cur, lines)
 
+	local time_machine_win_id =
+		window.create_native_split_win(time_machine_bufnr)
+
+	if time_machine_win_id then
+		--- Set the cursor to the current sequence
+		for i, id in ipairs(seq_map) do
+			if id == ut.seq_cur then
+				vim.api.nvim_win_set_cursor(time_machine_win_id, { i, 0 })
+				break
+			end
+		end
+	end
+
+	vim.api.nvim_buf_set_var(
+		time_machine_bufnr,
+		constants.seq_map_buf_var,
+		seq_map
+	)
+	vim.api.nvim_buf_set_var(
+		time_machine_bufnr,
+		constants.content_buf_var,
+		content_bufnr
+	)
+
+	vim.api.nvim_create_autocmd("User", {
+		group = utils.augroup("ui_refresh"),
+		pattern = {
+			constants.events.undo_created,
+			constants.events.undo_restored,
+			constants.events.undo_called,
+			constants.events.redo_called,
+			constants.events.tags_created,
+		},
+		callback = function()
+			-- only refresh if that buffer is still open
+			if vim.api.nvim_buf_is_valid(time_machine_bufnr) then
+				M.refresh(
+					time_machine_bufnr,
+					seq_map,
+					content_bufnr,
+					is_current_timeline_toggled
+				)
+			end
+		end,
+	})
+
+	vim.api.nvim_create_autocmd("User", {
+		group = utils.augroup("ui_close"),
+		pattern = constants.events.undofile_deleted,
+		callback = function()
+			utils.close_win(time_machine_win_id)
+		end,
+	})
+
 	local keymaps = require("time-machine.config").config.keymaps or {}
 
 	vim.api.nvim_buf_set_keymap(
@@ -465,7 +519,7 @@ function M.show_tree(ut, content_bufnr)
 		noremap = true,
 		silent = true,
 		callback = function()
-			utils.close_buf(time_machine_bufnr)
+			utils.close_win(time_machine_win_id)
 		end,
 	})
 
@@ -539,60 +593,6 @@ function M.show_tree(ut, content_bufnr)
 		}
 	)
 
-	local time_machine_win_id =
-		window.create_native_split_win(time_machine_bufnr)
-
-	if time_machine_win_id then
-		--- Set the cursor to the current sequence
-		for i, id in ipairs(seq_map) do
-			if id == ut.seq_cur then
-				vim.api.nvim_win_set_cursor(time_machine_win_id, { i, 0 })
-				break
-			end
-		end
-	end
-
-	vim.api.nvim_buf_set_var(
-		time_machine_bufnr,
-		constants.seq_map_buf_var,
-		seq_map
-	)
-	vim.api.nvim_buf_set_var(
-		time_machine_bufnr,
-		constants.content_buf_var,
-		content_bufnr
-	)
-
-	vim.api.nvim_create_autocmd("User", {
-		group = utils.augroup("ui_refresh"),
-		pattern = {
-			constants.events.undo_created,
-			constants.events.undo_restored,
-			constants.events.undo_called,
-			constants.events.redo_called,
-			constants.events.tags_created,
-		},
-		callback = function()
-			-- only refresh if that buffer is still open
-			if vim.api.nvim_buf_is_valid(time_machine_bufnr) then
-				M.refresh(
-					time_machine_bufnr,
-					seq_map,
-					content_bufnr,
-					is_current_timeline_toggled
-				)
-			end
-		end,
-	})
-
-	vim.api.nvim_create_autocmd("User", {
-		group = utils.augroup("ui_close"),
-		pattern = constants.events.undofile_deleted,
-		callback = function()
-			utils.close_buf(time_machine_bufnr)
-		end,
-	})
-
 	logger.info("Time-machine UI opened for buffer %d", content_bufnr)
 end
 
@@ -628,6 +628,9 @@ function M.show_help()
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, help_lines)
 
 	M.set_standard_buf_options(bufnr)
+
+	local win = window.create_native_float_win(bufnr, "Help")
+
 	vim.api.nvim_set_option_value(
 		"syntax",
 		"markdown",
@@ -639,11 +642,9 @@ function M.show_help()
 		noremap = true,
 		silent = true,
 		callback = function()
-			utils.close_buf(bufnr)
+			utils.close_win(win)
 		end,
 	})
-
-	window.create_native_float_win(bufnr, "Help")
 
 	logger.info("Help window displayed")
 end
@@ -751,17 +752,17 @@ function M.show_log()
 	)
 	logger.info("Log buffer %d populated and options set", bufnr)
 
+	local win = window.create_native_float_win(bufnr, "Log")
+
 	vim.api.nvim_buf_set_keymap(bufnr, "n", keymaps.close, "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
 		callback = function()
 			logger.info("Closing log buffer %d", bufnr)
-			utils.close_buf(bufnr)
+			utils.close_win(win)
 		end,
 	})
-
-	local win = window.create_native_float_win(bufnr, "Log")
 
 	if win then
 		logger.info("Log window %d displayed", win)

@@ -60,20 +60,21 @@ function M.preview_diff_native(old_lines, new_lines)
 
 	local keymaps = require("time-machine.config").config.keymaps or {}
 
+	local win = require("time-machine.window").create_native_float_win(
+		preview_buf,
+		"Preview (Native)"
+	)
+
 	vim.api.nvim_buf_set_keymap(preview_buf, "n", keymaps.close, "", {
 		nowait = true,
 		noremap = true,
 		silent = true,
 		callback = function()
 			logger.info("Closing native preview buffer %d", preview_buf)
-			require("time-machine.utils").close_buf(preview_buf)
+			require("time-machine.utils").close_win(win)
 		end,
 	})
 
-	require("time-machine.window").create_native_float_win(
-		preview_buf,
-		"Preview (Native)"
-	)
 	logger.info("Displayed native diff preview")
 end
 
