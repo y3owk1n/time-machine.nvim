@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.1](https://github.com/y3owk1n/time-machine.nvim/compare/v1.4.0...v1.4.1) (2025-04-28)
+
+
+### Bug Fixes
+
+* **config.setup_autocmds:** more checks to ensure not over-emitting `undo_created` event ([#63](https://github.com/y3owk1n/time-machine.nvim/issues/63)) ([a398221](https://github.com/y3owk1n/time-machine.nvim/commit/a3982213c41b93f77830266ac0a9a2f02f61d104))
+* **diff.preview_diff_external:** add log for closing win ([#65](https://github.com/y3owk1n/time-machine.nvim/issues/65)) ([cb57e3a](https://github.com/y3owk1n/time-machine.nvim/commit/cb57e3acc7a8b913c69f2d79a9babf4dee246e91))
+* log every event emission ([#66](https://github.com/y3owk1n/time-machine.nvim/issues/66)) ([18dfa6c](https://github.com/y3owk1n/time-machine.nvim/commit/18dfa6cce5de8fe7bd65bb6f3732deb9076a4121))
+
 ## [1.4.0](https://github.com/y3owk1n/time-machine.nvim/compare/v1.3.0...v1.4.0) (2025-04-28)
 
 
