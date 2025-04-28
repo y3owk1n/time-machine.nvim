@@ -98,7 +98,10 @@ function M.setup_autocmds()
 		{ "BufWritePost", "TextChanged", "InsertLeave" },
 		{
 			group = utils.augroup("undopoint_created"),
-			callback = function()
+			callback = function(ev)
+				if utils.is_time_machine_active(ev.buf) then
+					return
+				end
 				vim.api.nvim_exec_autocmds(
 					"User",
 					{ pattern = constants.events.undo_created }
