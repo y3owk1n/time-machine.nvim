@@ -68,8 +68,6 @@ function M.create_native_split_win(bufnr)
 
 	local win = vim.api.nvim_get_current_win()
 
-	vim.api.nvim_win_set_buf(win, bufnr)
-
 	vim.api.nvim_win_set_width(win, width)
 
 	vim.api.nvim_set_option_value(
