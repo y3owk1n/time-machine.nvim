@@ -99,6 +99,8 @@ function M.restore(seq, content_bufnr)
 		"User",
 		{ pattern = constants.events.undo_restored }
 	)
+
+	logger.info("Event emitted: %s", constants.events.undo_restored)
 end
 
 --- Purge all undofiles

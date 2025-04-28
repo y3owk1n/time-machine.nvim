@@ -156,6 +156,8 @@ function M.create_tag(cur_line_no, time_machine_bufnr, content_bufnr)
 				"User",
 				{ pattern = constants.events.tags_created }
 			)
+
+			logger.info("Event emitted: %s", constants.events.tags_created)
 			return
 		end
 
@@ -186,6 +188,8 @@ function M.create_tag(cur_line_no, time_machine_bufnr, content_bufnr)
 			"User",
 			{ pattern = constants.events.tags_created }
 		)
+
+		logger.info("Event emitted: %s", constants.events.tags_created)
 	end)
 end
 

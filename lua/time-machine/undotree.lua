@@ -95,6 +95,8 @@ function M.remove_undofiles()
 			"User",
 			{ pattern = constants.events.undofile_deleted }
 		)
+
+		logger.info("Event emitted: %s", constants.events.undofile_deleted)
 	end
 
 	logger.info("remove_undofiles() completed successfully")
@@ -142,6 +144,8 @@ function M.remove_undofile(bufnr)
 		"User",
 		{ pattern = constants.events.undofile_deleted }
 	)
+
+	logger.info("Event emitted: %s", constants.events.undofile_deleted)
 
 	return true
 end
