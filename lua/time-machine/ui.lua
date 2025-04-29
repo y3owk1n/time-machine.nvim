@@ -122,6 +122,27 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 				})
 			end
 
+			--- get after first character until the first bracket (alt timeline)
+			local first_bracket_start = line:find("%[", 1, false)
+			if first_bracket_start and #line > 1 then
+				local between_start = 2 -- after the first character
+				local between_end = first_bracket_start - 1
+				local between_str = line:sub(between_start, between_end)
+
+				local trimmed = between_str:match("^%s*(.-)%s*$")
+				local leading_spaces = #between_str:match("^(%s*)")
+
+				local start_col = between_start - 1 + leading_spaces
+				local end_col = start_col + #trimmed
+
+				if #trimmed > 0 then
+					vim.api.nvim_buf_set_extmark(bufnr, ns, row, start_col, {
+						end_col = end_col,
+						hl_group = hl.timeline_alt,
+					})
+				end
+			end
+
 			--- match the sequence number
 			for seq in str_gmatch(line, "%b[]") do
 				local start_col = str_find(line, seq, 1, true) - 1

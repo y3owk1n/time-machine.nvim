@@ -16,6 +16,7 @@ M.constants = {
 	hl = {
 		current = "TimeMachineCurrent",
 		timeline = "TimeMachineTimeline",
+		timeline_alt = "TimeMachineTimelineAlt",
 		keymap = "TimeMachineKeymap",
 		info = "TimeMachineInfo",
 		seq = "TimeMachineSeq",

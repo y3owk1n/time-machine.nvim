@@ -444,6 +444,7 @@ HLGROUPS                        *time-machine.nvim-time-machine.nvim-hlgroups*
 
 - `TimeMachineCurrent` - Current sequence (current line)
 - `TimeMachineTimeline` - Current active timeline (for the icon)
+- `TimeMachineTimelineAlt` - Non active timeline (for the icon)
 - `TimeMachineKeymap` - Keymaps at the header section
 - `TimeMachineInfo` - Info at the header section
 - `TimeMachineSeq` - Individual sequence number
@@ -472,6 +473,7 @@ CATPPUCCIN INTEGRATION (AUTHOR CONFIG) ~
       local highlights = {
        TimeMachineCurrent = { bg = colors.blue, fg = colors.base, style = { "bold" } },
        TimeMachineTimeline = { fg = colors.blue, style = { "bold" } },
+       TimeMachineTimelineAlt = { fg = colors.overlay2 },
        TimeMachineKeymap = { fg = colors.teal, style = { "italic" } },
        TimeMachineInfo = { fg = colors.subtext0, style = { "italic" } },
        TimeMachineSeq = { fg = colors.peach, style = { "bold" } },

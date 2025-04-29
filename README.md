@@ -400,6 +400,7 @@ vim.api.nvim_create_autocmd("User", {
 
 - `TimeMachineCurrent` - Current sequence (current line)
 - `TimeMachineTimeline` - Current active timeline (for the icon)
+- `TimeMachineTimelineAlt` - Non active timeline (for the icon)
 - `TimeMachineKeymap` - Keymaps at the header section
 - `TimeMachineInfo` - Info at the header section
 - `TimeMachineSeq` - Individual sequence number
@@ -426,6 +427,7 @@ vim.api.nvim_set_hl(0, "TimeMachineCurrent", { fg = "#7dcfff", bold = true })
   local highlights = {
    TimeMachineCurrent = { bg = colors.blue, fg = colors.base, style = { "bold" } },
    TimeMachineTimeline = { fg = colors.blue, style = { "bold" } },
+   TimeMachineTimelineAlt = { fg = colors.overlay2 },
    TimeMachineKeymap = { fg = colors.teal, style = { "italic" } },
    TimeMachineInfo = { fg = colors.subtext0, style = { "italic" } },
    TimeMachineSeq = { fg = colors.peach, style = { "bold" } },
