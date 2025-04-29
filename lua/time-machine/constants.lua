@@ -28,6 +28,9 @@ M.constants = {
 		saved = "◆ ",
 		point = "○ ",
 		tag = "◼ ",
+		tree_vertical = "│ ",
+		tree_vertical_join = "┴ ",
+		tree_vertical_last = "┘ ",
 	},
 }
 
