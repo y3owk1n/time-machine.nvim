@@ -132,4 +132,12 @@ function M.close_win(win)
 	end
 end
 
+--- Emit an event
+---@param event string The event name
+---@return nil
+function M.emit_event(event)
+	vim.api.nvim_exec_autocmds("User", { pattern = event })
+	require("time-machine.logger").info("Event emitted: %s", event)
+end
+
 return M

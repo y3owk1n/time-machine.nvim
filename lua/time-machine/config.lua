@@ -121,12 +121,7 @@ function M.setup_autocmds()
 					return
 				end
 
-				vim.api.nvim_exec_autocmds(
-					"User",
-					{ pattern = constants.events.undo_created }
-				)
-
-				logger.info("Event emitted: %s", constants.events.undo_created)
+				utils.emit_event(constants.events.undo_created)
 			end,
 		}
 	)

@@ -3,6 +3,7 @@ local M = {}
 local constants = require("time-machine.constants").constants
 local undotree = require("time-machine.undotree")
 local logger = require("time-machine.logger")
+local utils = require("time-machine.utils")
 
 local tags_dir = vim.fn.stdpath("data") .. "/time_machine/tags"
 
@@ -152,12 +153,7 @@ function M.create_tag(cur_line_no, time_machine_bufnr, content_bufnr)
 				vim.log.levels.INFO
 			)
 
-			vim.api.nvim_exec_autocmds(
-				"User",
-				{ pattern = constants.events.tags_created }
-			)
-
-			logger.info("Event emitted: %s", constants.events.tags_created)
+			utils.emit_event(constants.events.tags_created)
 			return
 		end
 
@@ -184,12 +180,7 @@ function M.create_tag(cur_line_no, time_machine_bufnr, content_bufnr)
 			vim.log.levels.INFO
 		)
 
-		vim.api.nvim_exec_autocmds(
-			"User",
-			{ pattern = constants.events.tags_created }
-		)
-
-		logger.info("Event emitted: %s", constants.events.tags_created)
+		utils.emit_event(constants.events.tags_created)
 	end)
 end
 
