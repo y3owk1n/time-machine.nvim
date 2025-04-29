@@ -33,6 +33,7 @@
 ---@class TimeMachine.Config.FloatOpts
 ---@field width? integer The width of the window
 ---@field height? integer The height of the window
+---@field winblend? integer The winblend of the window
 
 ---@class TimeMachine.SeqMapRaw
 ---@field entry vim.fn.undotree.entry The undotree entry
