@@ -109,6 +109,7 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
  float_opts = {
   width = 0.8, -- between 0 and 1
   height = 0.8, -- between 0 and 1
+  winblend = 0,
  },
  diff_tool = "native", -- default diff engine
  native_diff_opts = { -- only used when diff_tool is "native"
@@ -186,6 +187,7 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ---@class TimeMachine.Config.FloatOpts
 ---@field width? integer The width of the window
 ---@field height? integer The height of the window
+---@field winblend? integer The winblend of the window
 ```
 
 ## 🚀 Quick Start

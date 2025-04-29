@@ -45,6 +45,12 @@ function M.create_native_float_win(bufnr, title)
 		return
 	end
 
+	vim.api.nvim_set_option_value(
+		"winblend",
+		config_float_opts.winblend or 0,
+		{ scope = "local", win = win }
+	)
+
 	logger.info("Opened native float window %d (buf=%d)", win, bufnr)
 
 	return win

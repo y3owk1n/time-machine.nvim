@@ -15,6 +15,7 @@ local defaults = {
 	float_opts = {
 		width = 0.8,
 		height = 0.8,
+		winblend = 0,
 	},
 	diff_tool = "native",
 	native_diff_opts = {
