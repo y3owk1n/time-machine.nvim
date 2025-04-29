@@ -221,8 +221,8 @@ local function set_header(lines, seq_map, content_bufnr)
 		{ scope = "local", buf = content_bufnr }
 	)
 
-	local saved_text = constants.icons.saved .. "= Saved"
-	local point_text = constants.icons.point .. "= Point"
+	local saved_text = string.format("%s = Saved", constants.icons.saved)
+	local point_text = string.format("%s = Point", constants.icons.point)
 
 	local annotation = saved_text .. " " .. point_text
 
