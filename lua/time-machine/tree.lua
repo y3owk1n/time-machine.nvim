@@ -123,17 +123,18 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 			if seq == 1 then
 				--- last character
 				if c == max_column then
-					line[c + 1] = "┘ "
+					line[c + 1] = constants.icons.tree_vertical_last
 				else
-					line[c + 1] = "┴ "
+					line[c + 1] = constants.icons.tree_vertical_join
 				end
 			else
-				line[c + 1] = verticals[c] and "│ " or "  "
+				line[c + 1] = verticals[c] and constants.icons.tree_vertical
+					or "  "
 			end
 
 			--- force current timeline to have separator always (1st column)
 			if c == 0 then
-				line[c + 1] = "│ "
+				line[c + 1] = constants.icons.tree_vertical
 			end
 		end
 
