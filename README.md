@@ -404,12 +404,41 @@ vim.api.nvim_create_autocmd("User", {
 - `TimeMachineInfo` - Info at the header section
 - `TimeMachineSeq` - Individual sequence number
 - `TimeMachineTag` - Tags text
+- `TimeMachineNormal` - Normal text (split and floats)
+- `TimeMachineBorder` - Border text (floats only)
 
 ### Example hlgroups customisation
 
 ```lua
 vim.api.nvim_set_hl(0, "TimeMachineCurrent", { link = "Visual" })
 vim.api.nvim_set_hl(0, "TimeMachineCurrent", { fg = "#7dcfff", bold = true })
+```
+
+### Catppuccin integration (author config)
+
+```lua
+{
+ "catppuccin/nvim",
+ optional = true,
+ opts = function(_, opts)
+  local colors = require("catppuccin.palettes").get_palette()
+
+  local highlights = {
+   TimeMachineCurrent = { bg = colors.blue, fg = colors.base, style = { "bold" } },
+   TimeMachineTimeline = { fg = colors.blue, style = { "bold" } },
+   TimeMachineKeymap = { fg = colors.teal, style = { "italic" } },
+   TimeMachineInfo = { fg = colors.subtext0, style = { "italic" } },
+   TimeMachineSeq = { fg = colors.peach, style = { "bold" } },
+   TimeMachineTag = { fg = colors.yellow, style = { "bold" } },
+  }
+
+  opts.custom_highlights = opts.custom_highlights or {}
+
+  for key, value in pairs(highlights) do
+   opts.custom_highlights[key] = value
+  end
+ end,
+},
 ```
 
 <!-- panvimdoc-ignore-start -->
