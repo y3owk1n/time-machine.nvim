@@ -21,6 +21,11 @@ function M.create_native_float_win(bufnr, title)
 	local config_float_opts = require("time-machine.config").config.float_opts
 		or {}
 
+	local keymaps = require("time-machine.config").config.keymaps or {}
+
+	local footer_text =
+		string.format("Press `%s` to exit", keymaps.close or "q")
+
 	---@type vim.api.keyset.win_config
 	local win_opts = {
 		relative = "editor",
@@ -29,7 +34,7 @@ function M.create_native_float_win(bufnr, title)
 		height = config_float_opts.height or 0.8,
 		title = "Time Machine" .. (title and (" - " .. title) or ""),
 		title_pos = "center",
-		footer = "Press `q` to exit",
+		footer = footer_text,
 		footer_pos = "center",
 	}
 
