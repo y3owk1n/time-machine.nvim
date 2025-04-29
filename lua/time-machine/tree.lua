@@ -119,7 +119,17 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 
 		--- draw vertical lines
 		for c = 0, max_column do
-			line[c + 1] = verticals[c] and "│ " or "  "
+			--- only draw for the root node
+			if seq == 1 then
+				--- last character
+				if c == max_column then
+					line[c + 1] = "┘ "
+				else
+					line[c + 1] = "┴ "
+				end
+			else
+				line[c + 1] = verticals[c] and "│ " or "  "
+			end
 
 			--- force current timeline to have separator always (1st column)
 			if c == 0 then
