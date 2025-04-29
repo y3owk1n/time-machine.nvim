@@ -56,6 +56,12 @@ function M.create_native_float_win(bufnr, title)
 		{ scope = "local", win = win }
 	)
 
+	vim.api.nvim_set_option_value(
+		"winhighlight",
+		"Normal:TimeMachineNormal,FloatBorder:TimeMachineBorder",
+		{ scope = "local", win = win }
+	)
+
 	logger.info("Opened native float window %d (buf=%d)", win, bufnr)
 
 	return win
@@ -109,6 +115,12 @@ function M.create_native_split_win(bufnr)
 	vim.api.nvim_set_option_value(
 		"relativenumber",
 		false,
+		{ scope = "local", win = win }
+	)
+
+	vim.api.nvim_set_option_value(
+		"winhighlight",
+		"Normal:TimeMachineNormal",
 		{ scope = "local", win = win }
 	)
 

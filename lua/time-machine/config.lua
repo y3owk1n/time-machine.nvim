@@ -63,10 +63,15 @@ function M.setup_highlights()
 		info = { fg = "#939AB7", italic = true },
 		seq = { fg = "#ed8796", bold = true },
 		tag = { fg = "#f0c6c6", bold = true },
+		normal = { link = "Normal" },
+		border = { link = "FloatBorder" },
 	}
 
 	for key, group in pairs(groups) do
-		vim.api.nvim_set_hl(0, group, defaults_colors[key])
+		local ok, existing = pcall(vim.api.nvim_get_hl, 0, { name = group })
+		if not ok or vim.tbl_isempty(existing) then
+			vim.api.nvim_set_hl(0, group, defaults_colors[key])
+		end
 	end
 end
 

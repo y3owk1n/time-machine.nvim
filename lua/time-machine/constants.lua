@@ -20,6 +20,8 @@ M.constants = {
 		info = "TimeMachineInfo",
 		seq = "TimeMachineSeq",
 		tag = "TimeMachineTag",
+		normal = "TimeMachineNormal",
+		border = "TimeMachineBorder",
 	},
 	icons = {
 		saved = "◆ ",
