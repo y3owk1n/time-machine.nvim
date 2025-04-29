@@ -25,12 +25,13 @@ M.constants = {
 		border = "TimeMachineBorder",
 	},
 	icons = {
-		saved = "◆ ",
-		point = "○ ",
-		tag = "◼ ",
-		tree_vertical = "│ ",
-		tree_vertical_join = "┴ ",
-		tree_vertical_last = "┘ ",
+		saved = "◆",
+		point = "○",
+		tag = "◼",
+		tree_vertical = "│",
+		tree_vertical_join = "┴",
+		tree_vertical_last = "┘",
+		tree_horizontal = "─",
 	},
 }
 
