@@ -1,4 +1,5 @@
 local constants = require("time-machine.constants").constants
+local utils = require("time-machine.utils")
 local logger = require("time-machine.logger")
 
 local M = {}
@@ -91,12 +92,7 @@ function M.remove_undofiles()
 		logger.debug("Refreshing buffer window for %s (buf=%d)", n, bufnr)
 		M.refresh_buffer_window(bufnr)
 
-		vim.api.nvim_exec_autocmds(
-			"User",
-			{ pattern = constants.events.undofile_deleted }
-		)
-
-		logger.info("Event emitted: %s", constants.events.undofile_deleted)
+		utils.emit_event(constants.events.undofile_deleted)
 	end
 
 	logger.info("remove_undofiles() completed successfully")
@@ -140,13 +136,7 @@ function M.remove_undofile(bufnr)
 	M.refresh_buffer_window(bufnr)
 	logger.info("remove_undofile(%d) completed", bufnr)
 
-	vim.api.nvim_exec_autocmds(
-		"User",
-		{ pattern = constants.events.undofile_deleted }
-	)
-
-	logger.info("Event emitted: %s", constants.events.undofile_deleted)
-
+	utils.emit_event(constants.events.undofile_deleted)
 	return true
 end
 

@@ -95,12 +95,7 @@ function M.restore(seq, content_bufnr)
 	logger.info("Restored buffer %d to undopoint %d", content_bufnr, seq)
 	vim.notify(("Restored to undopoint %d"):format(seq), vim.log.levels.INFO)
 
-	vim.api.nvim_exec_autocmds(
-		"User",
-		{ pattern = constants.events.undo_restored }
-	)
-
-	logger.info("Event emitted: %s", constants.events.undo_restored)
+	utils.emit_event(constants.events.undo_restored)
 end
 
 --- Purge all undofiles

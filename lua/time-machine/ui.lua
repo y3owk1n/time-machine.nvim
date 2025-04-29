@@ -560,12 +560,7 @@ function M.show_tree(ut, content_bufnr)
 		callback = function()
 			vim.api.nvim_buf_call(content_bufnr, function()
 				vim.cmd("undo")
-				vim.api.nvim_exec_autocmds(
-					"User",
-					{ pattern = constants.events.undo_called }
-				)
-
-				logger.info("Event emitted: %s", constants.events.undo_called)
+				utils.emit_event(constants.events.undo_called)
 			end)
 		end,
 	})
@@ -577,12 +572,7 @@ function M.show_tree(ut, content_bufnr)
 		callback = function()
 			vim.api.nvim_buf_call(content_bufnr, function()
 				vim.cmd("redo")
-				vim.api.nvim_exec_autocmds(
-					"User",
-					{ pattern = constants.events.redo_called }
-				)
-
-				logger.info("Event emitted: %s", constants.events.redo_called)
+				utils.emit_event(constants.events.redo_called)
 			end)
 		end,
 	})
