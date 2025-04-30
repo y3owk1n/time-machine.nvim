@@ -123,25 +123,27 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 			if seq == 1 then
 				--- last character
 				if c == max_column then
-					line[c + 1] =
-						string.format("%s ", constants.icons.tree_vertical_last)
+					line[c + 1] = string.format(
+						"%s ",
+						constants.icons.line_corner_b_right
+					)
 				else
 					line[c + 1] = string.format(
 						"%s%s",
-						constants.icons.tree_vertical_join,
-						constants.icons.tree_horizontal
+						constants.icons.line_t_down,
+						constants.icons.line_horizontal
 					)
 				end
 			else
 				line[c + 1] = verticals[c]
-						and string.format("%s ", constants.icons.tree_vertical)
+						and string.format("%s ", constants.icons.line_vertical)
 					or "  "
 			end
 
 			--- force current timeline to have separator always (1st column)
 			if c == 0 then
 				line[c + 1] =
-					string.format(" %s ", constants.icons.tree_vertical)
+					string.format(" %s ", constants.icons.line_vertical)
 			end
 		end
 
