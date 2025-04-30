@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.5.0](https://github.com/y3owk1n/time-machine.nvim/compare/v1.4.2...v1.5.0) (2025-04-30)
+
+
+### Features
+
+* **highlights:** add `timeline_alt` for highlight overrides ([#77](https://github.com/y3owk1n/time-machine.nvim/issues/77)) ([5dbfaea](https://github.com/y3owk1n/time-machine.nvim/commit/5dbfaea60293454213ed9d3beccc6339b5fff5d6))
+* **window:** add configurable `winblend` for floats ([#73](https://github.com/y3owk1n/time-machine.nvim/issues/73)) ([7fd8482](https://github.com/y3owk1n/time-machine.nvim/commit/7fd848272c72102e58a8e550147eb88b2a661f70))
+
+
+### Bug Fixes
+
+* **highlights:** ensure hl is overridable ([#76](https://github.com/y3owk1n/time-machine.nvim/issues/76)) ([08bda79](https://github.com/y3owk1n/time-machine.nvim/commit/08bda79dfc13b4b81d2fbb8295d0ad5a3a438d84))
+* **icons:** rename icon names and use rounded corner ([#85](https://github.com/y3owk1n/time-machine.nvim/issues/85)) ([e3ea3ed](https://github.com/y3owk1n/time-machine.nvim/commit/e3ea3edbfa7339833375241c81c293e233220cee))
+* **tree:** nicer connector for root node ([#78](https://github.com/y3owk1n/time-machine.nvim/issues/78)) ([70d03ac](https://github.com/y3owk1n/time-machine.nvim/commit/70d03acca7a485272441329409a800f40bb0c172))
+* **ui.set_highlights:** remain actual hl for current text ([#83](https://github.com/y3owk1n/time-machine.nvim/issues/83)) ([36e858a](https://github.com/y3owk1n/time-machine.nvim/commit/36e858a000e8848920ed8726a4fd5e820094f9e0))
+* **ui:** add padding before first icon node in timeline ([#82](https://github.com/y3owk1n/time-machine.nvim/issues/82)) ([abb52ab](https://github.com/y3owk1n/time-machine.nvim/commit/abb52ab3d7d2ddf2ed27654c4c204744ea24414b))
+* **window.create_native_float_win:** ensure grabbing footer text keymap from config ([#75](https://github.com/y3owk1n/time-machine.nvim/issues/75)) ([6bdaa91](https://github.com/y3owk1n/time-machine.nvim/commit/6bdaa91185cf4e8f5f5efad7457a2d0b7f120aec))
+
 ## [1.4.2](https://github.com/y3owk1n/time-machine.nvim/compare/v1.4.1...v1.4.2) (2025-04-28)
 
 
