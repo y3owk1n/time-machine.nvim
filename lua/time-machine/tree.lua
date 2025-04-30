@@ -131,7 +131,7 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 					line[c + 1] = string.format(
 						"%s%s",
 						constants.icons.line_t_down,
-						constants.icons.tree_horizontal
+						constants.icons.line_horizontal
 					)
 				end
 			else
