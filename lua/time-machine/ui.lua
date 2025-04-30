@@ -111,7 +111,7 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 		end
 
 		--- is within sequence
-		if type(id) == "number" and id ~= curr_seq then
+		if type(id) == "number" then
 			--- get the first character (current timeline)
 			local first_char = line:sub(1 * 2, 1 * 2)
 			if first_char and first_char ~= "" then

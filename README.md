@@ -429,9 +429,7 @@ vim.api.nvim_set_hl(0, "TimeMachineCurrent", { fg = "#7dcfff", bold = true })
   ---@type {[string]: CtpHighlight}
   local highlights = {
    TimeMachineCurrent = {
-    bg = c_utils.darken(colors.blue, 0.18, colors.base),
-    fg = colors.blue,
-    style = { "bold" },
+    bg = c_utils.darken(colors.blue, 0.18, colors.base)
    },
    TimeMachineTimeline = { fg = colors.blue, style = { "bold" } },
    TimeMachineTimelineAlt = { fg = colors.overlay2 },

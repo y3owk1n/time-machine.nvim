@@ -57,7 +57,7 @@ function M.setup_highlights()
 	local groups = constants.hl
 
 	local defaults_colors = {
-		current = { bg = "#3c3836", fg = "#fabd2f", bold = true },
+		current = { bg = "#3c3836" },
 		timeline = { fg = "#fabd2f", bold = true },
 		timeline_alt = { fg = "#939AB7" },
 		keymap = { fg = "#8bd5ca", italic = true },
