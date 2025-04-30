@@ -126,8 +126,11 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 					line[c + 1] =
 						string.format("%s ", constants.icons.tree_vertical_last)
 				else
-					line[c + 1] =
-						string.format("%s ", constants.icons.tree_vertical_join)
+					line[c + 1] = string.format(
+						"%s%s",
+						constants.icons.tree_vertical_join,
+						constants.icons.tree_horizontal
+					)
 				end
 			else
 				line[c + 1] = verticals[c]
@@ -138,7 +141,7 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 			--- force current timeline to have separator always (1st column)
 			if c == 0 then
 				line[c + 1] =
-					string.format("%s ", constants.icons.tree_vertical)
+					string.format(" %s ", constants.icons.tree_vertical)
 			end
 		end
 
@@ -146,8 +149,17 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 		line[col + 1] = (
 			entry.save
 			and entry.save > 0
-			and string.format("%s ", constants.icons.saved)
-		) or string.format("%s ", constants.icons.point)
+			and string.format(
+				"%s%s ",
+				col == 0 and " " or "",
+				constants.icons.saved
+			)
+		)
+			or string.format(
+				"%s%s ",
+				col == 0 and " " or "",
+				constants.icons.point
+			)
 
 		verticals[col] = true
 

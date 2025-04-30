@@ -8,7 +8,7 @@ local logger = require("time-machine.logger")
 
 local M = {}
 
-local current_timeline_annotation = "╭─ Current timeline"
+local current_timeline_annotation = " ╭─ Current timeline"
 local is_current_timeline_toggled = false
 local ns = constants.ns
 local hl = constants.hl
@@ -113,7 +113,7 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 		--- is within sequence
 		if type(id) == "number" and id ~= curr_seq then
 			--- get the first character (current timeline)
-			local first_char = line:sub(1, 1)
+			local first_char = line:sub(1 * 2, 1 * 2)
 			if first_char and first_char ~= "" then
 				local start_col = str_find(line, first_char, 1, true) - 1
 				vim.api.nvim_buf_set_extmark(bufnr, ns, row, start_col, {
@@ -125,7 +125,7 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 			--- get after first character until the first bracket (alt timeline)
 			local first_bracket_start = line:find("%[", 1, false)
 			if first_bracket_start and #line > 1 then
-				local between_start = 2 -- after the first character
+				local between_start = 2 * 2 -- after the first character
 				local between_end = first_bracket_start - 1
 				local between_str = line:sub(between_start, between_end)
 
