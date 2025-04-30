@@ -6,7 +6,7 @@ Interactive timeline, diff previews, bookmarks, hot reloading, and undo file man
 
 <!-- panvimdoc-ignore-start -->
 
-![time-machine-demo](https://github.com/user-attachments/assets/b35a8ddd-b418-4ff8-a291-ea4c6a80228e)
+![demo-default](https://github.com/user-attachments/assets/3271248c-b1c9-4da9-9de8-0dafe9fd77a8)
 
 <!-- panvimdoc-ignore-end -->
 
@@ -416,6 +416,12 @@ vim.api.nvim_set_hl(0, "TimeMachineCurrent", { fg = "#7dcfff", bold = true })
 ```
 
 ### Catppuccin integration (author config)
+
+<!-- panvimdoc-ignore-start -->
+
+![demo-catppuccin](https://github.com/user-attachments/assets/53895035-ecd3-4f23-b8cb-5ccdea22e0f5)
+
+<!-- panvimdoc-ignore-end -->
 
 ```lua
 {
