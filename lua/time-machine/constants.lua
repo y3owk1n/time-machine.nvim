@@ -28,10 +28,11 @@ M.constants = {
 		saved = "◆",
 		point = "○",
 		tag = "◼",
-		tree_vertical = "│",
-		tree_vertical_join = "┴",
-		tree_vertical_last = "┘",
-		tree_horizontal = "─",
+		line_vertical = "│",
+		line_t_down = "┴",
+		line_corner_b_right = "╯",
+		line_corner_t_left = "╭",
+		line_horizontal = "─",
 	},
 }
 

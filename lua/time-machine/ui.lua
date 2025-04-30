@@ -8,7 +8,11 @@ local logger = require("time-machine.logger")
 
 local M = {}
 
-local current_timeline_annotation = " ╭─ Current timeline"
+local current_timeline_annotation = string.format(
+	" %s%s Current timeline",
+	constants.icons.line_corner_t_left,
+	constants.icons.line_horizontal
+)
 local is_current_timeline_toggled = false
 local ns = constants.ns
 local hl = constants.hl
