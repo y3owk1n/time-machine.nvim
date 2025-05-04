@@ -388,6 +388,12 @@ function M.show_tree(ut, content_bufnr)
 	local seq_map = {}
 	local tree_lines =
 		tree.build_tree_lines(ut, seq_map, tags, is_current_timeline_toggled)
+
+	if #tree_lines == 0 then
+		vim.notify("No undos yet", vim.log.levels.WARN)
+		return
+	end
+
 	local lines = {}
 
 	for _, line in ipairs(tree_lines) do
