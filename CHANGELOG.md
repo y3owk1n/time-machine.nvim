@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/y3owk1n/time-machine.nvim/compare/v1.5.0...v1.5.1) (2025-05-04)
+
+
+### Bug Fixes
+
+* **ui:** abort opening panel when no undos found ([#86](https://github.com/y3owk1n/time-machine.nvim/issues/86)) ([155bf71](https://github.com/y3owk1n/time-machine.nvim/commit/155bf71d8496c05fbc38ea732d4d711b21591afe))
+
 ## [1.5.0](https://github.com/y3owk1n/time-machine.nvim/compare/v1.4.2...v1.5.0) (2025-04-30)
 
 
