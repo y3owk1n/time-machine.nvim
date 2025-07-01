@@ -160,7 +160,7 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 			local patterns = {
 				relative = "(%d+%a+ ago)%s*(.*)$", -- e.g., "2h ago #tag"
 				pretty = "(%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d)%s*(.*)$", -- e.g., "2025-07-01 17:00:00 #tag"
-				unix = "(%d%d%d%d%d%d%d%d%d%d)%s*(.*)$", -- e.g., "1720048500 #tag"
+				unix = "(%d%d%d%d%d%d%d%d%d+)%s*(.*)$", -- e.g., "1720048500 #tag"
 			}
 
 			local config = require("time-machine.config").config
