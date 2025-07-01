@@ -47,6 +47,7 @@ local defaults = {
 		"snacks_notif_history",
 		"lazy",
 	},
+	time_format = "relative",
 	log_level = vim.log.levels.WARN,
 	log_file = vim.fn.stdpath("cache") .. "/time-machine.log",
 }

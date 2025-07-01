@@ -12,6 +12,7 @@
 ---@field split_opts? TimeMachine.Config.SplitOpts The split options
 ---@field float_opts? TimeMachine.Config.FloatOpts The floating window options
 ---@field keymaps? TimeMachine.Config.Keymaps The keymaps for actions
+---@field time_format? "pretty"|"relative"|"unix" The time format to display
 ---@field log_level? integer The log level
 ---@field log_file? string The log file path
 
