@@ -157,7 +157,17 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 			end
 
 			--- match time and the rest behind time (which is tags)
-			local time, rest = line:match("(%d+%a+ ago)%s*(.*)$")
+			-- local time, rest = line:match("(%d+%a+ ago)%s*(.*)$")
+			local patterns = {
+				relative = "(%d+%a+ ago)%s*(.*)$", -- e.g., "2h ago #tag"
+				pretty = "(%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d)%s*(.*)$", -- e.g., "2025-07-01 17:00:00 #tag"
+				unix = "(%d%d%d%d%d%d%d%d%d%d)%s*(.*)$", -- e.g., "1720048500 #tag"
+			}
+
+			local config = require("time-machine.config").config
+
+			local time, rest = line:match(patterns[config.time_format])
+
 			if time then
 				local start_col = str_find(line, time, 1, true) - 1
 				vim.api.nvim_buf_set_extmark(bufnr, ns, row, start_col, {
