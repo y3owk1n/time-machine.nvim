@@ -141,6 +141,7 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
   "snacks_notif_history",
   "lazy",
  },
+ time_format = "relative", -- "pretty"|"relative"|"unix"
  log_level = vim.log.levels.WARN,
  log_file = vim.fn.stdpath("cache") .. "/time-machine.log",
 }
@@ -166,6 +167,7 @@ vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 ---@field split_opts? TimeMachine.Config.SplitOpts The split options
 ---@field float_opts? TimeMachine.Config.FloatOpts The floating window options
 ---@field keymaps? TimeMachine.Config.Keymaps The keymaps for actions
+---@field time_format? "pretty"|"relative"|"unix" The time format to display
 ---@field log_level? integer The log level
 ---@field log_file? string The log file path
 

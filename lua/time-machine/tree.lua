@@ -169,7 +169,7 @@ function M.build_tree_lines(ut, seq_map, tags, show_current_timeline_only)
 		local info_text = string.format(
 			"%s %s %s",
 			(entry.seq == 0 and "[root]") or ("[" .. tostring(entry.seq) .. "]"),
-			entry.time and utils.relative_time(entry.time) or "",
+			entry.time and utils.pretty_time_or_relative_time(entry.time) or "",
 			info.tags
 					and #info.tags > 0
 					and (string.format("%s ", constants.icons.tag) .. table.concat(

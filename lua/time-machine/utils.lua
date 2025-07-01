@@ -20,6 +20,38 @@ function M.augroup(name)
 	return vim.api.nvim_create_augroup("TimeMachine" .. name, { clear = true })
 end
 
+--- Get pretty/relative time based on config
+---@param timestamp integer The timestamp to convert
+---@return string relative_time The relative time
+function M.pretty_time_or_relative_time(timestamp)
+	local ts = tonumber(timestamp)
+	if not ts then
+		return ""
+	end
+
+	local config = require("time-machine.config").config
+	local time_format = config.time_format or "relative"
+
+	if time_format == "relative" then
+		return M.relative_time(ts)
+	elseif time_format == "pretty" then
+		return M.pretty_time(ts)
+	elseif time_format == "unix" then
+		return tostring(ts)
+	end
+
+	return ""
+end
+
+--- Convert a timestamp into a human-readable relative time (with date)
+---@param timestamp integer The timestamp to convert
+---@return string pretty_time The relative time
+function M.pretty_time(timestamp)
+	local dateString = os.date("%Y-%m-%d %H:%M:%S", timestamp)
+	---@cast dateString string
+	return dateString
+end
+
 --- Convert a timestamp into a human-readable relative time
 ---@param timestamp integer The timestamp to convert
 ---@return string relative_time The relative time
