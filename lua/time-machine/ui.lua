@@ -157,7 +157,6 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 			end
 
 			--- match time and the rest behind time (which is tags)
-			-- local time, rest = line:match("(%d+%a+ ago)%s*(.*)$")
 			local patterns = {
 				relative = "(%d+%a+ ago)%s*(.*)$", -- e.g., "2h ago #tag"
 				pretty = "(%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d)%s*(.*)$", -- e.g., "2025-07-01 17:00:00 #tag"
