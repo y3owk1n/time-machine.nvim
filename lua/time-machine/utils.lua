@@ -48,6 +48,9 @@ end
 ---@return string pretty_time The relative time
 function M.pretty_time(timestamp)
 	local dateString = os.date("%Y-%m-%d %H:%M:%S", timestamp)
+	if not dateString then
+		return ""
+	end
 	---@cast dateString string
 	return dateString
 end
