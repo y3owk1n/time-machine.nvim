@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.2](https://github.com/y3owk1n/time-machine.nvim/compare/v1.5.1...v1.5.2) (2025-07-01)
+
+
+### Bug Fixes
+
+* **tree:** add different configurable `time_format` ([#88](https://github.com/y3owk1n/time-machine.nvim/issues/88)) ([66b173e](https://github.com/y3owk1n/time-machine.nvim/commit/66b173e7b6ddf58c79e124f945b8b4112b89f75e))
+* **ui:** ensure pattern matching for time section matches new config ([#90](https://github.com/y3owk1n/time-machine.nvim/issues/90)) ([cf5e66a](https://github.com/y3owk1n/time-machine.nvim/commit/cf5e66ab02c132c4289f0b1ac65c52ba5a80a0c2))
+
 ## [1.5.1](https://github.com/y3owk1n/time-machine.nvim/compare/v1.5.0...v1.5.1) (2025-05-04)
 
 
