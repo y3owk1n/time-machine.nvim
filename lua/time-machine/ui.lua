@@ -164,8 +164,10 @@ local function set_highlights(bufnr, seq_map, curr_seq, lines)
 			}
 
 			local config = require("time-machine.config").config
+			local time_format = config and config.time_format or "relative"
+			local pattern = patterns[time_format] or patterns.relative
 
-			local time, rest = line:match(patterns[config.time_format])
+			local time, rest = line:match(pattern)
 
 			if time then
 				local start_col = str_find(line, time, 1, true) - 1
