@@ -1,5 +1,4 @@
 ---@mod time-machine.nvim.types Types
----
 
 local M = {}
 
