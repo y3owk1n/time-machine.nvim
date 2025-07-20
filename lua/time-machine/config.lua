@@ -1,11 +1,67 @@
+---@mod time-machine.nvim.config Configurations
+---@brief [[
+---
+---Example Configuration:
+---
+--->
+---{
+---	split_opts = {
+---		split = "left",
+---		width = 50,
+---	},
+---	float_opts = {
+---		width = 0.8,
+---		height = 0.8,
+---		winblend = 0,
+---	},
+---	diff_tool = "native",
+---	native_diff_opts = {
+---		result_type = "unified",
+---		ctxlen = 3,
+---		algorithm = "histogram",
+---	},
+---	external_diff_args = {},
+---	keymaps = {
+---		undo = "u",
+---		redo = "<C-r>",
+---		restore_undopoint = "<CR>",
+---		refresh_timeline = "r",
+---		preview_sequence_diff = "p",
+---		tag_sequence = "t",
+---		close = "q",
+---		help = "g?",
+---		toggle_current_timeline = "c",
+---	},
+---	ignore_filesize = nil,
+---	ignored_filetypes = {
+---		"terminal",
+---		"nofile",
+---		constants.time_machine_ft,
+---		"mason",
+---		"snacks_picker_list",
+---		"snacks_picker_input",
+---		"snacks_dashboard",
+---		"snacks_notif_history",
+---		"lazy",
+---	},
+---	time_format = "relative",
+---	log_level = vim.log.levels.WARN,
+---	log_file = vim.fn.stdpath("cache") .. "/time-machine.log",
+---}
+---<
+---
+---@brief ]]
+
 local M = {}
 
 local constants = require("time-machine.constants").constants
 local utils = require("time-machine.utils")
 local logger = require("time-machine.logger")
 
+---@type TimeMachine.Config
 M.config = {}
 
+---@private
 ---@type TimeMachine.Config
 local defaults = {
 	split_opts = {
@@ -52,6 +108,7 @@ local defaults = {
 	log_file = vim.fn.stdpath("cache") .. "/time-machine.log",
 }
 
+---@private
 --- Setup Time Machine colors
 ---@return nil
 function M.setup_highlights()
@@ -86,6 +143,7 @@ function M.setup_logger()
 	})
 end
 
+---@private
 --- Setup autocommands
 ---@return nil
 function M.setup_autocmds()
@@ -147,6 +205,7 @@ function M.setup_autocmds()
 	})
 end
 
+---@private
 --- Setup user commands
 ---@return nil
 function M.setup_usercmds()
@@ -186,6 +245,7 @@ function M.setup_usercmds()
 	})
 end
 
+---@private
 --- Setup Time Machine
 ---@param user_config TimeMachine.Config
 ---@return nil
