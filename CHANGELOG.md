@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.3](https://github.com/y3owk1n/time-machine.nvim/compare/v1.5.2...v1.5.3) (2025-07-20)
+
+
+### Bug Fixes
+
+* **config:** make logger function private ([#93](https://github.com/y3owk1n/time-machine.nvim/issues/93)) ([78cc2e4](https://github.com/y3owk1n/time-machine.nvim/commit/78cc2e42ab2cf72af4a69a271e661d130641b93c))
+* **docs:** switch doc gen from `pandocvim` to `vimcats` ([#91](https://github.com/y3owk1n/time-machine.nvim/issues/91)) ([924c3d7](https://github.com/y3owk1n/time-machine.nvim/commit/924c3d7fffca486ce3f7c71425e3064a8c43c8b1))
+* remove whitespace ([#94](https://github.com/y3owk1n/time-machine.nvim/issues/94)) ([6f593a5](https://github.com/y3owk1n/time-machine.nvim/commit/6f593a50736507a6ffa11c2008109a250cb40f00))
+
 ## [1.5.2](https://github.com/y3owk1n/time-machine.nvim/compare/v1.5.1...v1.5.2) (2025-07-01)
 
 
