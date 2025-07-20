@@ -40,7 +40,8 @@ M.actions.purge_all                    *time-machine.nvim.api.actions.purge_all*
         (fun(force?:boolean))
 
 
-M.actions.purge_buffer              *time-machine.nvim.api.actions.purge_buffer*
+                                    *time-machine.nvim.api.actions.purge_buffer*
+M.actions.purge_buffer
     Purge the current buffer undofile
 
     Type: ~
@@ -131,7 +132,8 @@ M.setup_logger()                         *time-machine.nvim.config.setup_logger*
 ==============================================================================
 Types                                                  *time-machine.nvim.types*
 
-TimeMachine.DiffTool              *time-machine.nvim.types.TimeMachine.DiffTool*
+                                  *time-machine.nvim.types.TimeMachine.DiffTool*
+TimeMachine.DiffTool
 
     Variants: ~
         ("native")
@@ -149,20 +151,23 @@ TimeMachine.DiffToolExternal
         ("delta")
 
 
-TimeMachine.SplitDirection  *time-machine.nvim.types.TimeMachine.SplitDirection*
+                            *time-machine.nvim.types.TimeMachine.SplitDirection*
+TimeMachine.SplitDirection
 
     Variants: ~
         ("left")
         ("right")
 
 
-TimeMachine.SeqMap                  *time-machine.nvim.types.TimeMachine.SeqMap*
+                                    *time-machine.nvim.types.TimeMachine.SeqMap*
+TimeMachine.SeqMap
 
     Type: ~
         table<integer,string|integer[]>
 
 
-TimeMachine.Config                  *time-machine.nvim.types.TimeMachine.Config*
+                                    *time-machine.nvim.types.TimeMachine.Config*
+TimeMachine.Config
 
     Fields: ~
         {diff_tool?}           (TimeMachine.DiffTool)                          The diff tool to use
@@ -176,7 +181,8 @@ TimeMachine.Config                  *time-machine.nvim.types.TimeMachine.Config*
         {time_format?}         ()
 
 
-TimeMachine.Config.Keymaps  *time-machine.nvim.types.TimeMachine.Config.Keymaps*
+                            *time-machine.nvim.types.TimeMachine.Config.Keymaps*
+TimeMachine.Config.Keymaps
 
     Fields: ~
         {undo?}                     (string)  The keymap to undo
@@ -207,7 +213,8 @@ TimeMachine.Config.FloatOpts
         {winblend?}  (integer)  The winblend of the window
 
 
-TimeMachine.SeqMapRaw            *time-machine.nvim.types.TimeMachine.SeqMapRaw*
+                                 *time-machine.nvim.types.TimeMachine.SeqMapRaw*
+TimeMachine.SeqMapRaw
 
     Fields: ~
         {entry}      (vim.fn.undotree.entry)  The undotree entry
@@ -215,7 +222,8 @@ TimeMachine.SeqMapRaw            *time-machine.nvim.types.TimeMachine.SeqMapRaw*
         {tags}       (string[])               The tags
 
 
-TimeMachine.TreeLine              *time-machine.nvim.types.TimeMachine.TreeLine*
+                                  *time-machine.nvim.types.TimeMachine.TreeLine*
+TimeMachine.TreeLine
 
     Fields: ~
         {content}  (string)   The content of the line
