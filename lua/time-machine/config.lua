@@ -134,6 +134,7 @@ function M.setup_highlights()
 	end
 end
 
+---@private
 --- Setup logger
 ---@return nil
 function M.setup_logger()
