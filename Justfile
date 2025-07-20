@@ -1,5 +1,9 @@
 doc:
-    panvimdoc --project-name time-machine.nvim --input-file ./README.md --demojify true --vim-version "Neovim >= 0.11.0"
+    vimcats -t -f -c -a \
+    lua/time-machine/init.lua \
+    lua/time-machine/config.lua \
+    lua/time-machine/types.lua \
+    > doc/time-machine.nvim.txt
 
 set shell := ["bash", "-cu"]
 
