@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.4](https://github.com/y3owk1n/time-machine.nvim/compare/v1.5.3...v1.5.4) (2025-08-10)
+
+
+### Bug Fixes
+
+* **ci:** move docs out to its own workflow ([#96](https://github.com/y3owk1n/time-machine.nvim/issues/96)) ([e59e15a](https://github.com/y3owk1n/time-machine.nvim/commit/e59e15ab54d0dd0e8bc0db7f7fd33a53c0ab7767))
+
 ## [1.5.3](https://github.com/y3owk1n/time-machine.nvim/compare/v1.5.2...v1.5.3) (2025-07-20)
 
 
