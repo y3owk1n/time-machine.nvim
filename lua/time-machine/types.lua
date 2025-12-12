@@ -14,7 +14,7 @@ local M = {}
 ---@alias TimeMachine.SplitDirection
 ---| '"left"'
 ---| '"right"'
----@alias TimeMachine.SeqMap table<integer, string|integer[]>
+---@alias TimeMachine.SeqMap table<integer, string|integer>
 
 ---@class TimeMachine.Config
 ---@field diff_tool? TimeMachine.DiffTool The diff tool to use
@@ -58,5 +58,19 @@ local M = {}
 ---@field content string The content of the line
 ---@field seq integer The sequence number
 ---@field column integer The column number
+
+---@class vim.fn.undotree.entry
+---@field seq integer The sequence number
+---@field time integer The timestamp
+---@field alt vim.fn.undotree.entry[] Alternative entries (branches)
+---@field save integer|nil Save number if it's a save point
+
+---@class vim.fn.undotree.ret
+---@field seq_cur integer The current sequence number
+---@field entries vim.fn.undotree.entry[] The undo tree entries
+
+---@alias vim.diff.Opts table
+---@alias vim.text.diff.Opts table
+---@alias vim.api.keyset.win_config table
 
 return M

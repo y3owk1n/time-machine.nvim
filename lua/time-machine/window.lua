@@ -26,7 +26,6 @@ function M.create_native_float_win(bufnr, title)
 	local footer_text =
 		string.format("Press `%s` to exit", keymaps.close or "q")
 
-	---@type vim.api.keyset.win_config
 	local win_opts = {
 		relative = "editor",
 		border = winborder,
