@@ -10,11 +10,20 @@ permissions:
 
 jobs:
   checks:
-    name: ${{ matrix.check }}
+    name: ${{ matrix.check }} ${{ matrix.version || '' }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        check: [formatting, test]
+        include:
+          - os: ubuntu-latest
+            check: formatting
+          - os: ubuntu-latest
+            check: linting
+          - os: ubuntu-latest
+            check: test
+            version: stable
+          - os: ubuntu-latest
+            check: test
+            version: nightly
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
@@ -32,11 +41,16 @@ jobs:
         if: ${{ matrix.check == 'test' }}
         uses: y3owk1n/nvs@main
         with:
-          version: stable
+          version: ${{ matrix.version }}
+          use-global-cache: true
 
       - name: Run just fmt-check
         if: ${{ matrix.check == 'formatting' }}
         run: devbox run -- just fmt-check
+
+      - name: Run just lint
+        if: ${{ matrix.check == 'linting' }}
+        run: devbox run -- just lint
 
       - name: Run just test
         if: ${{ matrix.check == 'test' }}
